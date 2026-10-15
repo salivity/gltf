@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Handling Texture Atlas Border Clamping in glTF - gltf</title>
+    <meta name="description" content="In glTF 2.0, texture samplers apply wrapping and clamping behaviors exclusively to the entire image asset rather than to individual sub-tiles within a texture atlas. Because the specification lacks native sub-rectangle clamping parameters, sampling atlas">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/handling-texture-atlas-border-clamping-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Handling Texture Atlas Border Clamping in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/handling-texture-atlas-border-clamping-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In glTF 2.0, texture samplers apply wrapping and clamping behaviors exclusively to the entire image asset rather than to individual sub-tiles within a texture atlas. Because the specification lacks native sub-rectangle clamping parameters, sampling atlas" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="handling-texture-atlas-border-clamping-in-gltf">Handling Texture
+Atlas Border Clamping in glTF</h1>
+<p>In glTF 2.0, texture samplers apply wrapping and clamping behaviors
+exclusively to the entire image asset rather than to individual
+sub-tiles within a texture atlas. Because the specification lacks native
+sub-rectangle clamping parameters, sampling atlas tiles requires
+specific authoring techniques—such as padding, texel extrusion, or
+custom shader logic—to prevent visual artifacts like texture bleeding.
+This article explores how glTF texture samplers function, why border
+clamping fails on atlas tiles by default, and how to properly handle
+these constraints.</p>
+<h3 id="gltf-texture-sampler-wrap-modes">glTF Texture Sampler Wrap
+Modes</h3>
+<p>The glTF specification defines texture sampling behavior using the
+<code>sampler</code> object, which provides <code>wrapS</code> and
+<code>wrapT</code> properties. These properties support three standard
+WebGL/OpenGL wrap modes:</p>
+<ul>
+<li><strong><code>CLAMP_TO_EDGE</code> (33071):</strong> Clamps
+coordinates to the range <code>[0.0, 1.0]</code>, repeating the
+outermost edge texels of the full image.</li>
+<li><strong><code>REPEAT</code> (10497):</strong> Tiles the texture by
+ignoring the integer component of the UV coordinates.</li>
+<li><strong><code>MIRRORED_REPEAT</code> (33648):</strong> Tiles the
+texture while flipping it at every integer boundary.</li>
+</ul>
+<p>These wrap modes are executed at the hardware sampler level across
+the complete dimensions of the assigned image file.</p>
+<h3 id="the-sub-tile-clamping-problem">The Sub-Tile Clamping
+Problem</h3>
+<p>A texture atlas packs multiple independent textures into distinct UV
+sub-rectangles (e.g., from <code>[0.0, 0.0]</code> to
+<code>[0.5, 0.5]</code>). When a 3D model samples an atlas tile, the
+GPU's hardware sampler has no contextual awareness of the sub-tile's
+boundaries.</p>
+<p>If a material's UV coordinates cross or touch the perimeter of an
+assigned atlas tile:</p>
+<ol type="1">
+<li><strong>Wrap Mode Failures:</strong> Setting the glTF sampler to
+<code>CLAMP_TO_EDGE</code> clamps UVs to the edges of the <em>entire
+atlas</em>, not the sub-tile boundaries. A UV coordinate exceeding the
+sub-tile border continues reading into adjacent tiles.</li>
+<li><strong>Bilinear/Trilinear Filtering Bleed:</strong> Linear
+interpolation blends samples from adjacent texels. Texels right on the
+boundary of an atlas tile will blend with the texels of neighboring
+tiles.</li>
+<li><strong>Mipmapping Artifacts:</strong> As lower-resolution mip
+levels are generated, texels from different tiles merge together,
+resulting in visible discoloration or seams around the geometry edges at
+distant viewing angles.</li>
+</ol>
+<h3 id="solutions-for-atlas-border-clamping-in-gltf">Solutions for Atlas
+Border Clamping in glTF</h3>
+<p>Because glTF does not offer an arbitrary tile clamp mechanism in its
+core specification, developers must mitigate atlas clamping issues using
+the following methods:</p>
+<h4 id="1-padding-and-edge-extrusion-recommended-for-standard-gltf">1.
+Padding and Edge Extrusion (Recommended for Standard glTF)</h4>
+<p>The standard and fully glTF-compliant approach is to build the atlas
+with safety margins around each sub-tile:</p>
+<ul>
+<li><strong>Gutters:</strong> Leave empty space between sub-tiles.</li>
+<li><strong>Texel Extrusion (Bilinear Padding):</strong> Duplicate the
+outer single-pixel edge of each sub-tile into the gutter. This ensures
+that linear interpolation pulls identical edge colors instead of
+neighboring textures.</li>
+<li><strong>Mipmap Sizing:</strong> Ensure the padding thickness is
+large enough for the lowest mip level used (e.g., a margin of 16 to 32
+pixels for a <span class="math inline">\(2048 \times 2048\)</span>
+atlas).</li>
+</ul>
+<h4 id="2-uv-range-clamping-via-shaders">2. UV Range Clamping via
+Shaders</h4>
+<p>If rendering outside the constraints of an unextended glTF viewer,
+you can enforce sub-tile clamping inside the fragment shader:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode glsl"><code class="sourceCode glsl"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">vec2</span> clampedUV <span class="op">=</span> <span class="bu">clamp</span><span class="op">(</span>v_UV<span class="op">,</span> tileMinUV<span class="op">,</span> tileMaxUV<span class="op">);</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="dt">vec4</span> color <span class="op">=</span> <span class="bu">texture</span><span class="op">(</span>u_Atlas<span class="op">,</span> clampedUV<span class="op">);</span></span></code></pre></div>
+<p>While this restricts the UV coordinates to the tile's defined
+sub-rectangle, it requires passing bounding bounds per-material or
+per-draw call, which is not supported in the standard
+<code>KHR_texture_transform</code> extension.</p>
+<h4 id="3-limitations-of-khr_texture_transform">3. Limitations of
+<code>KHR_texture_transform</code></h4>
+<p>The <code>KHR_texture_transform</code> extension allows offset and
+scale controls for UV coordinates. While it can map geometry UVs to the
+correct sub-rectangle of an atlas, it only scales and offsets
+coordinates; it does not introduce boundary clamping logic.</p>
+<h4 id="4-array-textures-as-an-alternative">4. Array Textures as an
+Alternative</h4>
+<p>When independent clamping and wrapping are strictly required without
+atlas bleeding, modern pipelines often abandon 2D atlases in favor of 2D
+Texture Arrays. Texture arrays preserve individual texture boundaries,
+allowing standard <code>CLAMP_TO_EDGE</code> behavior on every layer
+without cross-tile contamination.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

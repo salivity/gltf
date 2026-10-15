@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Vertex Skinning for Large Crowd Animation - gltf</title>
+    <meta name="description" content="Rendering crowds of thousands of animated meshes requires efficient data layouts to prevent GPU memory bottlenecks and excessive draw calls. In the glTF 2.0 specification, vertex skinning relies on vertex attributes, node hierarchies, and inverse bind mat">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-vertex-skinning-for-large-crowd-animation">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Vertex Skinning for Large Crowd Animation - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-vertex-skinning-for-large-crowd-animation" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Rendering crowds of thousands of animated meshes requires efficient data layouts to prevent GPU memory bottlenecks and excessive draw calls. In the glTF 2.0 specification, vertex skinning relies on vertex attributes, node hierarchies, and inverse bind mat" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-vertex-skinning-for-large-crowd-animation">glTF Vertex
+Skinning for Large Crowd Animation</h1>
+<p>Rendering crowds of thousands of animated meshes requires efficient
+data layouts to prevent GPU memory bottlenecks and excessive draw calls.
+In the glTF 2.0 specification, vertex skinning relies on vertex
+attributes, node hierarchies, and inverse bind matrices. To scale this
+architecture to support massive crowds, developers pair standard glTF
+skinning data structures with extensions like GPU instancing and
+texture-based matrix pipelines. This article explains how glTF encodes
+skinning data natively and how those structures adapt to animate
+thousands of crowd characters simultaneously.</p>
+<h3 id="the-core-gltf-skinning-schema">The Core glTF Skinning
+Schema</h3>
+<p>At its base level, glTF defines skinning through a combination of
+vertex attributes, skin definitions, and scene node hierarchies.</p>
+<p>Within the <code>meshes[].primitives[].attributes</code> object, each
+vertex contains skinning references:</p>
+<ul>
+<li><strong><code>JOINTS_0</code></strong>: A 4-component vector
+(typically <code>UNSIGNED_BYTE</code> or <code>UNSIGNED_SHORT</code>)
+defining the indices of the joints in the skin's joint palette that
+influence the vertex.</li>
+<li><strong><code>WEIGHTS_0</code></strong>: A 4-component
+floating-point or normalized integer vector defining the influence
+weight of each corresponding joint. The sum of these weights must equal
+1.0.</li>
+</ul>
+<p>For high-fidelity meshes requiring more than four joint influences
+per vertex, glTF supports additional sets such as <code>JOINTS_1</code>
+and <code>WEIGHTS_1</code>. However, crowd characters almost universally
+constrain influences to <code>JOINTS_0</code> and <code>WEIGHTS_0</code>
+(or compress them to two influences) to minimize vertex buffer sizes
+across thousands of instances.</p>
+<h3 id="the-skins-definition-and-inverse-bind-matrices">The
+<code>skins</code> Definition and Inverse Bind Matrices</h3>
+<p>The mesh references a specific entry in the top-level
+<code>skins</code> array. A glTF skin object contains:</p>
+<ol type="1">
+<li><strong><code>joints</code></strong>: An array of indices pointing
+to nodes in the scene graph that act as bones.</li>
+<li><strong><code>inverseBindMatrices</code></strong>: An accessor
+pointing to an array of 4x4 floating-point matrices. Each matrix
+transforms vertex positions from the mesh’s local space into the local
+space of the associated joint at the time of binding.</li>
+</ol>
+<p>In standard playback, the vertex shader calculates the final skinned
+position using the formula:</p>
+<p><span class="math display">\[\text{SkinMatrix} = \sum_{i=0}^{3}
+\left( \text{WEIGHTS}[i] \times \text{JointMatrix}[i] \times
+\text{InverseBindMatrix}[i] \right)\]</span></p>
+<h3 id="the-crowd-scaling-bottleneck">The Crowd Scaling Bottleneck</h3>
+<p>The standard glTF specification ties a skin directly to individual
+scene nodes. In a scene containing 5,000 crowd agents, executing
+standard glTF node hierarchy updates on the CPU results in massive
+overhead, memory traversal stalls, and thousands of individual draw
+calls. To represent crowds within or alongside the glTF standard,
+runtimes adapt the underlying glTF encoding in two primary ways:</p>
+<h4 id="1-hardware-instancing-with-ext_mesh_gpu_instancing">1. Hardware
+Instancing with <code>EXT_mesh_gpu_instancing</code></h4>
+<p>glTF addresses repeated geometry using the
+<code>EXT_mesh_gpu_instancing</code> extension. This extension allows a
+single mesh primitive—containing static <code>JOINTS_0</code> and
+<code>WEIGHTS_0</code> vertex buffers—to be rendered many times in a
+single draw call.</p>
+<p>The extension introduces per-instance attribute accessors:</p>
+<ul>
+<li><code>TRANSLATION</code>: Instance world position offsets.</li>
+<li><code>ROTATION</code>: Instance orientations (quaternions).</li>
+<li><code>SCALE</code>: Instance dimensions.</li>
+<li>Custom application attributes: Often an instance-level float or
+integer pointing to a global animation playback timestamp or animation
+state index.</li>
+</ul>
+<p>By instancing the base skinned mesh, the GPU reuses identical joint
+index and weight accessors, drastically reducing memory bandwidth.</p>
+<h4 id="2-texture-encoded-animation-data-matrix-palettes">2.
+Texture-Encoded Animation Data (Matrix Palettes)</h4>
+<p>Because feeding thousands of unique skeletal node transforms via
+uniform buffers exceeds GPU shader uniform limits, glTF workflows for
+crowds frequently bake the node transform matrices into high-density 2D
+data textures (Vertex Animation Textures, or VAT).</p>
+<p>Instead of maintaining dynamic glTF node trees, the animations are
+pre-baked:</p>
+<ul>
+<li>Each row of a floating-point texture stores the 4x4 transform
+matrices for all joints of a skeleton across distinct animation
+frames.</li>
+<li>The glTF vertex data retains standard <code>JOINTS_0</code> indices,
+but the vertex shader intercepts these indices to sample matrix rows
+from the global animation texture rather than reading uniform
+matrices.</li>
+<li>Individual crowd instances only pass an animation offset ID (stored
+via instancing attributes), allowing thousands of characters to sample
+different frames of walking, running, or idling from the same shared
+texture buffer.</li>
+</ul>
+<h3 id="optimizing-buffer-alignment-and-accessors">Optimizing Buffer
+Alignment and Accessors</h3>
+<p>For large-scale crowds, glTF optimizes data throughput by packing
+joint attributes. The glTF binary buffer (<code>.bin</code>) aligns
+joint data using <code>UNSIGNED_BYTE</code> for skeletons with fewer
+than 256 joints, fitting <code>JOINTS_0</code> into 4 bytes per vertex
+instead of 16 bytes. Weights are often compressed to
+<code>UNSIGNED_SHORT</code> normalized values. This structured packing
+ensures that the vertex pipeline can stream thousands of crowd
+geometries through memory caches with minimal latency.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

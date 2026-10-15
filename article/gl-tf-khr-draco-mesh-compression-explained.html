@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF KHR_draco_mesh_compression Explained - gltf</title>
+    <meta name="description" content="The KHRdracomeshcompression extension dramatically reduces glTF 3D asset file sizes by structurally altering how geometric data—specifically vertex attributes and triangle connectivity—is packaged and stored. This article outlines the specific structural">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-khr-draco-mesh-compression-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF KHR_draco_mesh_compression Explained - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-khr-draco-mesh-compression-explained" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The KHRdracomeshcompression extension dramatically reduces glTF 3D asset file sizes by structurally altering how geometric data—specifically vertex attributes and triangle connectivity—is packaged and stored. This article outlines the specific structural" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-khr_draco_mesh_compression-explained">glTF
+KHR_draco_mesh_compression Explained</h1>
+<p>The <code>KHR_draco_mesh_compression</code> extension dramatically
+reduces glTF 3D asset file sizes by structurally altering how geometric
+data—specifically vertex attributes and triangle connectivity—is
+packaged and stored. This article outlines the specific structural
+transformations executed by the extension within the glTF file format,
+detailing how traditional byte-aligned vertex buffers are replaced with
+highly optimized, compressed bitstreams using Google’s Draco
+library.</p>
+<h3 id="schema-level-structural-transformation">Schema-Level Structural
+Transformation</h3>
+<p>In standard glTF 2.0 assets, mesh geometry is stored in raw,
+uncompressed binary arrays. The <code>mesh.primitives</code> object
+defines mesh data through an <code>attributes</code> dictionary and an
+<code>indices</code> property, which point to individual
+<code>accessors</code> that directly map to byte offsets within
+<code>bufferViews</code>.</p>
+<p>When <code>KHR_draco_mesh_compression</code> is applied, this
+structure is redirected:</p>
+<ol type="1">
+<li><strong>Primitive Redirection:</strong> The extension is injected
+directly into
+<code>mesh.primitives.extensions.KHR_draco_mesh_compression</code>.</li>
+<li><strong>Buffer Consolidation:</strong> Instead of referencing
+separate <code>bufferViews</code> for each vertex attribute
+(<code>POSITION</code>, <code>NORMAL</code>, <code>TEXCOORD_0</code>)
+and index array, the extension points to a single
+<code>bufferView</code> containing the entire compressed Draco
+bitstream.</li>
+<li><strong>Attribute ID Mapping:</strong> An <code>attributes</code>
+dictionary within the extension maps glTF attribute semantics (e.g.,
+<code>"POSITION": 0</code>, <code>"NORMAL": 1</code>) to internal Draco
+attribute identifiers.</li>
+<li><strong>Bypassing Raw Accessors:</strong> The standard
+<code>accessor</code> properties under <code>primitive.attributes</code>
+and <code>primitive.indices</code> are bypassed at runtime by
+Draco-capable parsers, functioning only as metadata fallbacks or
+compatibility placeholders for non-Draco loaders.</li>
+</ol>
+<h3 id="geometry-level-compression-mechanisms">Geometry-Level
+Compression Mechanisms</h3>
+<p>Inside the Draco bitstream referenced by the consolidated
+<code>bufferView</code>, the structural compression is executed through
+several interdependent stages:</p>
+<h4 id="1-connectivity-and-topology-compression">1. Connectivity and
+Topology Compression</h4>
+<p>Standard glTF files store topology as raw triangle lists (lists of
+vertex indices such as <code>[0, 1, 2, 2, 3, 0]</code>), which often
+consume significant storage. Draco replaces this structure using
+edge-based compression algorithms, primarily variants of the
+<strong>Edgebreaker</strong> algorithm. This method traverses the mesh
+surface and encodes the connectivity of adjacent triangles using a
+compact sequence of topological symbols (C, L, R, E, S), slashing the
+memory footprint of triangle indexes to just a few bits per
+triangle.</p>
+<h4 id="2-attribute-quantization">2. Attribute Quantization</h4>
+<p>Standard 3D models define coordinates, normals, and UVs as 32-bit
+floating-point numbers (<code>FLOAT</code>). Draco applies lossy
+quantization, converting these continuous floating-point values into
+discrete fixed-point integers based on user-defined bit depths (e.g.,
+14-bit for positions, 10-bit for normals). This standardizes the dynamic
+range and removes unnecessary precision noise.</p>
+<h4 id="3-prediction-schemes-delta-encoding">3. Prediction Schemes
+(Delta Encoding)</h4>
+<p>Rather than storing absolute coordinate values, Draco uses
+topological connectivity to predict the position of adjacent vertices.
+The most common technique is <strong>parallelogram prediction</strong>,
+which assumes that two adjacent triangles forming a quad approximate a
+flat parallelogram. The decoder estimates the fourth vertex from the
+first three, requiring the bitstream to store only the small corrective
+residual (delta) between the predicted and actual position.</p>
+<h4 id="4-entropy-coding">4. Entropy Coding</h4>
+<p>Finally, the quantized delta residuals, connectivity symbols, and
+attribute headers are compressed using asymmetric numeral systems,
+specifically <strong>rANS (Range Asymmetric Numeral Systems)</strong> or
+adaptive arithmetic coding. This entropy encoding packs frequently
+occurring symbols into the smallest possible number of bits.</p>
+<h3 id="transmission-vs-runtime-trade-off">Transmission vs. Runtime
+Trade-off</h3>
+<p>The structural compression executed by
+<code>KHR_draco_mesh_compression</code> is optimized strictly for
+transmission and storage. Graphics processing units (GPUs) cannot
+directly render the Draco bitstream. Consequently, the client
+application must download a Draco WebAssembly (Wasm) or native decoder
+module to decompress the bitstream back into standard, GPU-ready vertex
+and index arrays in memory prior to rendering.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clustered Forward Shading for Dense Lights in glTF - gltf</title>
+    <meta name="description" content="Clustered forward shading efficiently renders scenes containing thousands of dynamic light sources by subdividing the camera frustum into a three-dimensional grid of spatial clusters and assigning active lights to these volumes. When paired with complex g">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/clustered-forward-shading-for-dense-lights-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Clustered Forward Shading for Dense Lights in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/clustered-forward-shading-for-dense-lights-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Clustered forward shading efficiently renders scenes containing thousands of dynamic light sources by subdividing the camera frustum into a three-dimensional grid of spatial clusters and assigning active lights to these volumes. When paired with complex g" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="clustered-forward-shading-for-dense-lights-in-gltf">Clustered
+Forward Shading for Dense Lights in glTF</h1>
+<p>Clustered forward shading efficiently renders scenes containing
+thousands of dynamic light sources by subdividing the camera frustum
+into a three-dimensional grid of spatial clusters and assigning active
+lights to these volumes. When paired with complex glTF
+environments—which frequently feature intricate asset hierarchies,
+diverse physically based rendering (PBR) materials, and varying
+alpha-blending modes—this approach eliminates the traditional
+performance bottlenecks of standard forward and deferred rendering. By
+evaluating only the lights that intersect each fragment’s specific
+spatial cluster, the engine maintains high frame rates, full support for
+transparent surfaces, and minimal memory overhead regardless of light
+density.</p>
+<h3 id="the-problem-with-traditional-forward-and-deferred-pipelines">The
+Problem with Traditional Forward and Deferred Pipelines</h3>
+<p>Standard forward rendering evaluates every active light against every
+rendered primitive, resulting in an algorithmic complexity of <span
+class="math inline">\(O(\text{geometry} \times \text{lights})\)</span>.
+In dense scenes, this causes severe shader bloat and heavy fill-rate
+penalties.</p>
+<p>Deferred shading decouples lighting from geometry by writing surface
+properties to a G-buffer. While it handles high light counts well, it
+struggles with the standard features native to glTF 2.0. Deferred
+pipelines cannot natively handle transparent materials, struggle with
+multi-material shading variations (such as glTF extensions for
+clearcoat, transmission, and sheen), and require high memory bandwidth
+for wide G-buffers, making them less ideal for complex asset
+pipelines.</p>
+<h3 id="how-clustered-shading-operates">How Clustered Shading
+Operates</h3>
+<p>Clustered shading resolves these trade-offs by partitioning the view
+frustum along three axes:</p>
+<ol type="1">
+<li><strong>Frustum Subdivision:</strong> The screen is divided into a
+2D tile grid (typically <span class="math inline">\(16 \times
+16\)</span> pixels), and the view depth is divided logarithmically into
+slices along the Z-axis. This forms a 3D grid of sub-frusta known as
+clusters.</li>
+<li><strong>Light Cull and Binning:</strong> A compute shader tests the
+bounding volumes of all scene lights (point lights, spot lights) against
+the bounding boxes of these 3D clusters.</li>
+<li><strong>Index Generation:</strong> The engine builds a flat global
+list of light indices and a per-cluster lookup table (offset and
+count).</li>
+<li><strong>Per-Fragment Shading:</strong> During the standard forward
+rendering pass, a fragment shader calculates its 3D cluster coordinate
+directly from <code>gl_FragCoord.xy</code> and linear view depth. It
+then loops exclusively over the lights mapped to that cluster.</li>
+</ol>
+<p>Because the depth slicing is logarithmic, near-plane clusters remain
+tight while far-plane clusters encompass larger volumes, balancing light
+distribution across depth.</p>
+<h3 id="managing-complex-gltf-asset-features">Managing Complex glTF
+Asset Features</h3>
+<p>glTF models often combine complex node hierarchies, multiple mesh
+primitives, and rich material models. Clustered forward shading
+accommodates these structures directly:</p>
+<ul>
+<li><strong>Material Diversity:</strong> glTF files can mix standard PBR
+metallic-roughness workflows with extensions such as
+KHR_materials_transmission, KHR_materials_ior, and KHR_materials_volume.
+Because clustered rendering executes in a forward pass, distinct shaders
+can evaluate unique material properties per draw call without the
+uniform material restrictions of a G-buffer.</li>
+<li><strong>Alpha Blending and Transparency:</strong> Translucent
+objects, foliage, and glass elements defined by glTF alpha modes
+(<code>BLEND</code> and <code>MASK</code>) sample the same cluster grid
+as opaque geometry. This allows dense lighting to interact accurately
+with transparent surfaces in a single pass without secondary lighting
+passes.</li>
+<li><strong>Depth Discontinuities:</strong> Unlike 2D tiled forward
+shading—where a light far behind a foreground edge lights both surfaces
+because they share a 2D screen tile—clustered shading isolates objects
+along the Z-axis. Meshes with high geometric depth variation, such as
+dense architectural or industrial glTF scenes, do not suffer from false
+light allocations.</li>
+</ul>
+<h3 id="performance-scaling-under-high-light-counts">Performance Scaling
+Under High Light Counts</h3>
+<p>By restricting light iteration to localized 3D volumes, clustered
+forward shading bounds the inner loop of the fragment shader. Even in
+environments with thousands of point lights placed throughout a complex
+glTF world, any single fragment typically processes only 5 to 50 active
+lights. The compute overhead for building the cluster grid scales with
+the number of lights and clusters rather than scene geometric
+complexity, providing predictable frame times across varying hardware
+profiles.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

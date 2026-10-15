@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automated CI/CD Checks for Web glTF Assets - gltf</title>
+    <meta name="description" content="Publishing 3D content to the web requires a robust deployment pipeline to guarantee fast load times, broad device compatibility, and visual integrity. Integrating automated Continuous Integration and Continuous Deployment (CI/CD) checks for glTF and GLB f">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/automated-ci-cd-checks-for-web-gl-tf-assets">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Automated CI/CD Checks for Web glTF Assets - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/automated-ci-cd-checks-for-web-gl-tf-assets" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Publishing 3D content to the web requires a robust deployment pipeline to guarantee fast load times, broad device compatibility, and visual integrity. Integrating automated Continuous Integration and Continuous Deployment (CI/CD) checks for glTF and GLB f" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="automated-cicd-checks-for-web-gltf-assets">Automated CI/CD
+Checks for Web glTF Assets</h1>
+<p>Publishing 3D content to the web requires a robust deployment
+pipeline to guarantee fast load times, broad device compatibility, and
+visual integrity. Integrating automated Continuous Integration and
+Continuous Deployment (CI/CD) checks for glTF and GLB files ensures that
+incoming 3D assets adhere to strict technical budgets, rendering
+standards, and security protocols before reaching production
+environments.</p>
+<h3 id="1-specification-validation">1. Specification Validation</h3>
+<p>The primary step in any glTF pipeline is verifying adherence to the
+Khronos Group glTF 2.0 specification. Using the official, open-source
+<code>glTF-Validator</code> tool in a headless environment detects
+syntax errors, corrupted accessors, missing buffer views, and broken
+node hierarchies. Any critical error reported by this tool should fail
+the build immediately, as non-compliant files frequently crash
+client-side WebGL and WebGPU runtimes.</p>
+<h3 id="2-file-size-and-asset-budget-limits">2. File Size and Asset
+Budget Limits</h3>
+<p>Web delivery demands strict performance budgets to avoid high bounce
+rates and excessive bandwidth consumption. CI/CD pipelines should
+enforce automated file size thresholds:</p>
+<ul>
+<li><strong>Total File Size:</strong> Reject assets exceeding an
+agreed-upon limit (e.g., under 5 MB for standard e-commerce
+models).</li>
+<li><strong>Draw Calls:</strong> Limit the number of unique meshes and
+primitives to keep draw calls low on mobile devices.</li>
+<li><strong>Polygon Count:</strong> Enforce upper limits on triangle and
+vertex counts per asset or level-of-detail (LOD) tier.</li>
+</ul>
+<h3 id="3-texture-audits-and-compression">3. Texture Audits and
+Compression</h3>
+<p>Textures typically account for the vast majority of a glTF file's
+memory footprint. Automated checks should inspect and transform texture
+assets through the following rules:</p>
+<ul>
+<li><strong>Resolution Caps:</strong> Ensure no texture exceeds baseline
+dimensions (e.g., 2048x2048 or 4096x4096) and conforms to power-of-two
+dimensions where required.</li>
+<li><strong>Modern Compression Formats:</strong> Verify textures are
+compressed using KTX2 with Basis Universal
+(<code>KHR_texture_basisu</code>). Uncompressed PNG or JPEG textures
+should trigger automated conversion or build warnings.</li>
+<li><strong>Channel Packing:</strong> Validate that PBR workflow
+textures (metallic, roughness, and occlusion) are packed into a single
+texture map to reduce memory fetches.</li>
+</ul>
+<h3 id="4-geometry-optimization-and-extension-verification">4. Geometry
+Optimization and Extension Verification</h3>
+<p>Running optimization engines like <code>gltfpack</code> or
+<code>@gltf-transform</code> within CI ensures models are
+stream-ready:</p>
+<ul>
+<li><strong>Meshopt and Draco Compression:</strong> Check that geometry
+compression (<code>KHR_meshopt_compression</code> or
+<code>KHR_draco_mesh_compression</code>) is applied.</li>
+<li><strong>Allowed Extensions:</strong> Maintain an allowlist of
+approved glTF extensions (e.g., <code>KHR_materials_unlit</code>,
+<code>KHR_materials_transmission</code>). Assets containing unsupported,
+deprecated, or experimental extensions should be flagged or
+rejected.</li>
+</ul>
+<h3 id="5-rigging-and-animation-audits">5. Rigging and Animation
+Audits</h3>
+<p>For animated assets, excessive bones and over-sampled keyframes can
+quickly degrade CPU performance. CI checks should:</p>
+<ul>
+<li>Count bones and reject models exceeding common GPU skinning limits
+(often 64 to 256 bones).</li>
+<li>Check the duration and sampling rate of animation tracks.</li>
+<li>Verify morph targets do not exceed WebGL uniform limits.</li>
+</ul>
+<h3 id="6-security-and-uri-sanitization">6. Security and URI
+Sanitization</h3>
+<p>Standalone glTF files can reference external resources like image
+files or binary buffers via URIs. Automated checks must prevent security
+vulnerabilities by:</p>
+<ul>
+<li>Ensuring all referenced asset paths are relative and contained
+within the expected directory hierarchy.</li>
+<li>Blocking absolute URLs, non-HTTPS protocols, or path traversal
+patterns (e.g., <code>../</code>).</li>
+<li>Disallowing unexpected external file formats embedded within custom
+extras or metadata.</li>
+</ul>
+<h3 id="7-headless-visual-regression-testing">7. Headless Visual
+Regression Testing</h3>
+<p>Functional tests alone cannot catch inverted normals, missing UV
+mappings, or broken shaders. A complete CI/CD workflow uses headless
+browsers (such as Puppeteer or Playwright) with standard web 3D engines
+(Three.js, Babylon.js, or <code>&lt;model-viewer&gt;</code>) to render
+the asset from fixed camera angles. The resulting frames are compared
+against baseline "golden" images using perceptual diff tools to detect
+unwanted visual regressions automatically.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

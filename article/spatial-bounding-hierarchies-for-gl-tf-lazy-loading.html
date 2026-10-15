@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spatial Bounding Hierarchies for glTF Lazy Loading - gltf</title>
+    <meta name="description" content="Spatial bounding hierarchies act as the spatial index and scheduling backbone for streaming large-scale 3D assets, allowing rendering engines to dynamically load, render, and discard glTF sub-meshes based on camera movement. By structuring fragmented geom">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/spatial-bounding-hierarchies-for-gl-tf-lazy-loading">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Spatial Bounding Hierarchies for glTF Lazy Loading - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/spatial-bounding-hierarchies-for-gl-tf-lazy-loading" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Spatial bounding hierarchies act as the spatial index and scheduling backbone for streaming large-scale 3D assets, allowing rendering engines to dynamically load, render, and discard glTF sub-meshes based on camera movement. By structuring fragmented geom" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="spatial-bounding-hierarchies-for-gltf-lazy-loading">Spatial
+Bounding Hierarchies for glTF Lazy Loading</h1>
+<p>Spatial bounding hierarchies act as the spatial index and scheduling
+backbone for streaming large-scale 3D assets, allowing rendering engines
+to dynamically load, render, and discard glTF sub-meshes based on camera
+movement. By structuring fragmented geometry into nested volumes such as
+Bounding Volume Hierarchies (BVH) or Octrees, engines can evaluate scene
+visibility and detail requirements using lightweight metadata alone.
+This enables precise lazy-loading of payload data, preventing GPU memory
+exhaustion and network congestion while maintaining stable frame rates
+in complex web and native 3D applications.</p>
+<h3 id="decoupling-metadata-from-mesh-payloads">Decoupling Metadata from
+Mesh Payloads</h3>
+<p>Standard glTF files bundle geometry accessors, buffer views, and
+binary buffers together. In a lazy-loaded streaming architecture, a
+spatial hierarchy decouples this lightweight structural metadata from
+the heavy binary data. The spatial tree stores only the transformation
+matrices, hierarchical relationships, and simplified bounding
+volumes—such as Axis-Aligned Bounding Boxes (AABB) or Bounding
+Spheres—for each node.</p>
+<p>The client engine parses this hierarchical skeleton first, without
+requesting the heavy <code>.bin</code> buffers or texture payloads
+containing vertex attributes and indices. This allows the application to
+represent massive virtual environments within a tiny initial memory
+footprint.</p>
+<h3
+id="visibility-driven-streaming-via-frustum-culling">Visibility-Driven
+Streaming via Frustum Culling</h3>
+<p>Before an engine initiates a network request for a glTF sub-mesh, it
+uses the spatial hierarchy to perform hierarchical view-frustum
+culling.</p>
+<ol type="1">
+<li><strong>Top-Down Traversal:</strong> The engine tests the camera's
+view frustum against the root of the bounding hierarchy.</li>
+<li><strong>Early Pruning:</strong> If a parent bounding volume falls
+completely outside the view frustum, the engine culls that entire
+branch. None of the child sub-meshes in that branch are requested from
+the network or sent to the GPU.</li>
+<li><strong>Targeted Fetching:</strong> Only when a leaf node or an
+active level intersecting the frustum becomes visible does the engine
+trigger an asynchronous fetch for the corresponding glTF primitive or
+external buffer.</li>
+</ol>
+<p>This targeted approach prevents the client from downloading geometric
+data that the user cannot currently see, conserving bandwidth and device
+resources.</p>
+<h3 id="level-of-detail-lod-and-screen-space-error">Level of Detail
+(LOD) and Screen-Space Error</h3>
+<p>Spatial bounding hierarchies dictate not just <em>if</em> a sub-mesh
+loads, but <em>which version</em> loads. By computing the projected
+screen-space size of a node's bounding volume relative to the camera,
+the engine calculates a Screen-Space Error (SSE) metric.</p>
+<p>If a bounding volume occupies only a few pixels on the viewport, the
+engine loads a coarse, low-poly glTF sub-mesh. As the camera approaches
+and the bounding volume’s projected screen area exceeds a defined
+threshold, the hierarchy directs the engine to fetch higher-resolution
+sub-meshes while evicting or hiding lower-detail variants. This
+fine-grained control prevents visual popping and manages the active
+vertex count on the GPU.</p>
+<h3 id="priority-queueing-and-cache-management">Priority Queueing and
+Cache Management</h3>
+<p>Spatial hierarchies provide the spatial distance metrics needed to
+manage the network request queue and client-side memory cache:</p>
+<ul>
+<li><strong>Request Prioritization:</strong> When multiple sub-meshes
+enter the frustum simultaneously, the engine sorts network requests
+using the spatial tree. Nodes positioned near the center of the field of
+view or closest to the camera receive the highest priority.</li>
+<li><strong>Predictive Prefetching:</strong> By tracking camera velocity
+vectors, the hierarchy anticipates which bounding volumes will intersect
+the frustum in upcoming frames, pre-fetching sub-meshes right before
+they enter view.</li>
+<li><strong>VRAM Eviction (LRU):</strong> When local GPU memory
+approaches its threshold, the engine traverses the hierarchy to locate
+loaded sub-meshes farthest from the camera or outside the view frustum,
+safely unloading their GPU buffers while retaining the spatial node for
+future use.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

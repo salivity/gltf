@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Is glTF Called the JPEG of 3D? - gltf</title>
+    <meta name="description" content="glTF (GL Transmission Format) earned the nickname &quot;JPEG of 3D&quot; because it serves the exact same purpose for three-dimensional graphics that JPEG serves for digital photography: a compact, universal, and highly optimized delivery format built specifically">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/why-is-gl-tf-called-the-jpeg-of-3-d">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Why Is glTF Called the JPEG of 3D? - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/why-is-gl-tf-called-the-jpeg-of-3-d" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="glTF (GL Transmission Format) earned the nickname &quot;JPEG of 3D&quot; because it serves the exact same purpose for three-dimensional graphics that JPEG serves for digital photography: a compact, universal, and highly optimized delivery format built specifically" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="why-is-gltf-called-the-jpeg-of-3d">Why Is glTF Called the JPEG
+of 3D?</h1>
+<p>glTF (GL Transmission Format) earned the nickname "JPEG of 3D"
+because it serves the exact same purpose for three-dimensional graphics
+that JPEG serves for digital photography: a compact, universal, and
+highly optimized delivery format built specifically for transmission
+across the web. Developed by the Khronos Group, glTF bridges the gap
+between complex 3D authoring tools and real-time interactive rendering
+engines, prioritizing tiny file sizes and fast parsing over editable
+design data.</p>
+<h3 id="the-problem-with-traditional-3d-formats">The Problem with
+Traditional 3D Formats</h3>
+<p>Before glTF emerged, sharing 3D assets on the internet was
+inefficient and fragmented. Formats like OBJ, FBX, and DAE (Collada)
+were designed for digital content creation software like Blender, Maya,
+and 3ds Max. These legacy formats carry extensive metadata, historical
+modification stacks, and proprietary structures intended to keep models
+editable.</p>
+<p>When loaded inside a web browser or real-time application, these
+authoring formats require extensive preprocessing. An engine like
+Three.js, Babylon.js, or WebGPU has to decode the text or proprietary
+structures, unpack nested hierarchies, and restructure vertex buffers
+into a format the graphics processing unit (GPU) can actually read. This
+conversion creates heavy computational overhead, drains battery life,
+and causes noticeable loading delays on web pages.</p>
+<h3 id="direct-to-gpu-architecture">Direct-to-GPU Architecture</h3>
+<p>The defining technical breakthrough of glTF is its runtime-first
+architecture. Instead of storing data that requires parsing and
+calculation, glTF stores binary geometry data—such as vertex positions,
+normals, texture coordinates, and bone weights—in contiguous arrays that
+map directly to GPU buffers.</p>
+<p>When a browser loads a glTF file, it bypasses heavy computational
+reconstruction. The graphics engine simply reads the binary chunks
+straight into GPU memory using WebGL or WebGPU API calls like
+<code>gl.bufferData()</code>. This direct-to-GPU pipeline makes loading
+times nearly instantaneous compared to traditional alternatives.</p>
+<h3 id="the-jpeg-analogy-in-detail">The JPEG Analogy in Detail</h3>
+<p>The comparison to JPEG works across multiple core architectural
+principles:</p>
+<ul>
+<li><strong>Authoring vs. Delivery:</strong> Photographers shoot in RAW
+to preserve every piece of sensor data for editing, but they export to
+JPEG to publish on a website. Similarly, 3D artists build assets in
+complex formats like FBX or native application files, then export to
+glTF for web deployment, augmented reality, or virtual reality.</li>
+<li><strong>Universal Standard:</strong> Just as every web browser,
+operating system, and image viewer natively supports JPEG, glTF is an
+open, royalty-free standard adopted across major platforms, game
+engines, and AR frameworks (including Apple, Google, Meta, and
+Microsoft).</li>
+<li><strong>Compression and Portability:</strong> glTF files can be
+paired with Draco geometry compression or meshopt to drastically reduce
+geometry payload size, alongside KTX2/Basis Universal texture
+compression for GPU-friendly imagery. This guarantees small download
+footprints over cellular and broadband networks.</li>
+</ul>
+<h3 id="delivery-packages-gltf-vs-glb">Delivery Packages: glTF vs.
+GLB</h3>
+<p>The specification provides two primary deployment methods to suit
+different distribution pipelines:</p>
+<ol type="1">
+<li><strong>Standard glTF (.gltf):</strong> A JSON-based manifest file
+paired with separate binary data files (<code>.bin</code>) and standard
+image textures (<code>.png</code> or <code>.jpg</code>). This structure
+is transparent, human-readable, and easy to inspect or modify on a web
+server.</li>
+<li><strong>Binary glTF (.glb):</strong> A single, self-contained binary
+file containing the JSON manifest, raw geometry buffers, and embedded
+textures all in one container. GLB represents the true drag-and-drop
+equivalent of a standard <code>.jpg</code> file, making it the preferred
+choice for social media sharing, e-commerce product viewers, and mobile
+AR quick-looks.</li>
+</ol>
+<p>By combining an open standard with negligible runtime decoding
+overhead and tiny file footprints, glTF solved the distribution
+bottleneck for real-time graphics, solidifying its place as the web's
+universal format for interactive 3D content.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

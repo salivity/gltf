@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGL Draw Buffers: Fast Deferred glTF Rendering - gltf</title>
+    <meta name="description" content="Deferred rendering decouples scene geometry processing from lighting calculations, allowing WebGL applications to render complex scenes with dozens or hundreds of dynamic lights at high frame rates. When loading complex glTF 2.0 assets—which often contain">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/web-gl-draw-buffers-fast-deferred-gl-tf-rendering">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="WebGL Draw Buffers: Fast Deferred glTF Rendering - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/web-gl-draw-buffers-fast-deferred-gl-tf-rendering" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Deferred rendering decouples scene geometry processing from lighting calculations, allowing WebGL applications to render complex scenes with dozens or hundreds of dynamic lights at high frame rates. When loading complex glTF 2.0 assets—which often contain" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="webgl-draw-buffers-fast-deferred-gltf-rendering">WebGL Draw
+Buffers: Fast Deferred glTF Rendering</h1>
+<p>Deferred rendering decouples scene geometry processing from lighting
+calculations, allowing WebGL applications to render complex scenes with
+dozens or hundreds of dynamic lights at high frame rates. When loading
+complex glTF 2.0 assets—which often contain intricate node hierarchies,
+skeletal animations, and detailed physically based rendering (PBR)
+materials—the primary performance bottleneck shifts to generating the
+geometry buffer (G-buffer). The <code>WEBGL_draw_buffers</code>
+extension accelerates this pipeline by enabling Multiple Render Targets
+(MRT), allowing a fragment shader to output position, normal, albedo,
+and material parameters into multiple textures in a single draw pass,
+eliminating redundant geometry evaluations.</p>
+<h3 id="the-bottleneck-of-multi-pass-g-buffer-generation">The Bottleneck
+of Multi-Pass G-Buffer Generation</h3>
+<p>In baseline WebGL 1.0 without extensions, a framebuffer can only bind
+and write to a single color attachment at a time via
+<code>gl_FragColor</code>. To populate a standard G-buffer, the graphics
+pipeline requires separate textures for distinct surface properties:</p>
+<ol type="1">
+<li>Surface normals and depth</li>
+<li>Base color (albedo) and ambient occlusion</li>
+<li>Metallic, roughness, and emissive values</li>
+</ol>
+<p>Without MRT, an engine must re-render the entire glTF scene for every
+target texture. A three-target G-buffer requires three full geometry
+passes. Because glTF assets often contain thousands of draw calls, heavy
+skeletal matrices for skinned meshes, and morph target calculations,
+executing these operations multiple times per frame strains both the CPU
+(draw call overhead) and the GPU vertex processing units.</p>
+<h3 id="how-webgl_draw_buffers-eliminates-redundancy">How
+WEBGL_draw_buffers Eliminates Redundancy</h3>
+<p>The <code>WEBGL_draw_buffers</code> extension introduces Multiple
+Render Targets to WebGL 1.0 (a capability integrated natively into the
+core WebGL 2.0 specification). It exposes the
+<code>gl_FragData[n]</code> array to the fragment shader and allows
+developers to attach multiple textures to a single framebuffer via
+<code>gl.framebufferTexture2D</code> using extended attachment points
+(<code>COLOR_ATTACHMENT0_WEBGL</code>,
+<code>COLOR_ATTACHMENT1_WEBGL</code>, etc.).</p>
+<p>During the G-buffer pass, the application issues
+<code>ext.drawBuffersWEBGL(...)</code> to define the target array. When
+a glTF mesh is drawn:</p>
+<ul>
+<li><strong>Vertex Shading Happens Once:</strong> Mesh skinning, morph
+target blending, and coordinate space transformations
+(local-to-world-to-clip) are executed once per vertex instead of once
+per G-buffer layer.</li>
+<li><strong>Texture Lookups Are Consolidated:</strong> The fragment
+shader samples the glTF base color, normal, and metallic-roughness
+texture maps in a single execution step.</li>
+<li><strong>Simultaneous Output:</strong> The computed values are
+written directly to their corresponding textures in parallel using
+indexed output registers.</li>
+</ul>
+<h3 id="mapping-gltf-pbr-workflows-to-mrt">Mapping glTF PBR Workflows to
+MRT</h3>
+<p>The glTF 2.0 specification standardizes a Metallic-Roughness PBR
+workflow, which maps neatly into packed G-buffer layouts when using
+<code>WEBGL_draw_buffers</code>. A typical 32-bit floating-point or
+8-bit RGBA texture layout utilizes three attachments:</p>
+<ul>
+<li><strong>Attachment 0 (Color &amp; AO):</strong>
+<code>gl_FragData[0] = vec4(albedo.rgb, occlusion);</code></li>
+<li><strong>Attachment 1 (Normals &amp; Roughness):</strong>
+<code>gl_FragData[1] = vec4(encodedNormal.xy, depthComponent, roughness);</code></li>
+<li><strong>Attachment 2 (PBR &amp; Emissive):</strong>
+<code>gl_FragData[2] = vec4(emissive.rgb, metallic);</code></li>
+</ul>
+<p>By writing all standardized glTF surface parameters simultaneously,
+the expensive PBR lighting pass can be fully deferred to a subsequent
+screen-space pass. In that final pass, lights are rendered as
+screen-aligned quads or bounding volumes that sample the precomputed
+textures, ensuring lighting costs remain <span
+class="math inline">\(O(\text{lights})\)</span> or proportional to
+screen coverage rather than <span
+class="math inline">\(O(\text{geometry} \times
+\text{lights})\)</span>.</p>
+<h3 id="real-world-performance-impact">Real-World Performance
+Impact</h3>
+<p>Using <code>WEBGL_draw_buffers</code> transforms the geometry stage
+from an <span class="math inline">\(O(N \times M)\)</span> operation
+(where <span class="math inline">\(N\)</span> is the number of render
+targets and <span class="math inline">\(M\)</span> is the number of glTF
+primitives) into an <span class="math inline">\(O(M)\)</span> operation.
+This delivers substantial real-world advantages:</p>
+<ul>
+<li><strong>CPU Overhead Reduction:</strong> The JavaScript engine
+transmits state changes, uniform updates, and draw commands once per
+frame per glTF mesh, mitigating the single-threaded CPU bottlenecks
+common in browser environments.</li>
+<li><strong>Memory Bandwidth Optimization:</strong> Reading geometry
+attributes (indices, positions, UVs) from GPU VRAM only once per frame
+reduces bus saturation, preserving bandwidth for dynamic post-processing
+effects such as screen-space ambient occlusion (SSAO), bloom, and tone
+mapping.</li>
+<li><strong>Consistent Frame Times:</strong> For animated glTF
+characters and rich digital twins, bounding the vertex overhead
+guarantees predictable frametimes critical for smooth interactive
+experiences across heterogeneous hardware.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

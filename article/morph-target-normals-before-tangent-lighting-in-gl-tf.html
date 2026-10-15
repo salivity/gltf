@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morph Target Normals Before Tangent Lighting in glTF - gltf</title>
+    <meta name="description" content="In glTF asset rendering, morph targets alter a mesh&#39;s geometry dynamically by blending displacements for positions, normals, and tangents. Morph target normals must be accumulated and normalized before computing tangent space lighting because the tangent-">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/morph-target-normals-before-tangent-lighting-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Morph Target Normals Before Tangent Lighting in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/morph-target-normals-before-tangent-lighting-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In glTF asset rendering, morph targets alter a mesh&#39;s geometry dynamically by blending displacements for positions, normals, and tangents. Morph target normals must be accumulated and normalized before computing tangent space lighting because the tangent-" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="morph-target-normals-before-tangent-lighting-in-gltf">Morph
+Target Normals Before Tangent Lighting in glTF</h1>
+<p>In glTF asset rendering, morph targets alter a mesh's geometry
+dynamically by blending displacements for positions, normals, and
+tangents. Morph target normals must be accumulated and normalized before
+computing tangent space lighting because the tangent-bitangent-normal
+(TBN) basis relies directly on the final deformed surface orientation.
+Calculating tangent space lighting or deriving the TBN matrix using
+un-morphed normals causes normal maps to perturb the surface relative to
+the wrong reference frame, resulting in distorted highlights, inverted
+shadows, and visible shading seams during mesh deformation.</p>
+<h3 id="understanding-tangent-space-lighting">Understanding Tangent
+Space Lighting</h3>
+<p>Tangent space lighting relies on a local coordinate system
+constructed at each vertex or fragment, defined by three orthogonal
+axes:</p>
+<ul>
+<li><strong>Normal (<span class="math inline">\(N\)</span>):</strong>
+The vector perpendicular to the surface.</li>
+<li><strong>Tangent (<span class="math inline">\(T\)</span>):</strong> A
+vector lying along the surface, typically aligned with the horizontal
+texture coordinate (<span class="math inline">\(U\)</span>).</li>
+<li><strong>Bitangent (<span class="math inline">\(B\)</span>):</strong>
+The cross product of the normal and tangent (adjusted for handedness),
+aligned with the vertical texture coordinate (<span
+class="math inline">\(V\)</span>).</li>
+</ul>
+<p>Normal maps encode surface micro-details as offsets relative to this
+<span class="math inline">\(TBN\)</span> frame. When an engine evaluates
+lighting in tangent space or transforms normal-map samples into world
+space, the validity of the lighting depends entirely on the <span
+class="math inline">\(TBN\)</span> frame accurately reflecting the
+actual orientation of the triangle's surface.</p>
+<h3 id="the-mechanism-of-gltf-morph-targets">The Mechanism of glTF Morph
+Targets</h3>
+<p>In the glTF 2.0 specification, morph targets are represented as
+sparse or dense displacement vectors added to the base mesh
+attributes:</p>
+<p><span class="math display">\[\text{Final Normal} = \text{Base Normal}
++ \sum_{i} (w_i \times \text{Target Normal}_i)\]</span></p>
+<p>A morph target rarely displaces vertices evenly; facial expressions,
+muscle flexing, and cloth deformation twist and rotate surface polygons.
+When vertex positions shift, the surface normal changes angle to remain
+perpendicular to the deformed face.</p>
+<h3 id="why-the-order-of-operations-matters">Why the Order of Operations
+Matters</h3>
+<p>If tangent space lighting is calculated using the base normal instead
+of the fully morphed normal, two critical mathematical failures
+occur:</p>
+<ol type="1">
+<li><strong>Orthogonality Breakdown:</strong> The tangent vector and
+normal vector must be orthogonal to construct an accurate coordinate
+frame (often finalized via Gram-Schmidt orthogonalization: <span
+class="math inline">\(T&#39; = \text{normalize}(T - N \cdot (N \cdot
+T))\)</span>). If an undeformed normal is used with a deformed
+tangent—or if the normal is updated after the <span
+class="math inline">\(TBN\)</span> matrix is assembled—the frame shears,
+breaking the coordinate system.</li>
+<li><strong>Misdirected Normal Map Perturbations:</strong> A normal map
+assumes the <span class="math inline">\(Z\)</span>-axis of tangent space
+points directly outward along the current macroscopic surface normal. If
+a morph target twists a surface <span
+class="math inline">\(45^\circ\)</span>, the macroscopic normal rotates
+<span class="math inline">\(45^\circ\)</span>. If the normal map is
+applied to the old, unrotated basis, the lighting vectors (light
+direction and view direction) interact with surface details facing the
+wrong direction. Specular highlights will skate across the surface
+unnaturally, and diffuse shading will fail to match the dynamic
+contours.</li>
+</ol>
+<h3 id="the-correct-vertex-pipeline">The Correct Vertex Pipeline</h3>
+<p>To maintain lighting integrity according to the glTF specification,
+the graphics pipeline must process vertex attributes in the following
+strict order:</p>
+<ol type="1">
+<li><strong>Morph Attribute Blending:</strong> Apply morph target
+weights to base positions, normals, and (if present) tangents.</li>
+<li><strong>Normalization:</strong> Normalize the resulting deformed
+normal and tangent vectors, as linear blending can reduce vector
+magnitude.</li>
+<li><strong>Skinning (if applicable):</strong> Apply joint matrices to
+the morphed attributes.</li>
+<li><strong>TBN Construction:</strong> Generate the bitangent via the
+cross product (<span class="math inline">\(B = (N \times T) \times
+\text{sign}\)</span>) and construct the <span
+class="math inline">\(TBN\)</span> matrix from the updated vectors.</li>
+<li><strong>Lighting Evaluation:</strong> Transform lighting vectors
+into tangent space (or transform sampled normal-map vectors into world
+space using the <span class="math inline">\(TBN\)</span> matrix) and
+evaluate the material's BRDF.</li>
+</ol>
+<p>Applying normal morph targets prior to establishing the tangent space
+ensures that tangent-space details scale and rotate cohesively with
+dynamic mesh deformations.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

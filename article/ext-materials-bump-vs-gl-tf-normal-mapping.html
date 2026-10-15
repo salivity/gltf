@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXT_materials_bump vs glTF Normal Mapping - gltf</title>
+    <meta name="description" content="In the glTF 2.0 ecosystem, simulating surface relief without increasing geometric complexity is essential for real-time rendering performance. While core glTF relies on standard tangent-space normal mapping via the normalTexture property, the EXTmaterials">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/ext-materials-bump-vs-gl-tf-normal-mapping">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="EXT_materials_bump vs glTF Normal Mapping - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/ext-materials-bump-vs-gl-tf-normal-mapping" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In the glTF 2.0 ecosystem, simulating surface relief without increasing geometric complexity is essential for real-time rendering performance. While core glTF relies on standard tangent-space normal mapping via the normalTexture property, the EXTmaterials" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="ext_materials_bump-vs-gltf-normal-mapping">EXT_materials_bump vs
+glTF Normal Mapping</h1>
+<p>In the glTF 2.0 ecosystem, simulating surface relief without
+increasing geometric complexity is essential for real-time rendering
+performance. While core glTF relies on standard tangent-space normal
+mapping via the <code>normalTexture</code> property, the
+<code>EXT_materials_bump</code> extension introduces support for
+traditional height-based bump mapping. This article examines how these
+two approaches fundamentally differ in data representation, runtime
+computation, memory consumption, mesh requirements, and visual
+fidelity.</p>
+<h3 id="data-representation-and-encoding">Data Representation and
+Encoding</h3>
+<p>The primary distinction between the two approaches lies in the data
+stored within the texture:</p>
+<ul>
+<li><strong>Standard Normal Mapping:</strong> Uses a three-channel (RGB)
+or two-channel texture to store directional vectors. Each pixel encodes
+an explicit surface normal perturbed relative to the surface's tangent
+space, where RGB channels correspond directly to the X, Y, and Z vector
+coordinates.</li>
+<li><strong>EXT_materials_bump:</strong> Uses a single-channel
+(grayscale) height map. Pixels store scalar values representing relative
+elevation or surface displacement rather than directional vectors.</li>
+</ul>
+<h3 id="runtime-shader-computation">Runtime Shader Computation</h3>
+<p>Because the textures store different types of data, the GPU must
+process them differently to calculate surface lighting:</p>
+<ul>
+<li><strong>Standard Normal Mapping:</strong> The fragment shader
+performs a direct texture lookup, unpacks the sampled color from the
+<span class="math inline">\([0, 1]\)</span> range to the <span
+class="math inline">\([-1, 1]\)</span> vector range, and transforms it
+using the Tangent-Bitangent-Normal (TBN) frame. This operation is
+computationally lightweight and straightforward.</li>
+<li><strong>EXT_materials_bump:</strong> The fragment shader cannot use
+the sampled scalar value directly. Instead, it must dynamically compute
+the surface normal by evaluating the gradient of the height values
+across adjacent pixels. This is typically done using screen-space
+partial derivatives (such as <code>dFdx</code> and <code>dFdy</code>) or
+multi-tap sampling algorithms to approximate the slope of the surface at
+runtime.</li>
+</ul>
+<h3 id="vertex-and-mesh-requirements">Vertex and Mesh Requirements</h3>
+<p>Both methods affect the requirements placed on the underlying mesh
+geometry:</p>
+<ul>
+<li><strong>Standard Normal Mapping:</strong> Strictly requires a
+consistent tangent space across the mesh. To prevent lighting
+discontinuities, glTF assets typically require precomputed vertex
+tangents (often adhering to the MikkTSpace standard) stored directly in
+the mesh attributes.</li>
+<li><strong>EXT_materials_bump:</strong> Can generate perturbed normals
+procedurally using surface position derivatives and texture coordinate
+gradients. This reduces the strict necessity for precomputed vertex
+tangents, simplifying mesh export pipelines in specific workflows.</li>
+</ul>
+<h3 id="memory-footprint-and-performance">Memory Footprint and
+Performance</h3>
+<p>Each technique introduces different performance trade-offs:</p>
+<ul>
+<li><strong>Memory Usage:</strong> <code>EXT_materials_bump</code> is
+more memory-efficient. A bump map requires only a single 8-bit or 16-bit
+channel, reducing texture file size, VRAM usage, and bandwidth compared
+to a standard normal map that requires two or three channels.</li>
+<li><strong>GPU Processing:</strong> Standard normal mapping is more
+computationally efficient in the fragment stage. Bump mapping shifts the
+burden to the ALU by requiring real-time derivative calculations or
+multiple texture fetches per pixel to derive the surface slope.</li>
+</ul>
+<h3 id="visual-quality-and-artifacts">Visual Quality and Artifacts</h3>
+<ul>
+<li><strong>Precision:</strong> Standard normal maps provide smooth,
+consistent shading across varying viewing angles and distances because
+the vector direction is explicitly precalculated.</li>
+<li><strong>Derivative Artifacts:</strong> Height-derived bump maps from
+<code>EXT_materials_bump</code> can suffer from stair-stepping,
+aliasing, or precision loss, particularly when using standard 8-bit
+height maps. High-frequency details can become unstable across mipmap
+levels if the shader's derivative calculations are not properly
+filtered.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Buffer Isolation in Sandboxed Web Environments - gltf</title>
+    <meta name="description" content="Rendering glTF (GL Transmission Format) assets in web applications requires loading 3D scene data alongside external resources, such as binary buffers (.bin) and texture images. When parsing untrusted models, arbitrary Uniform Resource Identifiers (URIs)">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-buffer-isolation-in-sandboxed-web-environments">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Buffer Isolation in Sandboxed Web Environments - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-buffer-isolation-in-sandboxed-web-environments" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Rendering glTF (GL Transmission Format) assets in web applications requires loading 3D scene data alongside external resources, such as binary buffers (.bin) and texture images. When parsing untrusted models, arbitrary Uniform Resource Identifiers (URIs)" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-buffer-isolation-in-sandboxed-web-environments">glTF Buffer
+Isolation in Sandboxed Web Environments</h1>
+<p>Rendering glTF (GL Transmission Format) assets in web applications
+requires loading 3D scene data alongside external resources, such as
+binary buffers (<code>.bin</code>) and texture images. When parsing
+untrusted models, arbitrary Uniform Resource Identifiers (URIs) present
+security concerns, including Server-Side Request Forgery (SSRF),
+Cross-Origin Resource Sharing (CORS) bypasses, and data exfiltration.
+Web environments isolate this external buffer fetching by enforcing
+strict execution boundaries through iframe sandboxing, Content Security
+Policies (CSP), off-thread Web Worker architecture, and explicit buffer
+delegation.</p>
+<h3 id="content-security-policy-and-sandboxed-iframes">Content Security
+Policy and Sandboxed Iframes</h3>
+<p>The primary layer of network isolation relies on browser-level
+restrictions. Embedding the glTF parsing engine within an
+<code>&lt;iframe&gt;</code> configured with the <code>sandbox</code>
+attribute restricts the context from executing unauthorized actions. To
+restrict external buffer retrieval:</p>
+<ul>
+<li><strong>Directive Constraints:</strong> Setting
+<code>connect-src 'none'</code> or scoping it strictly to trusted
+origins prevents the browser's <code>fetch()</code> or
+<code>XMLHttpRequest</code> APIs from querying arbitrary endpoints
+declared inside the glTF JSON <code>buffers[].uri</code> or
+<code>images[].uri</code> properties.</li>
+<li><strong>Origin Nullification:</strong> Sandboxed iframes without the
+<code>allow-same-origin</code> token receive an opaque, unique origin
+(<code>null</code>). This forces any buffer requests to comply with
+cross-origin policies, blocking unauthorized access to cookies, local
+storage, or ambient credentials during asset fetches.</li>
+</ul>
+<h3
+id="worker-based-thread-isolation-and-transferable-objects">Worker-Based
+Thread Isolation and Transferable Objects</h3>
+<p>Modern glTF loaders often decouple parsing from the main UI thread by
+executing within dedicated Web Workers. This architecture naturally
+segments network I/O from scene graph generation:</p>
+<ol type="1">
+<li><strong>Denial of Direct Network Access:</strong> In hardened
+runtime models, the worker running the glTF parser is completely
+restricted from initiating network requests. The worker environment
+lacks network interfaces or has its global <code>fetch</code>
+overridden.</li>
+<li><strong>Explicit Host Fetching:</strong> The host application
+inspects the glTF structure first or receives resource resolution
+requests from the worker via structured cloning
+(<code>postMessage</code>).</li>
+<li><strong>Memory Transfer via Transferable Objects:</strong> The host
+environment validates the URI against an allowlist, executes the fetch
+operation in the controlled main context, and passes the resulting
+payload back into the sandboxed worker as a zero-copy transferable
+<code>ArrayBuffer</code>. This guarantees the parser only processes data
+explicitly cleared by the host.</li>
+</ol>
+<h3 id="custom-uri-resolvers-and-in-memory-virtual-filesystems">Custom
+URI Resolvers and In-Memory Virtual Filesystems</h3>
+<p>glTF parsing libraries provide hooks to override default resource
+resolution routines. Instead of allowing the parser to automatically
+resolve paths relative to the document base:</p>
+<ul>
+<li><strong>Blob and Object URLs:</strong> Applications pre-fetch or
+package assets into single archives (such as <code>.glb</code>
+containers or zip bundles). External references are unpacked into memory
+and converted to transient <code>blob:</code> URLs, severing direct
+external network pathways.</li>
+<li><strong>Custom Loading Interceptors:</strong> Overriding the
+loader’s internal request handler redirects any relative or absolute URI
+into an in-memory virtual filesystem. If a glTF file attempts to
+reference an external URI (such as
+<code>https://malicious-site.com/payload.bin</code> or
+<code>file:///etc/passwd</code>), the interceptor rejects the resolution
+before a network transport layer can initialize the request.</li>
+</ul>
+<h3 id="webassembly-memory-boundaries">WebAssembly Memory
+Boundaries</h3>
+<p>When using native glTF parsing libraries (such as
+<code>fastgltf</code> or <code>tinygltf</code>) compiled to WebAssembly
+(WASM), isolation is enforced at the compilation and runtime boundary.
+WASM instances cannot make direct system calls or network requests. Any
+external buffer referenced by the glTF manifest must be imported through
+host-provided JavaScript functions. The host application acts as a
+gatekeeper, inspecting every buffer offset and URI request, and writing
+the fetched bytes directly into the WASM instance's linear memory
+(<code>WebAssembly.Memory</code>) only after strict origin validation
+and schema parsing.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

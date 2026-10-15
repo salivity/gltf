@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF KHR Materials Transmission Rendering Fallbacks - gltf</title>
+    <meta name="description" content="This article provides an overview of how glTF client applications handle rendering fallbacks when they cannot decode or do not support the KHRmaterialstransmission extension. It explains the structural dependency on the core glTF 2.0 PBR model, the behavi">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-khr-materials-transmission-rendering-fallbacks">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF KHR Materials Transmission Rendering Fallbacks - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-khr-materials-transmission-rendering-fallbacks" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of how glTF client applications handle rendering fallbacks when they cannot decode or do not support the KHRmaterialstransmission extension. It explains the structural dependency on the core glTF 2.0 PBR model, the behavi" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-khr-materials-transmission-rendering-fallbacks">glTF KHR
+Materials Transmission Rendering Fallbacks</h1>
+<p>This article provides an overview of how glTF client applications
+handle rendering fallbacks when they cannot decode or do not support the
+<code>KHR_materials_transmission</code> extension. It explains the
+structural dependency on the core glTF 2.0 PBR model, the behavior of
+default material parameters in unsupported environments, and how content
+creators control the visual appearance of fallback states.</p>
+<h3 id="core-pbr-metallic-roughness-as-the-primary-fallback">Core PBR
+Metallic-Roughness as the Primary Fallback</h3>
+<p>The <code>KHR_materials_transmission</code> extension is designed to
+be backwards-compatible by relying on the core glTF 2.0 specification.
+If a client application does not support or cannot decode this
+extension—and the extension is not listed under
+<code>extensionsRequired</code>—it must ignore the extension data and
+fall back to the standard <code>pbrMetallicRoughness</code> model
+defined in the core material.</p>
+<p>When the extension is ignored, the renderer bypasses the physical
+simulation of light transmitting through the volume of the mesh (such as
+refraction and absorption) and treats the surface as a standard
+reflective, opaque, or alpha-blended surface.</p>
+<h3 id="opaque-rendering-fallback">Opaque Rendering Fallback</h3>
+<p>By default, materials utilizing
+<code>KHR_materials_transmission</code> typically specify their core
+<code>alphaMode</code> as <code>"OPAQUE"</code>. Optical transmission
+operates independently of alpha blending, as real-world transmissive
+objects (such as clear glass or water) are physically solid boundaries
+rather than partially transparent cutouts.</p>
+<p>When an unsupported client renders such an asset:</p>
+<ul>
+<li>The <code>transmissionFactor</code> and
+<code>transmissionTexture</code> values are ignored.</li>
+<li>The surface is drawn strictly according to its
+<code>alphaMode: "OPAQUE"</code> setting.</li>
+<li>The object renders as a solid, non-transparent surface using the
+<code>baseColorFactor</code>, <code>baseColorTexture</code>,
+<code>metallicFactor</code>, and <code>roughnessFactor</code> specified
+in the core material.</li>
+</ul>
+<p>For example, a clear glass sphere authored with a white base color
+and low roughness will fall back to a highly polished, mirror-like solid
+opaque sphere in an unsupported viewer.</p>
+<h3 id="fallback-to-alpha-blending">Fallback to Alpha Blending</h3>
+<p>Content creators can intentionally author an approximate transparency
+fallback for clients lacking transmission support. This is achieved by
+combining transmission with traditional alpha settings:</p>
+<ol type="1">
+<li><strong>Configuring <code>alphaMode</code></strong>: Authors can set
+<code>alphaMode</code> to <code>"BLEND"</code> instead of
+<code>"OPAQUE"</code>.</li>
+<li><strong>Base Color Alpha</strong>: Authors set the alpha channel of
+<code>baseColorFactor</code> or <code>baseColorTexture</code> to a value
+less than <code>1.0</code>.</li>
+</ol>
+<p>In an unsupported client, the object will fall back to classic
+rasterized alpha blending, providing a semi-transparent appearance
+rather than a completely solid surface.</p>
+<p>In a supported client, the implementation must resolve both
+transmission and alpha according to the specification: the alpha value
+dictates the coverage of the surface, while the transmission factor
+dictates how light passes through the covered areas.</p>
+<h3 id="the-role-of-extensionsrequired">The Role of
+<code>extensionsRequired</code></h3>
+<p>If an asset demands transmission for its visual integrity and cannot
+degrade gracefully to standard PBR or alpha blending, the exporter can
+declare <code>KHR_materials_transmission</code> inside the asset's
+top-level <code>extensionsRequired</code> array.</p>
+<p>When listed under <code>extensionsRequired</code>, the specification
+defines no rendering fallback: any client that cannot decode the
+extension must refuse to load or render the asset entirely, preventing
+incorrect or broken visual output.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

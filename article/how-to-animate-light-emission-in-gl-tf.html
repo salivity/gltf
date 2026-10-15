@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Animate Light Emission in glTF - gltf</title>
+    <meta name="description" content="Simulating changing light emission over time in glTF models requires specific workarounds or extensions because the core glTF 2.0 specification natively restricts animation channels to node transforms and morph target weights. While you cannot animate mat">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-to-animate-light-emission-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Animate Light Emission in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-to-animate-light-emission-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Simulating changing light emission over time in glTF models requires specific workarounds or extensions because the core glTF 2.0 specification natively restricts animation channels to node transforms and morph target weights. While you cannot animate mat" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-animate-light-emission-in-gltf">How to Animate Light
+Emission in glTF</h1>
+<p>Simulating changing light emission over time in glTF models requires
+specific workarounds or extensions because the core glTF 2.0
+specification natively restricts animation channels to node transforms
+and morph target weights. While you cannot animate material properties
+out of the box using baseline glTF, you can achieve dynamic emission by
+utilizing modern extensions like <code>KHR_animation_pointer</code>,
+implementing morph-target geometric tricks, using UV offset animations,
+or driving properties at runtime using WebGL engines. This article
+covers the most effective methods to create pulsing, flickering, or
+transitioning emissive light effects within glTF workflows.</p>
+<h2 id="1-the-khr_animation_pointer-extension">1. The
+<code>KHR_animation_pointer</code> Extension</h2>
+<p>The most robust and future-proof method is the
+<code>KHR_animation_pointer</code> extension. This extension expands
+glTF's native animation capabilities beyond simple TRS (translation,
+rotation, scale) and morph weights, allowing animation channels to
+target almost any property in the glTF JSON hierarchy via JSON
+pointers.</p>
+<ul>
+<li><strong>Targeting Emissive Factors:</strong> You can directly bind
+an animation channel to <code>/materials/{index}/emissiveFactor</code>
+to interpolate RGB values over time.</li>
+<li><strong>Targeting Emissive Strength:</strong> When combined with
+<code>KHR_materials_emissive_strength</code>, you can point the
+animation channel to
+<code>/materials/{index}/extensions/KHR_materials_emissive_strength/emissiveStrength</code>,
+allowing for high-dynamic-range (HDR) bloom and intensity changes over
+time.</li>
+<li><strong>Compatibility:</strong> Tools like Blender (via recent
+glTF-Blender-IO exporter updates) support exporting material animations
+using this extension, and major web engines like Three.js and Babylon.js
+provide playback support.</li>
+</ul>
+<h2 id="2-morph-targets-shape-keys-for-emissive-geometry">2. Morph
+Targets (Shape Keys) for Emissive Geometry</h2>
+<p>If you need your model to remain strictly compliant with core glTF
+2.0 without relying on material extension support in third-party
+viewers, morph targets offer a reliable geometric workaround.</p>
+<ul>
+<li><strong>Concealed Emissive Mesh:</strong> Create two states of an
+emissive element. In the base state, scale the emissive geometry down to
+zero (hidden inside an opaque outer shell or collapsed to a single
+point). In the target shape key, scale it outward so it becomes
+visible.</li>
+<li><strong>Layered Occlusion:</strong> Place an opaque "shutter" or
+mesh over the emissive surface. Use a morph target to translate or
+shrink the occluding geometry, gradually exposing the glowing material
+beneath.</li>
+<li><strong>Animation:</strong> Animate the morph target weight from
+<code>0.0</code> to <code>1.0</code> within standard glTF animation
+tracks to simulate a light powering on or pulsating.</li>
+</ul>
+<h2 id="3-uv-translation-and-texture-atlasing">3. UV Translation and
+Texture Atlasing</h2>
+<p>Another standard-compliant approach involves animating UV coordinates
+to slide across an emissive texture map containing various brightness
+states.</p>
+<ul>
+<li><strong>Emissive Texture Atlas:</strong> Create a single texture
+containing a sequence of brightness levels or animation frames side by
+side.</li>
+<li><strong>UV Animation:</strong> By using an extension like
+<code>KHR_texture_transform</code> paired with runtime logic or
+<code>KHR_animation_pointer</code>, you can shift the UV coordinates
+across the texture atlas to display different stages of light intensity
+over time.</li>
+</ul>
+<h2 id="4-runtime-driving-via-3d-engine-apis">4. Runtime Driving via 3D
+Engine APIs</h2>
+<p>If the glTF file is being used in an interactive application (such as
+Three.js, Babylon.js, or Godot), driving the emission programmatically
+at runtime is often the simplest and most performant solution.</p>
+<ul>
+<li><strong>Three.js Example:</strong> Inspect the loaded glTF scene,
+locate the target material, and animate
+<code>material.emissiveIntensity</code> or
+<code>material.emissive</code> inside the render loop using math
+functions (such as a sine wave for pulsing) or a tweening library.</li>
+<li><strong>Custom Animation Tracks:</strong> Load standard glTF
+animation clips and inject custom <code>NumberKeyframeTrack</code> or
+<code>ColorKeyframeTrack</code> instances targeted at the material's
+emissive parameters before starting playback.</li>
+</ul>
+<h2 id="5-simulating-emission-via-khr_lights_punctual">5. Simulating
+Emission via <code>KHR_lights_punctual</code></h2>
+<p>While surface glow comes from emissive materials, actual dynamic
+illumination on surrounding objects is typically handled by point or
+spot lights.</p>
+<ul>
+<li>The <code>KHR_lights_punctual</code> extension allows placing
+explicit light sources directly inside a glTF scene graph.</li>
+<li>By attaching a light node to an animated parent node, you can move
+the light source in and out of an occluded cavity to simulate turning it
+on and off.</li>
+<li>In conjunction with <code>KHR_animation_pointer</code>, the
+<code>intensity</code> property of the punctual light itself can be
+animated directly to synchronize illumination with an emissive mesh
+surface.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3ds Max glTF Exporter: Preserving Complex Lighting - gltf</title>
+    <meta name="description" content="Exporting complex architectural lighting rigs from Autodesk 3ds Max to real-time applications requires balancing sophisticated illumination data with the lightweight constraints of the glTF 2.0 format. The 3ds Max glTF exporter achieves this fidelity thro">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/3-ds-max-gl-tf-exporter-preserving-complex-lighting">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="3ds Max glTF Exporter: Preserving Complex Lighting - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/3-ds-max-gl-tf-exporter-preserving-complex-lighting" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Exporting complex architectural lighting rigs from Autodesk 3ds Max to real-time applications requires balancing sophisticated illumination data with the lightweight constraints of the glTF 2.0 format. The 3ds Max glTF exporter achieves this fidelity thro" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="3ds-max-gltf-exporter-preserving-complex-lighting">3ds Max glTF
+Exporter: Preserving Complex Lighting</h1>
+<p>Exporting complex architectural lighting rigs from Autodesk 3ds Max
+to real-time applications requires balancing sophisticated illumination
+data with the lightweight constraints of the glTF 2.0 format. The 3ds
+Max glTF exporter achieves this fidelity through standard extension
+support, physical material translation, automated light parameter
+mapping, and advanced baking pipelines. This article details the core
+features within the 3ds Max glTF exporter that maintain the accuracy,
+hierarchy, and visual impact of architectural lighting designs.</p>
+<h3 id="standardized-translation-via-khr_lights_punctual">Standardized
+Translation via KHR_lights_punctual</h3>
+<p>The core mechanism for translating direct lighting into glTF is the
+exporter's native support for the <code>KHR_lights_punctual</code>
+extension. This extension standardizes how analytical light sources are
+interpreted in real-time WebGL and runtime engines.</p>
+<ul>
+<li><strong>Point Lights (Omni):</strong> Translated directly,
+maintaining isotropic light emission and physical radius limits.</li>
+<li><strong>Spot Lights:</strong> Preserves inner cone (hotspot) and
+outer cone (falloff) angles to accurately represent downlights and
+directional architectural fixtures.</li>
+<li><strong>Directional Lights:</strong> Converted to represent parallel
+sunlight, preserving orientation and global shadows.</li>
+</ul>
+<p>The exporter maps 3ds Max light intensities and RGB color values into
+the glTF standard units (candela for punctual lights, lux for
+directional lights), ensuring that physical illumination ratios remain
+consistent in destination viewers.</p>
+<h3 id="photometric-to-pbr-calibration">Photometric-to-PBR
+Calibration</h3>
+<p>Architectural lighting often relies on Photometric Lights with
+specific Kelvin color temperatures and luminous flux ratings. The 3ds
+Max glTF exporter reads these photometric inputs and converts them into
+linear color data and radiometric intensity values. Color temperature
+controls are flattened into accurate sRGB tints, allowing fixtures
+modeled with warm incandescent or cool daylight temperatures to display
+correctly across platforms that lack native Kelvin simulation.</p>
+<h3 id="hierarchy-and-transform-preservation">Hierarchy and Transform
+Preservation</h3>
+<p>Architectural rigs often consist of complex assemblies, such as
+multi-head track lights, suspended chandeliers, and motorized fixtures
+linked to parent helpers or spline paths. The glTF exporter preserves
+the full node hierarchy, local pivot points, and coordinate transforms
+of light objects and their target nodes. This ensures that:</p>
+<ul>
+<li>Fixtures stay accurately targeted to their focal geometry.</li>
+<li>Relative offsets between physical geometry (housings, lenses) and
+analytical light emitters are preserved.</li>
+<li>Grouped switching and modular rigging remain functional in
+interactive environments.</li>
+</ul>
+<h3 id="light-baking-workflows-for-complex-effects">Light Baking
+Workflows for Complex Effects</h3>
+<p>Real-time formats like glTF cannot natively calculate complex
+architectural phenomena such as custom IES photometric distribution
+profiles, caustic refractions, or multi-bounce Global Illumination (GI).
+The 3ds Max glTF exporter integrates with 3ds Max’s Bake to Texture
+utility to resolve this limitation.</p>
+<ul>
+<li><strong>Emissive Maps:</strong> Architectural cove lighting, LED
+strips, and illuminated signage can be baked into the glTF Emissive
+channel, supporting bloom and real-time screen-space reflections without
+analytical emitters.</li>
+<li><strong>Ambient Occlusion and Lightmaps:</strong> The exporter maps
+baked indirect lighting into secondary UV channels
+(<code>TEXCOORD_1</code>), allowing high-end Arnold or V-Ray lighting
+solutions to be permanently encoded onto architectural surfaces while
+analytical glTF lights handle dynamic specular highlights.</li>
+</ul>
+<h3 id="physical-material-interoperability">Physical Material
+Interoperability</h3>
+<p>Lighting rigs cannot be separated from how their illumination
+interacts with surfaces. The glTF exporter is directly tied to the 3ds
+Max Physical Material, matching its roughness, metalness, and
+transmission parameters to the standard glTF PBR Metallic Roughness
+model. This ensures that the energy conservation of light hitting
+diffuse walls, polished concrete, and glass enclosures behaves
+predictably once exported.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

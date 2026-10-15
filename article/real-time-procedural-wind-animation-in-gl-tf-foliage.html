@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Procedural Wind Animation in glTF Foliage - gltf</title>
+    <meta name="description" content="This article explores the technical methods used to simulate real-time procedural wind deformation on glTF foliage models without relying on pre-baked skeletal rigs. By leveraging custom vertex shaders, vertex attribute masking, trigonometric waves, and p">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/real-time-procedural-wind-animation-in-gl-tf-foliage">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Real-Time Procedural Wind Animation in glTF Foliage - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/real-time-procedural-wind-animation-in-gl-tf-foliage" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores the technical methods used to simulate real-time procedural wind deformation on glTF foliage models without relying on pre-baked skeletal rigs. By leveraging custom vertex shaders, vertex attribute masking, trigonometric waves, and p" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="real-time-procedural-wind-animation-in-gltf-foliage">Real-Time
+Procedural Wind Animation in glTF Foliage</h1>
+<p>This article explores the technical methods used to simulate
+real-time procedural wind deformation on glTF foliage models without
+relying on pre-baked skeletal rigs. By leveraging custom vertex shaders,
+vertex attribute masking, trigonometric waves, and procedural noise,
+graphics engines can displace 3D plant vertices dynamically while
+maintaining high frame rates.</p>
+<h3 id="1-vertex-attribute-encoding-in-gltf">1. Vertex Attribute
+Encoding in glTF</h3>
+<p>The standard glTF 2.0 format stores geometry using standard
+attributes such as <code>POSITION</code>, <code>NORMAL</code>, and
+<code>TEXCOORD_n</code>. Because procedural wind requires different
+parts of a plant to react with varying intensity, developers embed
+deformation weight data directly into the glTF model before export:</p>
+<ul>
+<li><strong>Vertex Colors (<code>COLOR_0</code>):</strong> The primary
+method to store flexibility data. For instance, the red channel can
+represent branch flexibility, the green channel leaf fluttering, and the
+blue channel absolute height or distance from the root.</li>
+<li><strong>Secondary UV Channels (<code>TEXCOORD_1</code>):</strong>
+Can be used to store local object-space pivot origins, allowing
+sub-branches or leaves to rotate around an anchor rather than stretching
+uncontrollably.</li>
+</ul>
+<h3 id="2-custom-vertex-shader-displacement">2. Custom Vertex Shader
+Displacement</h3>
+<p>Standard PBR pipelines render glTF assets statically unless modified.
+Real-time deformation is achieved by intercepting the vertex shader
+stage (using custom shaders or shader-chunk injection in engines like
+Three.js or Babylon.js) before applying the model-view-projection
+matrix.</p>
+<p>The basic implementation applies mathematical transformations to the
+local vertex position:</p>
+<ul>
+<li><strong>Trigonometric Functions:</strong> Combining
+<code>sin()</code> and <code>cos()</code> functions driven by a global
+<code>time</code> uniform and the vertex's world coordinates creates
+traveling wave patterns across a field of foliage.</li>
+<li><strong>Wind Direction Vectors:</strong> Displacements are projected
+along a global wind direction vector, tilting the mesh in the direction
+of the gust.</li>
+</ul>
+<h3 id="3-layered-multi-frequency-deformation">3. Layered
+Multi-Frequency Deformation</h3>
+<p>To avoid unnatural, uniform swaying, procedural wind algorithms
+separate motion into distinct hierarchical frequencies:</p>
+<ul>
+<li><strong>Low-Frequency Motion (Main Trunk):</strong> Bends the entire
+mesh along the wind vector, scaled by vertex height or root
+distance.</li>
+<li><strong>Mid-Frequency Motion (Branches):</strong> Applies localized
+swaying to secondary branches using intermediate vertex weights.</li>
+<li><strong>High-Frequency Motion (Leaves):</strong> Implements rapid,
+low-amplitude vibration or fluttering on leaf vertices, often utilizing
+high-speed sinusoidal oscillation or cross-product rotations
+perpendicular to the surface normals.</li>
+</ul>
+<h3 id="4-gpu-based-procedural-noise">4. GPU-Based Procedural Noise</h3>
+<p>While trigonometric functions simulate calm, rhythmic breezes,
+realistic turbulent gusts require continuous procedural noise. Vertex
+shaders can compute:</p>
+<ul>
+<li><strong>Simplex or Perlin Noise:</strong> Evaluated directly in the
+shader using world-space coordinates combined with time, producing
+continuous, non-repeating gusts of wind that sweep across the
+terrain.</li>
+<li><strong>Flow Maps and Wind Textures:</strong> For lower-end
+hardware, a looping, pre-computed 2D noise texture can be sampled inside
+the vertex shader to drive wind speed and angle across thousands of
+instanced glTF foliage meshes simultaneously.</li>
+</ul>
+<h3 id="5-instanced-mesh-transformation">5. Instanced Mesh
+Transformation</h3>
+<p>When dealing with large forests or dense grass fields, individual
+glTF meshes are rendered via hardware instancing (such as the
+<code>EXT_mesh_gpu_instancing</code> glTF extension). Procedural wind
+equations incorporate the instance matrix or instance-specific
+attributes into the noise calculation. This ensures that adjacent plants
+do not sway in identical synchronization, maintaining visual variety
+across the scene with minimal draw call overhead.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

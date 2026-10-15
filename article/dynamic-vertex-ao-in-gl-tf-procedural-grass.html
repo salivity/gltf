@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Vertex AO in glTF Procedural Grass - gltf</title>
+    <meta name="description" content="This article explains how the glTF (GL Transmission Format) standard facilitates dynamic vertex ambient occlusion (AO) in procedural grass systems. Although glTF is fundamentally a static transmission format rather than a runtime execution engine, it prov">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/dynamic-vertex-ao-in-gl-tf-procedural-grass">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Dynamic Vertex AO in glTF Procedural Grass - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/dynamic-vertex-ao-in-gl-tf-procedural-grass" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how the glTF (GL Transmission Format) standard facilitates dynamic vertex ambient occlusion (AO) in procedural grass systems. Although glTF is fundamentally a static transmission format rather than a runtime execution engine, it prov" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="dynamic-vertex-ao-in-gltf-procedural-grass">Dynamic Vertex AO in
+glTF Procedural Grass</h1>
+<p>This article explains how the glTF (GL Transmission Format) standard
+facilitates dynamic vertex ambient occlusion (AO) in procedural grass
+systems. Although glTF is fundamentally a static transmission format
+rather than a runtime execution engine, it provides standardized
+structures—including vertex color attributes, custom vertex attributes,
+GPU instancing extensions, and morph targets—that serve as the
+foundational data pipelines required for real-time, dynamic vertex
+occlusion calculations on procedural foliage.</p>
+<h3 id="1-base-gradient-storage-via-vertex-color-attributes">1. Base
+Gradient Storage via Vertex Color Attributes</h3>
+<p>The primary method for storing ambient occlusion data at the vertex
+level in standard glTF 2.0 is the <code>COLOR_0</code> attribute. In
+procedural grass systems, grass blades naturally experience more
+occlusion at their roots than at their tips.</p>
+<p>Because glTF does not compute real-time physics or ray-traced ambient
+occlusion natively, the asset exporter bakes normalized baseline
+occlusion weights directly into the vertex attributes:</p>
+<ul>
+<li><strong>Format:</strong> <code>COLOR_0</code> is stored as either
+normalized 8-bit or 16-bit unsigned integers, or 32-bit floating-point
+values (typically <code>VEC3</code> or <code>VEC4</code>).</li>
+<li><strong>Implementation:</strong> The root vertices are typically
+assigned low values (approaching <code>0.0</code> for full occlusion),
+while the tip vertices are assigned higher values (approaching
+<code>1.0</code> for fully exposed areas). Runtime shaders sample this
+vertex color channel to determine static ground shadowing.</li>
+</ul>
+<h3 id="2-custom-application-specific-attributes">2. Custom
+Application-Specific Attributes</h3>
+<p>When standard material properties and color channels are reserved for
+visual texturing, glTF allows application-specific custom attributes
+designated with an underscore prefix, such as <code>_AO</code>,
+<code>_GROUND_OCCLUSION</code>, or <code>_BENDING_OCCLUSION</code>.</p>
+<ul>
+<li><strong>Accessory Data:</strong> These custom accessors store scalar
+floats (<code>SCALAR</code>) mapped per vertex.</li>
+<li><strong>Separation of Concerns:</strong> This approach decouples
+ambient occlusion from surface albedo color, allowing procedural grass
+shaders to dynamically scale the vertex occlusion without modifying the
+base diffuse tint.</li>
+</ul>
+<h3 id="3-combining-with-ext_mesh_gpu_instancing">3. Combining with
+<code>EXT_mesh_gpu_instancing</code></h3>
+<p>Procedural grass fields rely heavily on instancing to render
+thousands of blades efficiently. The official glTF extension
+<code>EXT_mesh_gpu_instancing</code> enables dynamic ambient occlusion
+across instances rather than just individual vertices:</p>
+<ul>
+<li><strong>Per-Instance Attributes:</strong> The extension permits
+custom per-instance accessors, such as <code>_INSTANCE_AO</code> or
+dynamic spatial transforms.</li>
+<li><strong>Interaction Occlusion:</strong> When an external object
+(such as a character or vehicle) bends the grass, the runtime passes
+dynamic proximity data into the instancing buffers. The vertex shader
+combines the static per-vertex gradient (stored in <code>COLOR_0</code>)
+with the dynamic per-instance attenuation defined via the instancing
+extension.</li>
+</ul>
+<h3 id="4-morph-targets-for-non-linear-occlusion">4. Morph Targets for
+Non-Linear Occlusion</h3>
+<p>For systems requiring precomputed deformation states with shifting
+ambient shadows (such as grass flattened by high winds or trampling),
+glTF represents dynamic states using <strong>Morph Targets</strong>.</p>
+<ul>
+<li><strong>Target Arrays:</strong> A glTF primitive defines
+<code>targets</code>, which can include alternative <code>COLOR_0</code>
+or custom attribute arrays corresponding to different flattened
+configurations.</li>
+<li><strong>Dynamic Blending:</strong> At runtime, the host engine
+dynamically updates the <code>weights</code> array of the mesh node. As
+the grass blade bends toward the ground, the ambient occlusion channel
+interpolates between the upright state (bright tip, dark base) and the
+flattened state (overall darker values to simulate being trapped beneath
+other foliage).</li>
+</ul>
+<h3 id="5-runtime-shader-consumption">5. Runtime Shader Consumption</h3>
+<p>Within a dynamic rendering pipeline, glTF acts as the data layout
+blueprint. The runtime vertex shader reads the glTF buffer data and
+evaluates dynamic vertex ambient occlusion through an equation similar
+to:</p>
+<p><span class="math display">\[\text{Final AO} = \text{glTF.COLOR\_0}
+\times \text{DynamicEnvironmentOcclusion} \times
+\text{InstanceShadowWeight}\]</span></p>
+<p>By providing strict binary accessor definitions and flexible
+attribute extensions, glTF standardizes the delivery of root-to-tip
+occlusion factors, morph weights, and instance transforms to the GPU,
+enabling procedural grass rendering engines to simulate dynamic,
+reactive shading seamlessly.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

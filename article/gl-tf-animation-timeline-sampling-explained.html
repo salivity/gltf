@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Animation Timeline Sampling Explained - gltf</title>
+    <meta name="description" content="In the glTF 2.0 specification, the animation object drives runtime motion by pairing keyframe timelines with specific node transformations. This article provides a technical breakdown of how glTF structures timeline sampling, focusing on the relationship">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-animation-timeline-sampling-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Animation Timeline Sampling Explained - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-animation-timeline-sampling-explained" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In the glTF 2.0 specification, the animation object drives runtime motion by pairing keyframe timelines with specific node transformations. This article provides a technical breakdown of how glTF structures timeline sampling, focusing on the relationship" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-animation-timeline-sampling-explained">glTF Animation
+Timeline Sampling Explained</h1>
+<p>In the glTF 2.0 specification, the <code>animation</code> object
+drives runtime motion by pairing keyframe timelines with specific node
+transformations. This article provides a technical breakdown of how glTF
+structures timeline sampling, focusing on the relationship between
+animation samplers, time accessor inputs, transform outputs, and the
+supported mathematical interpolation algorithms.</p>
+<h2 id="the-architecture-of-animation-samplers">The Architecture of
+Animation Samplers</h2>
+<p>Timeline sampling in glTF is primarily managed by the
+<code>samplers</code> array inside an <code>animation</code> object.
+Each sampler defines the relationship between keyframe timestamps and
+corresponding values, which are then routed to targeted node properties
+via animation channels.</p>
+<p>An animation sampler consists of three core properties:</p>
+<ul>
+<li><strong><code>input</code></strong>: An index referring to an
+accessor containing the timeline timestamps.</li>
+<li><strong><code>output</code></strong>: An index referring to an
+accessor containing the animation keyframe values.</li>
+<li><strong><code>interpolation</code></strong>: A string defining the
+mathematical formula used to sample between keyframe points.</li>
+</ul>
+<h2 id="timeline-input-requirements">Timeline Input Requirements</h2>
+<p>The <code>input</code> property points to an accessor that stores the
+timeline data. The glTF specification enforces strict rules for timeline
+inputs:</p>
+<ul>
+<li><strong>Data Format</strong>: Timeline inputs must be floating-point
+scalar values (<code>SCALAR</code> type with <code>FLOAT</code>
+component type).</li>
+<li><strong>Measurement Units</strong>: Time is measured strictly in
+seconds, starting at zero or a positive offset.</li>
+<li><strong>Monotonic Progression</strong>: Timestamps within the
+accessor must be strictly increasing (<span
+class="math inline">\(t_{k+1} &gt; t_k\)</span>). This guarantees a
+deterministic timeline where no two keyframes share the same time
+index.</li>
+<li><strong>Min/Max Metadata</strong>: The accessor must define
+<code>min</code> and <code>max</code> values, representing the start and
+end times of the animation track, allowing runtimes to establish the
+duration without scanning the entire buffer.</li>
+</ul>
+<h2 id="interpolation-mechanisms">Interpolation Mechanisms</h2>
+<p>When sampling a timeline at an arbitrary time <span
+class="math inline">\(t\)</span> between two keyframes <span
+class="math inline">\(t_k\)</span> and <span
+class="math inline">\(t_{k+1}\)</span>, a glTF runtime computes a
+normalized time factor:</p>
+<p><span class="math display">\[s = \frac{t - t_k}{t_{k+1} -
+t_k}\]</span></p>
+<p>The value at <span class="math inline">\(t\)</span> is calculated
+based on the sampler's <code>interpolation</code> property, which
+supports three standard algorithms:</p>
+<h3 id="1-step">1. STEP</h3>
+<p>The <code>STEP</code> mechanism disables intermediate interpolation.
+The output maintains the value of the previous keyframe until the
+timeline reaches the next keyframe:</p>
+<p><span class="math display">\[\text{value}(t) = v_k\]</span></p>
+<p>This is commonly used for discrete state changes, visibility toggles,
+or mechanical, non-smoothing motions.</p>
+<h3 id="2-linear">2. LINEAR</h3>
+<p>The <code>LINEAR</code> mechanism performs linear interpolation
+between adjacent keyframes:</p>
+<p><span class="math display">\[\text{value}(t) = (1 - s) \cdot v_k + s
+\cdot v_{k+1}\]</span></p>
+<p>When the target property is a rotation (represented by quaternions in
+glTF), runtimes apply spherical linear interpolation (Slerp) or
+normalized linear interpolation (Nlerp) to preserve quaternion
+normalization.</p>
+<h3 id="3-cubicspline">3. CUBICSPLINE</h3>
+<p>The <code>CUBICSPLINE</code> mechanism uses cubic Hermite spline
+interpolation. Unlike <code>STEP</code> and <code>LINEAR</code>, which
+store only values in the output accessor, <code>CUBICSPLINE</code>
+requires three separate values per keyframe in the output buffer:</p>
+<ol type="1">
+<li><strong>In-tangent</strong> (<span
+class="math inline">\(a_k\)</span>): The incoming tangent vector.</li>
+<li><strong>Keyframe value</strong> (<span
+class="math inline">\(v_k\)</span>): The actual property value at time
+<span class="math inline">\(t_k\)</span>.</li>
+<li><strong>Out-tangent</strong> (<span
+class="math inline">\(b_k\)</span>): The outgoing tangent vector.</li>
+</ol>
+<p>To compute the interpolated value between <span
+class="math inline">\(t_k\)</span> and <span
+class="math inline">\(t_{k+1}\)</span>, the runtime evaluates the
+standard Hermite basis functions:</p>
+<p><span class="math display">\[\text{value}(t) = (2s^3 - 3s^2 + 1)v_k +
+(t_{k+1} - t_k)(s^3 - 2s^2 + s)b_k + (-2s^3 + 3s^2)v_{k+1} + (t_{k+1} -
+t_k)(s^3 - s^2)a_{k+1}\]</span></p>
+<p>The tangents scale proportionally with the duration of the time
+interval <span class="math inline">\((t_{k+1} - t_k)\)</span>, ensuring
+smooth curves across keyframes with non-uniform time distributions.</p>
+<h2 id="out-of-bounds-evaluation">Out-of-Bounds Evaluation</h2>
+<p>For timeline queries occurring before the first keyframe (<span
+class="math inline">\(t &lt; t_0\)</span>) or after the final keyframe
+(<span class="math inline">\(t &gt; t_n\)</span>), glTF specifies that
+runtimes should clamp the values to the first and last keyframe,
+respectively, unless an external playback loop or application-specific
+behavior is enforced.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

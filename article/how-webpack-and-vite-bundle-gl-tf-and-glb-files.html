@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Webpack and Vite Bundle glTF and GLB Files - gltf</title>
+    <meta name="description" content="Modern web applications often integrate 3D graphics using glTF (GL Transmission Format) and its binary counterpart, GLB. Automated build tools like Webpack and Vite process these assets differently depending on whether they are packaged as self-contained">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-webpack-and-vite-bundle-gl-tf-and-glb-files">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Webpack and Vite Bundle glTF and GLB Files - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-webpack-and-vite-bundle-gl-tf-and-glb-files" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Modern web applications often integrate 3D graphics using glTF (GL Transmission Format) and its binary counterpart, GLB. Automated build tools like Webpack and Vite process these assets differently depending on whether they are packaged as self-contained" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-webpack-and-vite-bundle-gltf-and-glb-files">How Webpack and
+Vite Bundle glTF and GLB Files</h1>
+<p>Modern web applications often integrate 3D graphics using glTF (GL
+Transmission Format) and its binary counterpart, GLB. Automated build
+tools like Webpack and Vite process these assets differently depending
+on whether they are packaged as self-contained binaries or multi-file
+structures with external references. This article explains the
+underlying mechanisms Webpack and Vite use to detect, emit, and resolve
+dependencies inside 3D models, covering asset modules, internal path
+resolution, and best practices for asset delivery.</p>
+<h2 id="understanding-the-difference-glb-vs-gltf">Understanding the
+Difference: GLB vs. glTF</h2>
+<p>To understand how bundlers handle 3D assets, it is necessary to
+distinguish between the two primary distribution formats:</p>
+<ul>
+<li><strong>GLB (Binary glTF):</strong> A self-contained file containing
+the scene hierarchy, mesh data, animations, and embedded image textures
+within a single binary payload. Bundlers treat GLB files identically to
+monolithic assets like PNGs, MP4s, or WOFF2 fonts.</li>
+<li><strong>glTF (JSON + External Assets):</strong> A structured JSON
+file referencing external <code>.bin</code> files (for vertex data,
+animations, and buffers) and image files (PNG, JPEG, WebP, or KTX2 for
+textures) via relative URIs. This format requires the build tool to
+understand and resolve a secondary dependency graph.</li>
+</ul>
+<h2 id="bundling-with-vite">Bundling with Vite</h2>
+<p>Vite leverages native ES modules during development and Rollup for
+production builds.</p>
+<h3 id="1-handling-glb-files">1. Handling GLB Files</h3>
+<p>Vite treats GLB files as static assets. When you import a
+<code>.glb</code> file directly in JavaScript:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> modelUrl <span class="im">from</span> <span class="st">&#39;./assets/robot.glb&#39;</span><span class="op">;</span></span></code></pre></div>
+<p>Vite returns the resolved public URL of the asset. During production
+builds, Rollup hashes the filename (e.g.,
+<code>robot-a1b2c3d4.glb</code>), emits it to the
+<code>dist/assets</code> directory, and replaces the import statement
+with the final string path.</p>
+<h3 id="2-handling-gltf-files-with-external-dependencies">2. Handling
+glTF Files with External Dependencies</h3>
+<p>Standard multi-file glTF assets present a challenge for Vite's
+default static asset pipeline. When Vite parses an
+<code>import modelUrl from './scene.gltf'</code>, it emits the
+<code>.gltf</code> file itself, but its internal JSON references to
+<code>buffer.bin</code> and <code>texture.png</code> are not
+automatically traversed or rewritten by standard Rollup plugins.</p>
+<p>Developers address this in Vite in two ways:</p>
+<ul>
+<li><strong>The Public Directory:</strong> Placing multi-file glTF
+assets in the <code>public/</code> folder bypasses the build pipeline
+entirely. The files are copied as-is to the root output directory,
+preserving relative path references between the JSON, binary, and image
+files at runtime.</li>
+<li><strong>Dedicated Plugins:</strong> Community plugins (such as
+<code>vite-plugin-gltf</code>) parse the glTF JSON manifest during the
+build, add referenced <code>.bin</code> and image files to the Rollup
+build graph, emit the processed assets with generated hashes, and
+rewrite the relative URIs inside the glTF JSON file.</li>
+</ul>
+<h2 id="bundling-with-webpack">Bundling with Webpack</h2>
+<p>Webpack 5 introduced Asset Modules, replacing legacy loaders such as
+<code>file-loader</code> and <code>url-loader</code>.</p>
+<h3 id="1-handling-glb-files-1">1. Handling GLB Files</h3>
+<p>Under Webpack 5, configuring GLB handling requires a basic rule
+inside <code>webpack.config.js</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>module<span class="op">.</span><span class="at">exports</span> <span class="op">=</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">module</span><span class="op">:</span> {</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">rules</span><span class="op">:</span> [</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>      {</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        <span class="dt">test</span><span class="op">:</span> <span class="ss">/</span><span class="sc">\.</span><span class="ss">glb</span><span class="sc">$</span><span class="ss">/</span><span class="op">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>        <span class="dt">type</span><span class="op">:</span> <span class="st">&#39;asset/resource&#39;</span><span class="op">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>        <span class="dt">generator</span><span class="op">:</span> {</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>          <span class="dt">filename</span><span class="op">:</span> <span class="st">&#39;models/[hash][ext][query]&#39;</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>      }</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    ]</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>}<span class="op">;</span></span></code></pre></div>
+<p>Webpack emits the binary model directly to the output folder and
+provides the final resolved URL to loaders like Three.js's
+<code>GLTFLoader</code>.</p>
+<h3 id="2-handling-multi-file-gltf-dependencies">2. Handling Multi-File
+glTF Dependencies</h3>
+<p>Webpack cannot natively parse the JSON structure of a
+<code>.gltf</code> file to discover referenced buffers and textures
+using standard <code>asset/resource</code> rules. Treating a
+<code>.gltf</code> file as a simple resource leaves its external
+dependencies behind, resulting in 404 errors at runtime when the 3D
+runtime attempts to fetch the relative URIs.</p>
+<p>To solve this, Webpack relies on specialized loaders like
+<code>gltf-webpack-loader</code>:</p>
+<ol type="1">
+<li><strong>JSON Traversal:</strong> The loader parses the glTF JSON
+structure and identifies all URI references within the
+<code>buffers</code> and <code>images</code> arrays.</li>
+<li><strong>Dependency Emission:</strong> It converts these references
+into module dependencies, passing them through Webpack's build pipeline
+so that images and <code>.bin</code> files are processed, hashed, and
+emitted.</li>
+<li><strong>URI Rewriting:</strong> The loader updates the relative URIs
+inside the glTF JSON to match the newly generated, hashed output paths
+of the referenced assets.</li>
+</ol>
+<h2 id="comparison-of-bundling-strategies">Comparison of Bundling
+Strategies</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Feature</th>
+<th style="text-align: left;">Vite (Default)</th>
+<th style="text-align: left;">Webpack 5 (Asset Modules)</th>
+<th style="text-align: left;">Specialized Loaders/Plugins</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>GLB Support</strong></td>
+<td style="text-align: left;">Built-in via static import</td>
+<td style="text-align: left;">Built-in
+(<code>asset/resource</code>)</td>
+<td style="text-align: left;">Supported</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>glTF Path Rewriting</strong></td>
+<td style="text-align: left;">No (requires <code>public/</code>
+folder)</td>
+<td style="text-align: left;">No</td>
+<td style="text-align: left;">Yes (parses and rewrites JSON)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Cache Busting
+(Hashing)</strong></td>
+<td style="text-align: left;">Automatic for GLB only</td>
+<td style="text-align: left;">Automatic for GLB only</td>
+<td style="text-align: left;">Supported for all linked assets</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Pipeline Complexity</strong></td>
+<td style="text-align: left;">Minimal</td>
+<td style="text-align: left;">Low</td>
+<td style="text-align: left;">Medium</td>
+</tr>
+</tbody>
+</table>
+<p>For most production use cases, exporting assets as self-contained
+<strong>GLB</strong> files is the industry-standard approach. It
+completely circumvents the path-resolution problems inherent in
+multi-file glTF setups, allowing both Webpack and Vite to treat 3D
+models as single, immutable assets that benefit from standard hashing,
+caching, and CDN distribution.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

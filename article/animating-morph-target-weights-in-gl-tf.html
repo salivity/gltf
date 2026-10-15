@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animating Morph Target Weights in glTF - gltf</title>
+    <meta name="description" content="The glTF (GL Transmission Format) specification allows morph target weights to be animated through standard animation channels to provide a unified, lightweight, and hardware-friendly approach to mesh deformation. By integrating weight manipulation direct">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/animating-morph-target-weights-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Animating Morph Target Weights in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/animating-morph-target-weights-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The glTF (GL Transmission Format) specification allows morph target weights to be animated through standard animation channels to provide a unified, lightweight, and hardware-friendly approach to mesh deformation. By integrating weight manipulation direct" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="animating-morph-target-weights-in-gltf">Animating Morph Target
+Weights in glTF</h1>
+<p>The glTF (GL Transmission Format) specification allows morph target
+weights to be animated through standard animation channels to provide a
+unified, lightweight, and hardware-friendly approach to mesh
+deformation. By integrating weight manipulation directly into the core
+animation system alongside translation, rotation, and scale, glTF
+enables complex facial expressions, muscle flexing, and cloth
+simulations to execute consistently across diverse 3D rendering engines
+without requiring proprietary animation pipelines.</p>
+<h3 id="the-unified-gltf-animation-architecture">The Unified glTF
+Animation Architecture</h3>
+<p>In the glTF specification, animations are structured around two
+fundamental concepts: <strong>samplers</strong> and
+<strong>channels</strong>. A sampler contains the raw timeline data—the
+keyframe timestamps and the corresponding output values (such as scalar
+weights). An animation channel defines the relationship between the
+sampler and the scene hierarchy by targeting a specific node and an
+animatable property on that node.</p>
+<p>The specification explicitly defines four valid targets for an
+animation channel: <code>translation</code>, <code>rotation</code>,
+<code>scale</code>, and <code>weights</code>. By classifying
+<code>weights</code> as a first-class citizen of node properties, the
+runtime processes morph target tracks using the exact same interpolation
+algorithms (such as <code>LINEAR</code>, <code>STEP</code>, or
+<code>CUBICSPLINE</code>) that drive standard skeletal transforms.</p>
+<h3 id="separation-of-geometry-and-temporal-state">Separation of
+Geometry and Temporal State</h3>
+<p>Morph targets—often called blend shapes or shape keys—consist of
+vertex position, normal, and tangent offsets relative to a base mesh.
+Storing these geometric deltas within the mesh primitive keeps them
+static.</p>
+<p>Animating morph target weights through glTF channels maintains a
+clean separation of concerns:</p>
+<ul>
+<li><strong>Mesh Data:</strong> The geometry layer stores <em>how</em>
+vertices move when a shape key activates.</li>
+<li><strong>Node Layer:</strong> The node layer instantiates the mesh
+and maintains the current state array of scalar values (one float per
+morph target).</li>
+<li><strong>Animation Layer:</strong> The animation channels dynamically
+update that scalar array over time.</li>
+</ul>
+<p>This separation allows multiple nodes to share identical mesh
+geometry while expressing unique, asynchronous morphing states,
+substantially reducing memory consumption in complex scenes.</p>
+<h3 id="hardware-acceleration-and-runtime-efficiency">Hardware
+Acceleration and Runtime Efficiency</h3>
+<p>Modern graphics pipelines process morph targets efficiently on the
+GPU via vertex shaders or compute passes. Modern rendering engines pass
+morph target weights as uniform arrays, uniform buffer objects (UBOs),
+or floating-point textures to the shader, which calculates the linear
+combination of vertex deltas:</p>
+<p><span class="math display">\[\text{Final Position} = \text{Base
+Position} + \sum (\text{Delta}_i \times \text{Weight}_i)\]</span></p>
+<p>Because glTF animation channels output raw scalar arrays that map
+directly into contiguous memory buffers, the runtime can interpolate
+weights on the CPU (or compute shader) and copy them straight to GPU
+buffers with minimal data marshaling.</p>
+<h3 id="cross-platform-standardization">Cross-Platform
+Standardization</h3>
+<p>Prior to glTF's widespread adoption, 3D file formats handled blend
+shape keyframing through divergent, tool-specific conventions. By
+formalizing morph target weight animation in the glTF core schema, any
+exporting software (such as Blender or Maya) and importing runtime (such
+as Three.js, Babylon.js, Unreal Engine, or Unity) share a common
+contract. This ensures that detailed character animations, lip-sync
+tracks, and corrective shape dynamics import seamlessly across the
+WebGL, WebGPU, and native graphics ecosystems.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

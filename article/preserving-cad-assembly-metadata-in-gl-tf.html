@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preserving CAD Assembly Metadata in glTF - gltf</title>
+    <meta name="description" content="Converting Computer-Aided Design (CAD) models to glTF often risks flattening product hierarchies and stripping engineering data. However, glTF natively supports hierarchical scene graphs and metadata storage that can fully preserve original CAD assembly t">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/preserving-cad-assembly-metadata-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Preserving CAD Assembly Metadata in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/preserving-cad-assembly-metadata-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Converting Computer-Aided Design (CAD) models to glTF often risks flattening product hierarchies and stripping engineering data. However, glTF natively supports hierarchical scene graphs and metadata storage that can fully preserve original CAD assembly t" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="preserving-cad-assembly-metadata-in-gltf">Preserving CAD
+Assembly Metadata in glTF</h1>
+<p>Converting Computer-Aided Design (CAD) models to glTF often risks
+flattening product hierarchies and stripping engineering data. However,
+glTF natively supports hierarchical scene graphs and metadata storage
+that can fully preserve original CAD assembly trees, component names,
+and part-level attributes. This article details the specific core glTF
+nodes, properties, and official extensions required to retain structural
+fidelity and metadata during CAD-to-glTF translation.</p>
+<h2 id="core-node-hierarchy-preserving-the-assembly-tree">Core Node
+Hierarchy: Preserving the Assembly Tree</h2>
+<p>The structural relationship of an assembly—such as top-level
+assemblies, sub-assemblies, and individual parts—is maintained using the
+core glTF <code>nodes</code> array within the scene graph.</p>
+<ul>
+<li><strong><code>nodes[]</code></strong>: Each entry represents an
+element in the CAD tree (an assembly, component instance, or solid
+body).</li>
+<li><strong><code>children</code></strong>: Inside a node, the
+<code>children</code> array contains the indices of lower-level nodes.
+Nesting indices within <code>children</code> recreates the original
+parent-child relationships of the CAD assembly structure without merging
+bodies into a single mesh.</li>
+<li><strong><code>matrix</code> or <code>translation</code> /
+<code>rotation</code> / <code>scale</code> (TRS)</strong>: Each node
+retains its local transformation relative to its parent node, ensuring
+components remain oriented correctly in 3D space according to the
+original CAD coordinate system.</li>
+</ul>
+<h2 id="part-and-assembly-identification-the-name-property">Part and
+Assembly Identification: The <code>name</code> Property</h2>
+<p>Every glTF node includes an optional <code>name</code> property
+defined as a UTF-8 string:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;Front_Suspension_Assembly_RevB&quot;</span><span class="fu">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;children&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="dv">1</span><span class="ot">,</span> <span class="dv">2</span><span class="ot">]</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<ul>
+<li><strong>Node Names</strong>: Assigning the original CAD part number,
+instance name, or assembly label directly to <code>node.name</code>
+preserves human-readable identification.</li>
+<li><strong>Mesh Names</strong>: The <code>mesh.name</code> property can
+store the identifier of the underlying geometry or solid body
+representation, distinguishing the geometric definition from instance
+occurrences.</li>
+</ul>
+<h2 id="custom-engineering-data-the-extras-node">Custom Engineering
+Data: The <code>extras</code> Node</h2>
+<p>Standard glTF does not have dedicated engineering fields for CAD
+parameters like material densities, tolerance classes, or supplier part
+numbers. To store arbitrary CAD data, use the native <code>extras</code>
+property.</p>
+<p>The <code>extras</code> object can be attached to any glTF element,
+most notably nodes:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;Hex_Bolt_M8x20&quot;</span><span class="fu">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;mesh&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;extras&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;PartNumber&quot;</span><span class="fu">:</span> <span class="st">&quot;ISO4017-M8x20-8.8&quot;</span><span class="fu">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;Material&quot;</span><span class="fu">:</span> <span class="st">&quot;Steel Grade 8.8&quot;</span><span class="fu">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;Mass_kg&quot;</span><span class="fu">:</span> <span class="fl">0.015</span><span class="fu">,</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;CAD_GUID&quot;</span><span class="fu">:</span> <span class="st">&quot;e3b0c442-98fc-1c14-9afbf4c8996fb924&quot;</span><span class="fu">,</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;Layer&quot;</span><span class="fu">:</span> <span class="st">&quot;Fasteners&quot;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><code>extras</code> accepts valid JSON types (objects, arrays,
+strings, numbers, booleans) and is universally supported across glTF
+loaders, making it the most common method for preserving unstructured
+CAD metadata.</p>
+<h2 id="standardized-gltf-extensions-for-cadbim-metadata">Standardized
+glTF Extensions for CAD/BIM Metadata</h2>
+<p>For high-volume datasets or standardized enterprise pipelines,
+relying purely on <code>extras</code> can cause performance overhead or
+data ambiguity. Two official extensions address structured metadata:</p>
+<h3 id="1-ext_structural_metadata">1.
+<code>EXT_structural_metadata</code></h3>
+<p>Designed for complex BIM and CAD workflows, this extension provides a
+formal schema system:</p>
+<ul>
+<li>Defines strongly typed property tables (integers, floats, strings,
+enums).</li>
+<li>Attaches metadata directly to nodes, instances, or geometry vertices
+without duplicating string keys.</li>
+<li>Dramatically reduces file size when dealing with large assemblies
+containing thousands of repeated parts.</li>
+</ul>
+<h3 id="2-khr_xmp_json_ld">2. <code>KHR_xmp_json_ld</code></h3>
+<p>This extension embeds standard Adobe XMP (Extensible Metadata
+Platform) metadata directly into the glTF model using JSON-LD. It is
+ideal for preserving document-level CAD attributes such as authoring
+software, revision history, copyright, and lifecycle states.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

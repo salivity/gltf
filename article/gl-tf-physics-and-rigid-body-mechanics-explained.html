@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Physics and Rigid Body Mechanics Explained - gltf</title>
+    <meta name="description" content="The proposed Khronos draft extension for glTF physics, primarily formulated as KHRphysicsrigidbodies, standardizes how real-time physics data is authored and exchanged across 3D tools and runtime engines. This article examines the extension&#39;s architecture">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-physics-and-rigid-body-mechanics-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Physics and Rigid Body Mechanics Explained - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-physics-and-rigid-body-mechanics-explained" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The proposed Khronos draft extension for glTF physics, primarily formulated as KHRphysicsrigidbodies, standardizes how real-time physics data is authored and exchanged across 3D tools and runtime engines. This article examines the extension&#39;s architecture" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-physics-and-rigid-body-mechanics-explained">glTF Physics
+and Rigid Body Mechanics Explained</h1>
+<p>The proposed Khronos draft extension for glTF physics, primarily
+formulated as <code>KHR_physics_rigid_bodies</code>, standardizes how
+real-time physics data is authored and exchanged across 3D tools and
+runtime engines. This article examines the extension's architecture,
+outlining how it integrates rigid body dynamics, collision shapes,
+physical materials, and joint constraints into glTF's node
+hierarchy.</p>
+<h3 id="modular-architecture">Modular Architecture</h3>
+<p>The glTF physics draft decouples visual assets from simulation data
+while keeping them linked to the scene graph. The specification
+structures rigid body mechanics into four primary elements:</p>
+<ul>
+<li><strong>Collision Shapes:</strong> Geometric definitions used
+strictly for collision detection.</li>
+<li><strong>Physics Materials:</strong> Surface properties affecting
+interaction behaviors, such as friction and restitution.</li>
+<li><strong>Rigid Bodies:</strong> Dynamic properties applied to
+specific nodes, defining mass and motion state.</li>
+<li><strong>Constraints:</strong> Joints that restrict relative
+translation and rotation between connected bodies.</li>
+</ul>
+<h3 id="collision-shapes-and-materials">Collision Shapes and
+Materials</h3>
+<p>Collision detection is handled separately from visual rendering to
+optimize performance. The draft defines primitive colliders (spheres,
+boxes, capsules, and cylinders) as well as complex geometries (convex
+hulls and triangle meshes).</p>
+<p>These colliders reference physics materials that govern contact
+behavior:</p>
+<ul>
+<li><strong>Static and Dynamic Friction:</strong> Dictate resistance to
+sliding motion.</li>
+<li><strong>Restitution:</strong> Governs the bounciness of an object
+upon impact.</li>
+<li><strong>Combine Modes:</strong> Specify mathematical rules (average,
+minimum, maximum, or multiply) for resolving interactions when two
+different materials collide.</li>
+</ul>
+<h3 id="rigid-body-definition-and-motion-types">Rigid Body Definition
+and Motion Types</h3>
+<p>A rigid body is instantiated by extending a node in the glTF
+hierarchy with the <code>KHR_physics_rigid_bodies</code> extension. The
+specification categorizes motion into three distinct types:</p>
+<ul>
+<li><strong>Dynamic:</strong> Fully simulated objects influenced by
+forces, impulses, gravity, and collisions.</li>
+<li><strong>Kinematic:</strong> Objects driven explicitly by transforms,
+timelines, or programmatic input, moving without being displaced by
+dynamic objects.</li>
+<li><strong>Static:</strong> Immovable environment geometry that
+collides with dynamic objects but possesses infinite mass and zero
+velocity.</li>
+</ul>
+<p>For dynamic bodies, the extension defines mass properties including
+total mass, the center of mass offset relative to the node, and the
+inertia tensor. It also supports initial linear and angular velocity
+vectors, gravity scale multipliers, and flags to designate whether a
+body serves as a solid collider or a non-solid trigger/sensor.</p>
+<h3 id="joint-constraints">Joint Constraints</h3>
+<p>To model articulated mechanics such as hinges, ragdolls, suspension,
+and mechanical linkages, the draft introduces physics constraints.
+Constraints bind two rigid bodies (or one body and the world frame) via
+local reference frames.</p>
+<p>The extension defines multiple constraint archetypes:</p>
+<ul>
+<li><strong>Fixed:</strong> Completely locks relative translation and
+rotation.</li>
+<li><strong>Revolute (Hinge):</strong> Permits rotation around a single
+axis while locking other degrees of freedom.</li>
+<li><strong>Prismatic (Slider):</strong> Permits linear translation
+along a single axis.</li>
+<li><strong>Spherical (Ball-and-Socket):</strong> Permits free
+three-axis rotation around a shared point while locking linear
+displacement.</li>
+<li><strong>Generic (6-DOF):</strong> Provides configurable linear and
+angular limits, springs, and dampening parameters across all three
+positional and rotational axes.</li>
+</ul>
+<h3 id="collision-filtering">Collision Filtering</h3>
+<p>To control which objects interact, the draft integrates a collision
+filtering system based on collision groups and mask layers. Objects are
+assigned to one or more bitmask categories, allowing runtimes to skip
+broadphase and narrowphase collision checks between non-interacting
+layers (such as debris passing through friendly characters).</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

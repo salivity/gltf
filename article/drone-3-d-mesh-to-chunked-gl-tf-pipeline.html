@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drone 3D Mesh to Chunked glTF Pipeline - gltf</title>
+    <meta name="description" content="Drone mapping platforms convert massive aerial datasets into web-ready 3D models through a pipeline of photogrammetric reconstruction, spatial partitioning, mesh optimization, and hierarchical file export. Because raw photogrammetry meshes of large terrai">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/drone-3-d-mesh-to-chunked-gl-tf-pipeline">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Drone 3D Mesh to Chunked glTF Pipeline - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/drone-3-d-mesh-to-chunked-gl-tf-pipeline" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Drone mapping platforms convert massive aerial datasets into web-ready 3D models through a pipeline of photogrammetric reconstruction, spatial partitioning, mesh optimization, and hierarchical file export. Because raw photogrammetry meshes of large terrai" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="drone-3d-mesh-to-chunked-gltf-pipeline">Drone 3D Mesh to Chunked
+glTF Pipeline</h1>
+<p>Drone mapping platforms convert massive aerial datasets into
+web-ready 3D models through a pipeline of photogrammetric
+reconstruction, spatial partitioning, mesh optimization, and
+hierarchical file export. Because raw photogrammetry meshes of large
+terrains often contain tens of millions of polygons and gigabytes of 8K
+texture sheets, direct browser rendering is impossible. To overcome
+hardware and bandwidth limits, modern mapping software subdivides
+monolithic meshes into discrete, level-of-detail (LoD) chunks, optimizes
+the geometry and textures, and formats the output into standard glTF or
+binary GLB containers referenced by spatial indexing structures like 3D
+Tiles.</p>
+<h3 id="1-photogrammetric-reconstruction-to-monolithic-mesh">1.
+Photogrammetric Reconstruction to Monolithic Mesh</h3>
+<p>The process begins with Structure from Motion (SfM) and Multi-View
+Stereo (MVS) algorithms. Thousands of overlapping, georeferenced aerial
+images are matched via visual tie points to compute precise camera
+positions. The engine then builds a dense point cloud and wraps it in a
+continuous surface mesh—typically outputting a massive raw format such
+as OBJ or PLY—paired with high-resolution texture maps derived from the
+original drone orthophotos.</p>
+<h3 id="2-spatial-subdivision-and-chunking">2. Spatial Subdivision and
+Chunking</h3>
+<p>To make the data manageable, the processing engine projects the
+global coordinates into a local spatial reference system (such as UTM or
+local Cartesian coordinates) and subdivides the continuous surface along
+a regular grid, quadtree, or octree.</p>
+<ul>
+<li><strong>Spatial Slicing:</strong> The algorithm clips vertices,
+edges, and triangles along defined spatial bounding boxes.</li>
+<li><strong>Seam Preservation:</strong> To prevent visible cracks or
+gaps between adjacent chunks during rendering, systems preserve boundary
+edge vertices across neighboring blocks or generate mesh "skirts"—slight
+vertical extensions along the perimeter that mask precision errors
+between adjacent tiles.</li>
+</ul>
+<h3 id="3-level-of-detail-lod-generation">3. Level of Detail (LoD)
+Generation</h3>
+<p>Once partitioned into spatial chunks, each block undergoes geometric
+decimation. Using algorithms such as Quadric Error Metrics (QEM), the
+engine reduces the polygon count in stages while preserving critical
+topographic features, ridgelines, and sharp structural edges. This
+creates multiple hierarchical tiers:</p>
+<ul>
+<li><strong>Root/Coarse Levels:</strong> Low-poly versions of the
+terrain loaded when the camera is far away.</li>
+<li><strong>Leaf/Fine Levels:</strong> High-density meshes loaded only
+when the user zooms close to the surface.</li>
+</ul>
+<h3 id="4-texture-atlas-repacking-and-compression">4. Texture Atlas
+Repacking and Compression</h3>
+<p>Texture handling is adapted to match the chunked geometry:</p>
+<ul>
+<li><strong>UV Re-mapping:</strong> Texture atlases are sliced and
+re-baked so that each spatial chunk references only its dedicated image
+maps, rather than relying on a shared, global texture atlas.</li>
+<li><strong>Mipmapping and Compression:</strong> Textures are resized
+according to the mesh LoD and compressed into GPU-friendly formats such
+as KTX 2.0 with Basis Universal (UASTC or ETC1S). This allows graphics
+hardware to ingest textures directly into video memory without prior
+client-side decompression.</li>
+</ul>
+<h3 id="5-gltfglb-packaging-and-spatial-indexing">5. glTF/GLB Packaging
+and Spatial Indexing</h3>
+<p>Each individual mesh chunk and its associated material is serialized
+into a glTF (or binary <code>.glb</code>) payload:</p>
+<ul>
+<li><strong>Geometry Compression:</strong> Engines frequently apply
+Draco or EXT_meshopt_compression to reduce vertex buffer sizes,
+attribute streams, and index arrays.</li>
+<li><strong>Integration with 3D Tiles:</strong> While glTF defines the
+geometry, materials, and local transformations of the chunk itself, a
+master spatial index—most commonly an OGC 3D Tiles
+<code>tileset.json</code>—coordinates the files. This JSON schema
+outlines the bounding volumes (oriented bounding boxes or bounding
+spheres), geometric error thresholds, and URIs pointing to individual
+glTF/GLB assets.</li>
+</ul>
+<p>When rendered, the client-side viewer uses camera distance and field
+of view to evaluate the geometric error of each bounding volume,
+streaming and assembling only the visible, appropriately detailed glTF
+chunks into a seamless, continuous 3D orthomosaic.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

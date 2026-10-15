@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interleaved vs Planar Vertex Data in glTF - gltf</title>
+    <meta name="description" content="In 3D graphics rendering with glTF assets, structuring vertex attributes in either an interleaved or planar layout directly impacts memory bandwidth, GPU cache efficiency, and runtime rendering throughput. This article examines the core performance trade-">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/interleaved-vs-planar-vertex-data-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Interleaved vs Planar Vertex Data in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/interleaved-vs-planar-vertex-data-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In 3D graphics rendering with glTF assets, structuring vertex attributes in either an interleaved or planar layout directly impacts memory bandwidth, GPU cache efficiency, and runtime rendering throughput. This article examines the core performance trade-" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="interleaved-vs-planar-vertex-data-in-gltf">Interleaved vs Planar
+Vertex Data in glTF</h1>
+<p>In 3D graphics rendering with glTF assets, structuring vertex
+attributes in either an interleaved or planar layout directly impacts
+memory bandwidth, GPU cache efficiency, and runtime rendering
+throughput. This article examines the core performance trade-offs
+between interleaved and planar (separate) vertex data layouts in glTF
+files, detailing how each format behaves during general rasterization,
+specialized rendering passes, dynamic updates, and cross-platform GPU
+pipelines.</p>
+<h3 id="understanding-vertex-data-layouts">Understanding Vertex Data
+Layouts</h3>
+<p>Vertex data defines the geometry of a 3D model through multiple
+attributes, including position, normal, tangent, texture coordinates,
+and joint weights. In glTF, these attributes are stored in binary
+buffers (<code>bufferViews</code>) and referenced via accessors in two
+primary ways:</p>
+<ul>
+<li><strong>Interleaved Data:</strong> All attributes for a single
+vertex are stored contiguously in memory
+(<code>[Pos0, Norm0, UV0, Pos1, Norm1, UV1, ...]</code>).</li>
+<li><strong>Planar Data (Separate Streams):</strong> Each attribute type
+is stored in its own dedicated, contiguous array
+(<code>[Pos0, Pos1, ...]</code>, <code>[Norm0, Norm1, ...]</code>,
+<code>[UV0, UV1, ...]</code>).</li>
+</ul>
+<h3 id="cache-coherency-and-standard-rendering">Cache Coherency and
+Standard Rendering</h3>
+<p>For general rendering passes where the vertex shader processes all or
+most vertex attributes simultaneously, interleaved data is significantly
+more efficient.</p>
+<p>GPUs fetch memory in discrete cache lines, typically 32, 64, or 128
+bytes wide. When vertex attributes are interleaved, reading the position
+of a vertex automatically pulls the vertex's normals, tangents, and UVs
+into the L1/L2 cache. This maximizes spatial locality, reduces memory
+latency, and ensures high utilization of each fetched cache line.</p>
+<p>Conversely, planar data spreads the attributes across different
+memory addresses. A vertex shader consuming four distinct attributes
+must issue read operations across four separate memory locations
+simultaneously. This increases cache pressure, causes higher cache miss
+rates, and can degrade vertex shader execution throughput.</p>
+<h3 id="bandwidth-efficiency-in-depth-and-shadow-passes">Bandwidth
+Efficiency in Depth and Shadow Passes</h3>
+<p>While interleaved data optimizes full-attribute passes, it introduces
+performance penalties during passes that require only a subset of
+attributes. Common examples include:</p>
+<ul>
+<li><strong>Depth Pre-Passes:</strong> Only require vertex positions to
+populate the depth buffer.</li>
+<li><strong>Cascaded Shadow Maps:</strong> Typically need only position
+data to compute occluder depth.</li>
+<li><strong>Position-Only Visibility Buffers:</strong> Common in modern
+deferred rendering and virtualized geometry architectures.</li>
+</ul>
+<p>When executing a depth-only pass with interleaved data, the GPU
+fetches full cache lines containing unused normals, UVs, and vertex
+colors just to read the position vector. This results in wasted memory
+bandwidth and cache thrashing.</p>
+<p>Planar data avoids this issue entirely. By isolating positions into a
+single contiguous buffer, depth passes read only the exact bytes
+required, reducing memory bandwidth usage by 50% to 75% depending on the
+total vertex footprint.</p>
+<h3 id="dynamic-updates-and-streaming">Dynamic Updates and
+Streaming</h3>
+<p>When vertex attributes need to be modified at runtime—such as
+CPU-driven procedural mesh deformation, dynamic vertex coloring, or
+morph targets—planar layouts provide superior flexibility and
+performance.</p>
+<ul>
+<li><strong>Partial Buffer Updates:</strong> With a planar layout, an
+application can upload a new stream of positions or normals without
+re-uploading unchanged attributes, minimizing PCIe bus traffic.</li>
+<li><strong>Interleaved Updates:</strong> Modifying a single attribute
+in an interleaved buffer requires either rewriting the entire
+interleaved structure or performing fragmented memory writes, which
+degrades transfer speeds between the CPU and GPU.</li>
+</ul>
+<h3 id="optimal-hybrid-strategy">Optimal Hybrid Strategy</h3>
+<p>To balance both cache locality and bandwidth efficiency, modern glTF
+workflows often adopt a hybrid approach:</p>
+<ol type="1">
+<li><strong>Position Stream (Planar):</strong> Store positions in a
+separate, isolated buffer view (<code>bufferView</code>). This provides
+peak bandwidth efficiency for depth passes, shadow mapping, and
+occlusion culling.</li>
+<li><strong>Rendering Attributes (Interleaved):</strong> Interleave the
+remaining attributes (normals, tangents, texture coordinates, colors)
+into a second shared buffer view. These attributes are always consumed
+together during main shading passes.</li>
+<li><strong>Skinning Data (Optional Separation):</strong> Joint indices
+and weights can either be interleaved with general shading data or
+placed in a dedicated stream, depending on whether compute-shader
+skinning or hardware vertex skinning is employed.</li>
+</ol>
+<p>This split layout prevents bandwidth waste during depth rendering
+while maintaining strong GPU cache utilization during full-geometry
+rendering passes.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

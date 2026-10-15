@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Animation Channel Target Properties - gltf</title>
+    <meta name="description" content="In the glTF 2.0 specification, animations modify scene elements over time by linking input keyframe data to specific node attributes through animation channels. This article identifies the four core node properties that channel targets can directly animat">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-animation-channel-target-properties">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Animation Channel Target Properties - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-animation-channel-target-properties" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In the glTF 2.0 specification, animations modify scene elements over time by linking input keyframe data to specific node attributes through animation channels. This article identifies the four core node properties that channel targets can directly animat" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-animation-channel-target-properties">glTF Animation Channel
+Target Properties</h1>
+<p>In the glTF 2.0 specification, animations modify scene elements over
+time by linking input keyframe data to specific node attributes through
+animation channels. This article identifies the four core node
+properties that channel targets can directly animate—translation,
+rotation, scale, and morph target weights—and details how each property
+is represented, manipulated, and interpreted within a 3D runtime.</p>
+<h3 id="core-animatable-node-properties">Core Animatable Node
+Properties</h3>
+<p>In standard glTF 2.0, an animation channel defines a
+<code>target</code> object containing two parameters: <code>node</code>
+(the index of the target node) and <code>path</code> (the property to
+animate). The specification strictly limits the <code>path</code> string
+on a standard node to four possible values:</p>
+<h4 id="1-translation-translation">1. Translation
+(<code>"translation"</code>)</h4>
+<ul>
+<li><strong>Data Type:</strong> <code>VEC3</code> (Floating-point array
+of length 3: <code>[x, y, z]</code>)</li>
+<li><strong>Description:</strong> Represents the local 3D position of
+the node relative to its parent. Animating translation moves the node
+along the local X, Y, and Z axes.</li>
+</ul>
+<h4 id="2-rotation-rotation">2. Rotation (<code>"rotation"</code>)</h4>
+<ul>
+<li><strong>Data Type:</strong> <code>VEC4</code> (Floating-point array
+of length 4: <code>[x, y, z, w]</code>)</li>
+<li><strong>Description:</strong> Represents the local orientation of
+the node stored as a unit quaternion in the format
+<code>[x, y, z, w]</code>, where <code>w</code> is the scalar component.
+Quaternion interpolation (SLERP or normalized linear interpolation)
+ensures smooth, gimbal-lock-free rotational changes.</li>
+</ul>
+<h4 id="3-scale-scale">3. Scale (<code>"scale"</code>)</h4>
+<ul>
+<li><strong>Data Type:</strong> <code>VEC3</code> (Floating-point array
+of length 3: <code>[x, y, z]</code>)</li>
+<li><strong>Description:</strong> Represents local scaling factors along
+the local X, Y, and Z axes. A value of <code>[1.0, 1.0, 1.0]</code>
+indicates no scaling. Non-uniform scaling is supported, though uniform
+scaling is recommended for performance and skinning stability.</li>
+</ul>
+<h4 id="4-morph-target-weights-weights">4. Morph Target Weights
+(<code>"weights"</code>)</h4>
+<ul>
+<li><strong>Data Type:</strong> <code>SCALAR</code> sequence
+(Floating-point array)</li>
+<li><strong>Description:</strong> Controls the influence of morph
+targets defined on the mesh instantiated by the target node. Unlike
+translation, rotation, and scale (collectively known as TRS properties),
+the output size per keyframe matches the total number of morph targets
+present on the node's mesh. Each value typically ranges from
+<code>0.0</code> (no influence) to <code>1.0</code> (full influence),
+driving shape key blend shapes.</li>
+</ul>
+<hr />
+<h3 id="interpolation-methods">Interpolation Methods</h3>
+<p>For all four animatable properties, the animation sampler defines how
+values are computed between keyframes using one of three standard
+interpolation algorithms:</p>
+<ul>
+<li><strong><code>LINEAR</code>:</strong> Linear interpolation between
+adjacent keyframes (spherical linear interpolation for rotations).</li>
+<li><strong><code>STEP</code>:</strong> Discrete steps where the value
+remains unchanged until the next keyframe timestamp.</li>
+<li><strong><code>CUBICSPLINE</code>:</strong> Smooth cubic spline
+interpolation, which requires each keyframe to supply in-tangent, value,
+and out-tangent vectors.</li>
+</ul>
+<hr />
+<h3
+id="expanding-beyond-core-properties-khr_animation_pointer">Expanding
+Beyond Core Properties: <code>KHR_animation_pointer</code></h3>
+<p>Standard glTF restricts animation channels to the four node
+properties listed above. However, models utilizing the
+<code>KHR_animation_pointer</code> extension can target arbitrary glTF
+object properties directly via JSON Pointers. With this extension,
+animation channels can directly drive non-TRS properties, such as camera
+parameters (field of view, focal length), material properties (base
+color factor, roughness, emissive strength), and light parameters.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

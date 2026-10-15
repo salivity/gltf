@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimize glTF Alpha Vegetation Shadow Maps - gltf</title>
+    <meta name="description" content="Rendering shadows for alpha-tested (masked) vegetation in glTF scenes frequently creates severe performance bottlenecks because discard operations in fragment shaders disable early depth testing and induce heavy texture sampling during shadow map generati">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/optimize-gl-tf-alpha-vegetation-shadow-maps">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Optimize glTF Alpha Vegetation Shadow Maps - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/optimize-gl-tf-alpha-vegetation-shadow-maps" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Rendering shadows for alpha-tested (masked) vegetation in glTF scenes frequently creates severe performance bottlenecks because discard operations in fragment shaders disable early depth testing and induce heavy texture sampling during shadow map generati" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="optimize-gltf-alpha-vegetation-shadow-maps">Optimize glTF Alpha
+Vegetation Shadow Maps</h1>
+<p>Rendering shadows for alpha-tested (masked) vegetation in glTF scenes
+frequently creates severe performance bottlenecks because discard
+operations in fragment shaders disable early depth testing and induce
+heavy texture sampling during shadow map generation. This article
+outlines core optimization techniques—including shadow proxy geometry,
+cascaded shadow map (CSM) filtering, aggressive level of detail (LOD)
+transitions, alpha cutoff optimizations, and efficient draw call
+batching—to maximize frame rates without compromising visual quality in
+real-time 3D engines.</p>
+<h3 id="1-separate-shadow-geometry-using-proxy-meshes">1. Separate
+Shadow Geometry Using Proxy Meshes</h3>
+<p>Alpha-tested foliage relies on transparency cutouts mapped to flat
+planes, which requires discarding fragments in the shadow pass. Discard
+operations (<code>clip()</code> in HLSL or <code>discard</code> in GLSL)
+force the GPU to evaluate fragments rather than relying on rapid
+fixed-function depth writes (Early-Z).</p>
+<p>To resolve this, generate simplified, non-textured proxy geometry for
+the shadow pass. By modeling low-poly cards that closely conform to leaf
+clusters, you can render shadow depth as fully opaque meshes. This
+eliminates texture reads and discard instructions from the shadow pass
+entirely, allowing hardware-accelerated Early-Z to process the shadow
+maps at peak efficiency.</p>
+<h3 id="2-bypass-alpha-testing-on-distant-shadow-cascades">2. Bypass
+Alpha Testing on Distant Shadow Cascades</h3>
+<p>In cascaded shadow map setups, the highest-resolution cascades close
+to the camera benefit most from detailed alpha cutouts. Distant cascades
+cover larger surface areas where fine leaf details occupy sub-pixel
+dimensions.</p>
+<p>Implement a distance-based or per-cascade rule:</p>
+<ul>
+<li><strong>Cascade 0 &amp; 1:</strong> Evaluate alpha testing to
+capture nearby silhouette details.</li>
+<li><strong>Cascade 2 &amp; Beyond:</strong> Disable alpha testing
+completely and write standard depth as opaque hulls, or fade out shadows
+for small leaf geometry.</li>
+</ul>
+<p>This approach drastically reduces the fragment shader workload where
+pixel density is too low for cutouts to be perceptually meaningful.</p>
+<h3 id="3-minimize-the-shadow-pass-fragment-shader">3. Minimize the
+Shadow Pass Fragment Shader</h3>
+<p>When alpha testing is mandatory, strip the shadow pass fragment
+shader down to the bare minimum. A common mistake in generic glTF
+pipelines is using the main material shader for depth passes.</p>
+<p>Ensure the shadow shader:</p>
+<ul>
+<li>Samples only the single channel containing the alpha mask rather
+than full RGBA textures.</li>
+<li>Strips all UV transformations, vertex animations, or material
+calculations not strictly required for position and alpha masking.</li>
+<li>Reads directly from a dedicated, compressed single-channel texture
+or uses lower-resolution mipmaps to minimize memory bandwidth
+saturation.</li>
+</ul>
+<h3 id="4-implement-geometry-and-shadow-specific-lods">4. Implement
+Geometry and Shadow-Specific LODs</h3>
+<p>Leverage glTF extensions like <code>MSFT_lod</code> to configure
+aggressive Level of Detail transitions. Vegetation should transition to
+simplified billboard or cross-quad meshes rapidly with distance.</p>
+<p>Pair geometric LODs with shadow-casting flags. For example,
+transition dense undergrowth to simplified volumes at medium range, and
+disable shadow casting altogether for the smallest foliage tiers (such
+as grass blades or small shrubs), relying instead on screen-space
+ambient occlusion (SSAO) or baked contact shadows for ground
+contact.</p>
+<h3 id="5-tune-alpha-cutoff-and-mipmap-generation">5. Tune Alpha Cutoff
+and Mipmap Generation</h3>
+<p>The glTF specification defines an <code>alphaCutoff</code> value for
+<code>MASK</code> alpha modes. Inaccurate thresholding causes edge
+shimmering and forces excessive fragment evaluations across mip
+levels.</p>
+<ul>
+<li><strong>Mipmap Alpha Erosion Compensation:</strong> Standard
+downsampling causes alpha-tested edges to recede or vanish at distance.
+Use coverage-preserving mipmap generation algorithms to maintain
+consistent alpha density across all mip levels.</li>
+<li><strong>Optimal Cutoff Values:</strong> Set the
+<code>alphaCutoff</code> as high as visually acceptable (e.g., 0.5–0.7).
+Higher thresholds reduce ambiguous edge fragments and speed up depth
+resolution on architectures with conservative depth estimation.</li>
+</ul>
+<h3 id="6-instancing-and-state-batching">6. Instancing and State
+Batching</h3>
+<p>Foliage scenes typically contain thousands of individual leaf and
+stem meshes. Alpha-tested materials prevent specific hardware-level
+depth merging if draw calls are issued individually.</p>
+<p>Combine vegetation into uniform hardware instancing buffers
+(<code>EXT_mesh_gpu_instancing</code>). Batching identical foliage
+assets eliminates CPU-to-GPU overhead, allowing the GPU to fill the
+shadow map atlas in minimal draw passes while cycling through uniform
+depth-only pipeline states.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

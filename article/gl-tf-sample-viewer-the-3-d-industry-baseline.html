@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Sample Viewer: The 3D Industry Baseline - gltf</title>
+    <meta name="description" content="The glTF Sample Viewer is the official reference application maintained by the Khronos Group to demonstrate the correct rendering of glTF (GL Transmission Format) 2.0 assets. This article explores what the viewer is, its core capabilities, and how it func">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-sample-viewer-the-3-d-industry-baseline">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Sample Viewer: The 3D Industry Baseline - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-sample-viewer-the-3-d-industry-baseline" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The glTF Sample Viewer is the official reference application maintained by the Khronos Group to demonstrate the correct rendering of glTF (GL Transmission Format) 2.0 assets. This article explores what the viewer is, its core capabilities, and how it func" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-sample-viewer-the-3d-industry-baseline">glTF Sample Viewer:
+The 3D Industry Baseline</h1>
+<p>The glTF Sample Viewer is the official reference application
+maintained by the Khronos Group to demonstrate the correct rendering of
+glTF (GL Transmission Format) 2.0 assets. This article explores what the
+viewer is, its core capabilities, and how it functions as the definitive
+visual and technical benchmark for physically based rendering (PBR)
+across diverse 3D software and hardware platforms.</p>
+<h3 id="what-is-the-gltf-sample-viewer">What Is the glTF Sample
+Viewer?</h3>
+<p>The glTF Sample Viewer is an open-source, web-based rendering tool
+designed to display 3D models strictly according to the official glTF
+specification. Developed under the governance of the Khronos Group 3D
+Formats Working Group, it relies on modern WebGL and WebGPU standards to
+run directly in modern web browsers.</p>
+<p>Rather than aiming to be a fully featured 3D creation suite or game
+engine, the viewer serves a focused purpose: accurately implementing all
+core glTF features and official Khronos PBR material extensions. This
+includes complex optical behaviors such as transmission, volume,
+clearcoat, sheen, specular color, dispersion, and iridescence.</p>
+<h3 id="how-it-serves-as-an-industry-reference-baseline">How It Serves
+as an Industry Reference Baseline</h3>
+<h4 id="1-the-visual-ground-truth">1. The Visual "Ground Truth"</h4>
+<p>In 3D graphics, different rendering engines—such as Unreal Engine,
+Unity, Blender, Three.js, and Babylon.js—often use varying mathematical
+approximations for lighting and material interactions. These differences
+historically led to assets looking inconsistent when moved between
+applications. The glTF Sample Viewer acts as the authoritative "ground
+truth." If an asset appears a certain way in the Sample Viewer, that
+appearance represents the intended result of the official glTF
+specification. Engine developers use it to calibrate their own PBR
+pipelines to ensure interoperability.</p>
+<h4 id="2-reliable-asset-validation">2. Reliable Asset Validation</h4>
+<p>For 3D artists, technical directors, and e-commerce platforms, the
+viewer serves as an indispensable validation tool. Creators can import
+an asset into the viewer to immediately distinguish between authoring
+errors and target-engine rendering bugs. If an asset renders correctly
+in the Sample Viewer, any visual discrepancies in an external
+application can be isolated to that specific engine's implementation
+rather than the file itself.</p>
+<h4 id="3-blueprint-for-implementing-extensions">3. Blueprint for
+Implementing Extensions</h4>
+<p>As the Khronos Group ratifies new extensions to expand the glTF
+ecosystem, the Sample Viewer is updated simultaneously with reference
+shader code. This open-source implementation provides graphics engineers
+with a concrete, vetted blueprint for how mathematical formulas and
+shading models should be implemented in production code, accelerating
+the adoption of new material standards across the industry.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

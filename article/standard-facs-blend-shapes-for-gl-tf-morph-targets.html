@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Standard FACS Blend Shapes for glTF Morph Targets - gltf</title>
+    <meta name="description" content="In real-time 3D facial animation, the Facial Action Coding System (FACS) provides a standardized framework for breaking down facial expressions into individual muscle movements known as Action Units (AUs). When exporting 3D avatars to the glTF (GL Transmi">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/standard-facs-blend-shapes-for-gl-tf-morph-targets">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Standard FACS Blend Shapes for glTF Morph Targets - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/standard-facs-blend-shapes-for-gl-tf-morph-targets" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In real-time 3D facial animation, the Facial Action Coding System (FACS) provides a standardized framework for breaking down facial expressions into individual muscle movements known as Action Units (AUs). When exporting 3D avatars to the glTF (GL Transmi" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="standard-facs-blend-shapes-for-gltf-morph-targets">Standard FACS
+Blend Shapes for glTF Morph Targets</h1>
+<p>In real-time 3D facial animation, the Facial Action Coding System
+(FACS) provides a standardized framework for breaking down facial
+expressions into individual muscle movements known as Action Units
+(AUs). When exporting 3D avatars to the glTF (GL Transmission Format)
+standard, these AUs are typically stored as morph targets within the
+mesh primitive data. While pure academic FACS uses numerical
+identifiers, the interactive 3D and WebXR industries overwhelmingly map
+these to the 52 ARKit-compatible blend shape standard, which translates
+FACS movements into split, directional targets (left and right) for
+runtime facial tracking and performance capture.</p>
+<h3 id="the-arkit-52-facs-standard-in-gltf">The ARKit 52 FACS Standard
+in glTF</h3>
+<p>The most ubiquitous standard mapped into glTF morph target arrays is
+the Apple ARKit standard, which derives directly from FACS principles.
+This system decomposes complex facial mechanics into 52 localized morph
+targets, categorized primarily by facial region:</p>
+<h4 id="1-eye-and-brow-region-upper-face">1. Eye and Brow Region (Upper
+Face)</h4>
+<p>Upper face blend shapes isolate brow movements and ocular actions,
+corresponding closely to primary FACS Action Units:</p>
+<ul>
+<li><strong>Brow Inner Up</strong> (FACS AU 1): Inner brow raiser.</li>
+<li><strong>Brow Down Left / Right</strong> (FACS AU 4): Brow lowerer /
+corrugator action.</li>
+<li><strong>Brow Outer Up Left / Right</strong> (FACS AU 2): Outer brow
+raiser.</li>
+<li><strong>Eye Blink Left / Right</strong> (FACS AU 45): Eyelid closure
+via orbicularis oculi.</li>
+<li><strong>Eye Squint Left / Right</strong> (FACS AU 7): Lid
+tightener.</li>
+<li><strong>Eye Wide Left / Right</strong> (FACS AU 5): Upper lid
+raiser.</li>
+<li><strong>Eye Look Directions</strong>: Morph targets handling
+directional eye gazing (<code>eyeLookDown</code>,
+<code>eyeLookIn</code>, <code>eyeLookOut</code>, <code>eyeLookUp</code>
+split per eye), though these are sometimes handled via skeletal joints
+rather than morph targets.</li>
+</ul>
+<h4 id="2-cheek-and-nose-region-midface">2. Cheek and Nose Region
+(Midface)</h4>
+<p>Midface blend shapes handle nasal flare and cheek elevations:</p>
+<ul>
+<li><strong>Cheek Puff</strong> (FACS AU 33 / AU 34): Bucco-facial air
+expansion.</li>
+<li><strong>Cheek Squint Left / Right</strong> (FACS AU 6): Cheek
+raiser.</li>
+<li><strong>Nose Sneer Left / Right</strong> (FACS AU 9): Levator labii
+superioris alaeque nasi contraction, wrinkling the nose.</li>
+</ul>
+<h4 id="3-jaw-region">3. Jaw Region</h4>
+<p>Jaw blend shapes define basic mandible translation and
+articulation:</p>
+<ul>
+<li><strong>Jaw Open</strong> (FACS AU 26 / AU 27): Jaw drop and
+mandible depression.</li>
+<li><strong>Jaw Forward</strong> (FACS AU 31): Mandible thrust.</li>
+<li><strong>Jaw Left / Right</strong> (FACS AU 30): Lateral mandible
+displacement.</li>
+</ul>
+<h4 id="4-mouth-and-lip-region-lower-face">4. Mouth and Lip Region
+(Lower Face)</h4>
+<p>The mouth contains the largest array of morph targets due to complex
+phoneme generation and emotive expressions:</p>
+<ul>
+<li><strong>Mouth Smile Left / Right</strong> (FACS AU 12): Zygomaticus
+major pull, raising lip corners.</li>
+<li><strong>Mouth Frown Left / Right</strong> (FACS AU 15): Depressor
+anguli oris pull, lowering lip corners.</li>
+<li><strong>Mouth Pucker</strong> (FACS AU 18): Lip pucker and
+orbicularis oris contraction.</li>
+<li><strong>Mouth Funnel</strong> (FACS AU 22): Lip funneler.</li>
+<li><strong>Mouth Left / Right</strong> (FACS AU 14 variation): Lateral
+mouth shifting.</li>
+<li><strong>Mouth Dimple Left / Right</strong> (FACS AU 14): Buccinator
+contraction at the lip corners.</li>
+<li><strong>Mouth Stretch Left / Right</strong> (FACS AU 20): Risorius
+contraction pulling lips laterally.</li>
+<li><strong>Mouth Roll Lower / Upper</strong> (FACS AU 28): Lip
+inversion over the teeth.</li>
+<li><strong>Mouth Shrug Lower / Upper</strong> (FACS AU 17): Mentalis
+muscle lifting and pushing the lip upward.</li>
+<li><strong>Mouth Press Left / Right</strong> (FACS AU 24): Lip
+pressor.</li>
+<li><strong>Mouth Lower Down Left / Right</strong> (FACS AU 16):
+Depressor labii inferioris pulling the lower lip down.</li>
+<li><strong>Mouth Upper Up Left / Right</strong> (FACS AU 10): Levator
+labii superioris raising the upper lip.</li>
+<li><strong>Mouth Close</strong> (FACS AU 23): Lips pressed together
+when the jaw is open.</li>
+</ul>
+<h3 id="gltf-implementation-details">glTF Implementation Details</h3>
+<p>In the glTF 2.0 specification, morph targets are represented
+numerically rather than associatively by default:</p>
+<ul>
+<li><strong>Target Arrays</strong>: Stored under
+<code>mesh.primitives[].targets</code>, containing arrays of
+displacement accessors for vertex positions (<code>POSITION</code>),
+normals (<code>NORMAL</code>), and tangents (<code>TANGENT</code>).</li>
+<li><strong>Naming Conventions</strong>: Because the core glTF
+specification does not natively mandate morph target names inside the
+<code>targets</code> array, target names are standardized by populating
+the <code>extras.targetNames</code> array within the mesh definition.
+Engines such as Three.js, Babylon.js, and Unreal Engine read this array
+to map strings (e.g., <code>"eyeBlinkLeft"</code>) to their
+corresponding integer index in the primitive target array.</li>
+<li><strong>Default Weights</strong>: Default rest states are
+initialized using the <code>mesh.weights</code> array, with values
+typically ranging from <code>0.0</code> (neutral base pose) to
+<code>1.0</code> (maximum morph deformation).</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

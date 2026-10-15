@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Point Size Works in glTF Point Clouds - gltf</title>
+    <meta name="description" content="This article examines how point size parameters operate when rendering point cloud primitives within the glTF 2.0 specification. While glTF inherently supports point cloud geometry through its primitive rendering modes, the core specification does not def">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-point-size-works-in-gl-tf-point-clouds">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Point Size Works in glTF Point Clouds - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-point-size-works-in-gl-tf-point-clouds" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how point size parameters operate when rendering point cloud primitives within the glTF 2.0 specification. While glTF inherently supports point cloud geometry through its primitive rendering modes, the core specification does not def" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-point-size-works-in-gltf-point-clouds">How Point Size Works
+in glTF Point Clouds</h1>
+<p>This article examines how point size parameters operate when
+rendering point cloud primitives within the glTF 2.0 specification.
+While glTF inherently supports point cloud geometry through its
+primitive rendering modes, the core specification does not define a
+dedicated material property for point size. As a result, point sizing
+relies on a combination of lower-level graphics API mechanics, runtime
+vertex shaders, custom attributes, and viewer-specific
+implementations.</p>
+<h3 id="primitive-mode-0-points">Primitive Mode 0: POINTS</h3>
+<p>In glTF, point clouds are defined inside the <code>meshes</code>
+array using primitive objects where the <code>mode</code> property is
+set to <code>0</code> (<code>POINTS</code>). Each index or vertex
+position provided in the accessor array represents an individual point
+in 3D space rather than a vertex of an interconnected polygon or
+line.</p>
+<p>While the format standardizes vertex attributes such as
+<code>POSITION</code>, <code>COLOR_0</code>, and <code>NORMAL</code>, it
+omits a standardized, core PBR material property for setting the visual
+diameter or radius of these points.</p>
+<h3 id="the-role-of-webgl-and-graphics-apis">The Role of WebGL and
+Graphics APIs</h3>
+<p>Because core glTF delegates primitive rasterization to underlying
+graphics APIs (such as WebGL, WebGPU, OpenGL, or Vulkan), point size
+behavior defaults to the API's rendering pipeline:</p>
+<ul>
+<li><strong>Hardware Defaults:</strong> In standard WebGL, rendering
+<code>POINTS</code> relies on the vertex shader setting the special
+variable <code>gl_PointSize</code>. If the shader does not explicitly
+set or calculate this value, it defaults to <code>1.0</code>, producing
+single-pixel points regardless of camera distance or screen
+resolution.</li>
+<li><strong>Hardware Limitations:</strong> APIs enforce
+implementation-dependent minimum and maximum point sizes. For example,
+WebGL devices expose an <code>ALIASED_POINT_SIZE_RANGE</code>. Points
+configured beyond these hardware limits are clamped, preventing
+extremely large splats unless rendered as quad instancing or triangle
+meshes instead of native point primitives.</li>
+</ul>
+<h3 id="screen-space-vs-world-space-attenuation">Screen-Space vs.
+World-Space Attenuation</h3>
+<p>How point sizes scale relative to the camera depends entirely on how
+the runtime viewer’s shader pipeline handles attenuation:</p>
+<ol type="1">
+<li><strong>Fixed Screen-Space Sizing:</strong> The vertex shader
+assigns a constant scalar value to <code>gl_PointSize</code>. The points
+maintain an identical pixel size across the screen regardless of whether
+the camera moves closer or further away.</li>
+<li><strong>Perspective Attenuation (World-Space Sizing):</strong> The
+vertex shader scales <code>gl_PointSize</code> inversely proportional to
+the camera distance (often calculated as
+<code>pointSize = baseSize * (viewportHeight / -viewPosition.z)</code>).
+This causes points to expand when viewed up close and shrink when viewed
+from a distance, simulating physical 3D volume.</li>
+</ol>
+<p>Because glTF does not standardize distance attenuation formulas in
+its material schemas, different glTF viewers (such as Three.js,
+Babylon.js, or Cesium) may render the identical file with different
+visual densities unless explicitly overridden via client-side code.</p>
+<h3 id="custom-vertex-attributes-and-per-point-sizing">Custom Vertex
+Attributes and Per-Point Sizing</h3>
+<p>To support variable point sizes within a single point cloud, creators
+often utilize custom application-specific vertex attributes. According
+to the glTF 2.0 specification, custom attributes must begin with an
+underscore:</p>
+<ul>
+<li><strong><code>_SIZE</code> or <code>_RADIUS</code>:</strong> A
+floating-point scalar accessor assigned to each vertex.</li>
+<li><strong>Shader Integration:</strong> Viewers customized to support
+these point clouds bind the custom accessor to the vertex shader,
+computing <code>gl_PointSize</code> dynamically per vertex rather than
+using a uniform value for the entire mesh primitive.</li>
+</ul>
+<h3 id="handling-point-sizes-in-production">Handling Point Sizes in
+Production</h3>
+<p>Since point size is not strictly standardized in core glTF,
+production workflows typically adopt one of the following
+approaches:</p>
+<ul>
+<li><strong>Engine Uniforms:</strong> Setting point size at the
+application level through runtime engine materials (e.g., modifying
+<code>material.size</code> in Three.js or
+<code>material.pointSize</code> in Babylon.js).</li>
+<li><strong>Instanced Meshes:</strong> Converting point clouds into
+instanced geometry (such as low-poly spheres or camera-facing quads)
+using the <code>EXT_mesh_gpu_instancing</code> extension. This
+guarantees fully deterministic, physical world-space sizing across any
+compliant glTF viewer at the cost of higher primitive overhead.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

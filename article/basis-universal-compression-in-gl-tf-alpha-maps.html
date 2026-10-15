@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basis Universal Compression in glTF Alpha Maps - gltf</title>
+    <meta name="description" content="Basis Universal compression maintains high visual fidelity across glTF alpha maps by combining versatile intermediate encoding formats, targeted channel allocation, and intelligent run-time transcoding to native GPU textures. By leveraging the KHRtextureb">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/basis-universal-compression-in-gl-tf-alpha-maps">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Basis Universal Compression in glTF Alpha Maps - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/basis-universal-compression-in-gl-tf-alpha-maps" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Basis Universal compression maintains high visual fidelity across glTF alpha maps by combining versatile intermediate encoding formats, targeted channel allocation, and intelligent run-time transcoding to native GPU textures. By leveraging the KHRtextureb" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="basis-universal-compression-in-gltf-alpha-maps">Basis Universal
+Compression in glTF Alpha Maps</h1>
+<p>Basis Universal compression maintains high visual fidelity across
+glTF alpha maps by combining versatile intermediate encoding formats,
+targeted channel allocation, and intelligent run-time transcoding to
+native GPU textures. By leveraging the <code>KHR_texture_basisu</code>
+glTF extension, 3D pipelines can compress textures into compact
+distribution sizes while ensuring that high-frequency transparency
+cutouts and continuous scalar values (such as roughness and metalness)
+remain sharp and artifact-free on any target device.</p>
+<h3 id="the-role-of-the-uastc-format">The Role of the UASTC Format</h3>
+<p>Basis Universal operates using two primary encoding modes: ETC1S and
+UASTC. While ETC1S yields smaller file sizes suitable for diffuse color
+textures, it often introduces visible ringing, banding, or bleeding into
+the alpha channel because of heavy color palette quantization.</p>
+<p>To preserve alpha fidelity, glTF pipelines rely on the <strong>UASTC
+(Universal ASTC)</strong> mode. UASTC is an intermediate format closely
+aligned with modern hardware texture compression formats like ASTC and
+BC7. Because UASTC treats the fourth channel with dedicated precision
+rather than downsampling it, it retains the exact gradients and crisp
+boundaries necessary for visual realism in alpha maps.</p>
+<h3 id="independent-alpha-endpoint-encoding">Independent Alpha Endpoint
+Encoding</h3>
+<p>Standard lossy compression algorithms often evaluate RGBA values
+collectively, which can lead to color data bleeding into the alpha mask.
+Basis Universal counters this by decoupling the alpha processing from
+the RGB channels:</p>
+<ul>
+<li><strong>Dual-Plane Prediction:</strong> UASTC utilizes block modes
+that evaluate RGB data independently from the alpha plane. This prevents
+luminance or chrominance shifts in the color channels from corrupting
+the boundary thresholds of the alpha channel.</li>
+<li><strong>Preservation of High-Frequency Boundaries:</strong> Alpha
+maps used for transparency masks, vegetation, or decals require sharp,
+step-like cutoffs. By isolating alpha endpoints within each <span
+class="math inline">\(4 \times 4\)</span> texel block, Basis Universal
+prevents boundary softening and halos around masked edges.</li>
+</ul>
+<h3 id="optimized-handling-of-packed-pbr-maps">Optimized Handling of
+Packed PBR Maps</h3>
+<p>In glTF assets, alpha channels frequently store non-color scalar
+data, such as combined Occlusion, Roughness, and Metallic (ORM) maps, or
+transmission masks. Compressing these requires strict per-channel
+independence.</p>
+<p>Basis Universal allows creators to specify channel weights and error
+metrics tailored to linear scalar maps. By prioritizing the alpha
+channel during the rate-distortion optimization phase, the encoder
+allocates sufficient bit budgets to prevent quantization artifacts like
+stepped specular highlights or patchy surface roughness.</p>
+<h3 id="high-fidelity-transcoding-to-target-hardware">High-Fidelity
+Transcoding to Target Hardware</h3>
+<p>Basis Universal files are never rendered directly by the GPU; they
+are transcoded on the fly into the graphics hardware's native format
+(such as ASTC on mobile, BC7 on modern desktop GPUs, or BC3 on older
+hardware).</p>
+<p>Because the UASTC intermediate structure directly maps to target
+hardware formats without relying on intermediate uncompressed CPU
+buffers:</p>
+<ol type="1">
+<li><strong>No Intermediate Decoding Artifacts:</strong> Transcoders
+convert block-level data directly to hardware-level blocks via fast,
+deterministic lookups.</li>
+<li><strong>Native Filtering Support:</strong> Because the final target
+is a hardware-compressed format, the GPU performs bilinear and trilinear
+filtering directly on the hardware blocks, maintaining continuous alpha
+gradients without post-process blur.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

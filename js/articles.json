@@ -1,0 +1,2636 @@
+[
+  [
+    439,
+    "How Open Source Drives the glTF 3D Standard",
+    "The glTF (GL Transmission Format) standard, often called the \"JPEG of 3D,\" relies heavily on the open-source community for its rapid adoption, robustness, and continuous evolution. Maintained under the umbrella of the Khronos Group, glTF is not developed",
+    false
+  ],
+  [
+    438,
+    "How Khronos Ensures Cross-Vendor glTF Hardware Support",
+    "The Khronos Group guarantees cross-vendor hardware compatibility for glTF features through a structured, consensus-driven ratification process. By requiring collaborative specification design, independent reference implementations, rigorous conformance te",
+    false
+  ],
+  [
+    437,
+    "Khronos glTF Extension Design Principles",
+    "The Khronos Group evaluates new extensions for glTF through a defined set of philosophical principles designed to balance continuous graphical innovation with format stability. Because glTF is positioned as the standard runtime asset delivery format—often",
+    false
+  ],
+  [
+    436,
+    "Bridging glTF Meshes and Neural Radiance Fields",
+    "The evolution of real-time 3D graphics is driving a convergence between explicit polygonal geometry and implicit neural representations like Neural Radiance Fields (NeRFs) and 3D Gaussian Splatting. As the universally adopted \"JPEG of 3D,\" the glTF format",
+    false
+  ],
+  [
+    435,
+    "3D Gaussian Splatting glTF Extensions Explained",
+    "This article explores the ongoing efforts and experimental extensions aimed at integrating 3D Gaussian Splatting (3DGS) data into the glTF (GL Transmission Format) ecosystem. While 3DGS traditionally relies on Stanford PLY files for storage and transmissi",
+    false
+  ],
+  [
+    434,
+    "How glTF Plans to Support 3D Gaussian Splatting",
+    "The rapid emergence of 3D Gaussian Splatting and volumetric neural representations has introduced a paradigm shift in real-time 3D capture and rendering, exposing the limitations of traditional polygonal pipelines. To meet this demand, the Khronos Group a",
+    false
+  ],
+  [
+    433,
+    "Role of Octrees in Streaming glTF Terrain",
+    "Streaming massive 3D terrain datasets across the web requires balancing visual fidelity against network bandwidth and GPU performance. Octrees serve as the foundational spatial partitioning data structure that enables this balance by organizing geographic",
+    false
+  ],
+  [
+    432,
+    "glTF Streaming: Loading Assets by Camera Proximity",
+    "Streaming glTF engines manage vast 3D scenes by dynamically loading and unloading assets according to the viewer's camera position. By evaluating spatial proximity, screen-space metrics, and hierarchical data structures, these engines ensure that high-res",
+    false
+  ],
+  [
+    431,
+    "Estimate glTF VRAM from JSON Manifests",
+    "Estimating the Video RAM (VRAM) footprint of a 3D asset directly from a glTF JSON manifest involves calculating the memory required for vertex attributes, index buffers, morph targets, and textures once uploaded to the GPU. Because the glTF manifest expli",
+    false
+  ],
+  [
+    430,
+    "Inspect glTF Triangles and Textures Before GPU Load",
+    "Web applications can inspect glTF 3D model complexity—specifically triangle and texture counts—by reading the file's JSON structural metadata before dispatching resources to WebGL or WebGPU. By parsing the glTF JSON chunk rather than passing the file dire",
+    false
+  ],
+  [
+    429,
+    "Preventing glTF Browser Memory Exploitation",
+    "This article examines how modern web browsers, rendering engines, and security policies protect client systems from malformed or malicious glTF (GL Transmission Format) files designed to exhaust memory. It covers the multi-layered defense architecture acr",
+    false
+  ],
+  [
+    428,
+    "glTF Color Tinting Without Breaking PBR Energy Balance",
+    "Modifying the color of specific sub-meshes in a glTF asset requires precise material targeting and strict adherence to the metallic-roughness shading model. By utilizing primitive-level material assignments, vertex color attributes, or material variants,",
+    false
+  ],
+  [
+    427,
+    "Client-Side Color Customization for glTF Models",
+    "Client-side color customization allows real-time 3D web applications, such as product configurators and games, to alter asset appearances instantly without the latency and bandwidth overhead of downloading new textures. By utilizing the glTF material pipe",
+    false
+  ],
+  [
+    426,
+    "How glTF Part Names Control 3D Accessory Visibility",
+    "Web-based 3D product configurators manage customizable products by linking graphical user interface (GUI) inputs directly to distinct nodes inside a 3D model. By utilizing standardized node and mesh names exported within glTF (GL Transmission Format) file",
+    false
+  ],
+  [
+    425,
+    "Preserving CAD Assembly Metadata in glTF",
+    "Converting Computer-Aided Design (CAD) models to glTF often risks flattening product hierarchies and stripping engineering data. However, glTF natively supports hierarchical scene graphs and metadata storage that can fully preserve original CAD assembly t",
+    false
+  ],
+  [
+    424,
+    "How glTF Topological Deduplication Works",
+    "Topological deduplication is an optimization technique that detects and merges geometrically identical meshes within a glTF asset regardless of their position, orientation, or scale in the scene. By analyzing the connectivity, vertex relationships, and su",
+    false
+  ],
+  [
+    423,
+    "Optimizing glTF Memory for Massive CAD Assemblies",
+    "Rendering massive Computer-Aided Design (CAD) assemblies in real-time WebGL and WebGPU engines requires aggressive memory management to avoid browser crashes and performance bottlenecks. This guide outlines the essential technical strategies for reducing",
+    false
+  ],
+  [
+    422,
+    "How Reducing Material Count Improves glTF Frame Rates",
+    "Reducing the number of unique materials in glTF models directly enhances rendering frame rates by lowering CPU overhead, minimizing GPU state changes, and enabling draw call batching. In real-time 3D graphics, every distinct material requires the renderin",
+    false
+  ],
+  [
+    421,
+    "Best Open Source Tools for glTF Texture Atlasing",
+    "This article provides an overview of open-source utilities that automate texture atlasing for complex glTF models. Texture atlasing consolidates multiple distinct textures and materials into a single image sheet, dramatically reducing draw calls and optim",
+    false
+  ],
+  [
+    420,
+    "Combine glTF Materials with Texture Atlasing",
+    "Texture atlasing is a powerful 3D optimization technique that consolidates multiple individual textures from distinct materials into a single, unified texture image. In the context of glTF (GL Transmission Format) models, this process reduces file sizes,",
+    false
+  ],
+  [
+    419,
+    "Static Mesh Batching with Different glTF Materials",
+    "Static mesh batching combines multiple geometries into a unified buffer to reduce draw calls and optimize rendering performance, but primitives utilizing different glTF materials severely restrict this process. When primitives do not share material proper",
+    false
+  ],
+  [
+    418,
+    "Batching glTF Primitives into a Single Draw Call",
+    "Mesh batching optimizes real-time 3D rendering by consolidating multiple static glTF primitives into unified vertex and index buffers, drastically reducing CPU-to-GPU communication overhead. This article explains the technical mechanics of mesh batching i",
+    false
+  ],
+  [
+    417,
+    "Reduce WebGL Draw Calls in Fragmented glTF Scenes",
+    "Loading fragmented glTF scenes with numerous discrete nodes, materials, and meshes often degrades WebGL performance by flooding the render pipeline with excessive draw calls. This article covers practical memory and buffer optimization techniques—includin",
+    false
+  ],
+  [
+    416,
+    "Clustered Forward Shading for Dense Lights in glTF",
+    "Clustered forward shading efficiently renders scenes containing thousands of dynamic light sources by subdividing the camera frustum into a three-dimensional grid of spatial clusters and assigning active lights to these volumes. When paired with complex g",
+    false
+  ],
+  [
+    415,
+    "Forward+ Rendering for glTF Scenes with Dynamic Lights",
+    "Forward+ rendering, also known as tiled forward shading, has emerged as the premier pipeline for rendering complex glTF scenes illuminated by dozens of dynamic lights. Traditional forward rendering scales poorly with numerous light sources, while deferred",
+    false
+  ],
+  [
+    414,
+    "glTF PBR Data in Deferred Rendering G-Buffers",
+    "Deferred rendering decouples scene geometry processing from lighting calculations by rasterizing surface characteristics into a collection of screen-space textures known as the Geometry Buffer (G-buffer). When ingesting assets defined by the standard glTF",
+    false
+  ],
+  [
+    413,
+    "WebGL Draw Buffers: Fast Deferred glTF Rendering",
+    "Deferred rendering decouples scene geometry processing from lighting calculations, allowing WebGL applications to render complex scenes with dozens or hundreds of dynamic lights at high frame rates. When loading complex glTF 2.0 assets—which often contain",
+    false
+  ],
+  [
+    412,
+    "Custom Lighting Models in Standard glTF Materials",
+    "Standard glTF 2.0 assets strictly adhere to a standardized Physically Based Rendering (PBR) metallic-roughness workflow, offering consistent rendering across platforms at the cost of shading flexibility. Injecting custom lighting models—such as stylized t",
+    false
+  ],
+  [
+    411,
+    "Custom Shader Hooks for glTF in Three.js and Babylon.js",
+    "Modifying the rendering pipeline of glTF meshes without losing standard Physically Based Rendering (PBR) features requires injecting custom shader code directly into existing materials. Both Three.js and Babylon.js load glTF models with pre-configured PBR",
+    false
+  ],
+  [
+    410,
+    "Real-Time Procedural Wind Animation in glTF Foliage",
+    "This article explores the technical methods used to simulate real-time procedural wind deformation on glTF foliage models without relying on pre-baked skeletal rigs. By leveraging custom vertex shaders, vertex attribute masking, trigonometric waves, and p",
+    false
+  ],
+  [
+    409,
+    "Dynamic Vertex AO in glTF Procedural Grass",
+    "This article explains how the glTF (GL Transmission Format) standard facilitates dynamic vertex ambient occlusion (AO) in procedural grass systems. Although glTF is fundamentally a static transmission format rather than a runtime execution engine, it prov",
+    false
+  ],
+  [
+    408,
+    "Optimize glTF Alpha Vegetation Shadow Maps",
+    "Rendering shadows for alpha-tested (masked) vegetation in glTF scenes frequently creates severe performance bottlenecks because discard operations in fragment shaders disable early depth testing and induce heavy texture sampling during shadow map generati",
+    false
+  ],
+  [
+    407,
+    "Alpha Cutoff in glTF: Crisp Foliage and Low Overdraw",
+    "Alpha cutoff thresholding in glTF optimizes dense foliage rendering by converting semi-transparent textures into binary opaque-or-discarded geometry at a defined opacity value. This technique preserves razor-sharp leaf silhouettes without the sorting arti",
+    false
+  ],
+  [
+    406,
+    "glTF Transparency: Why Choose MASK Over BLEND",
+    "When authoring 3D assets in glTF, selecting the correct alpha mode directly determines an asset's visual fidelity and rendering performance across real-time engines. While BLEND mode allows for smooth semi-transparency, it frequently introduces severe dep",
+    false
+  ],
+  [
+    405,
+    "glTF Depth Write State Across Alpha Modes",
+    "The glTF specification defines three alpha modes—OPAQUE, MASK, and BLEND—each dictating how surface transparency interacts with the graphics rendering pipeline. The depth write state (glDepthMask in OpenGL or depthWrite in standard WebGL frameworks) contr",
+    false
+  ],
+  [
+    404,
+    "Dual-Depth Peeling for glTF Sorting Artifacts",
+    "Dual-depth peeling is an order-independent transparency (OIT) technique that eliminates visual sorting artifacts in complex glTF scenes by extracting both the nearest and furthest depth layers simultaneously in each render pass. By managing multiple rende",
+    false
+  ],
+  [
+    403,
+    "How OIT Improves glTF Scene Visual Fidelity",
+    "Order-independent transparency (OIT) significantly enhances the visual fidelity of glTF scenes by solving the long-standing graphical artifacts associated with rendering overlapping transparent surfaces. Traditional rendering pipelines rely on sorting geo",
+    false
+  ],
+  [
+    402,
+    "glTF Alpha Blending Transparency Sorting Algorithms",
+    "Rendering transparent surfaces in dense glTF models often introduces depth-sorting artifacts, such as geometry popping or incorrect occlusion, because standard alpha blending relies on the Painter’s Algorithm to draw primitives strictly from back to front",
+    false
+  ],
+  [
+    401,
+    "glTF Refraction Depth for Overlapping Objects",
+    "Evaluating refraction depth across overlapping transmissive models in glTF requires understanding how the core format, its official extensions, and modern real-time or offline renderers process light transmission. The glTF 2.0 specification manages refrac",
+    false
+  ],
+  [
+    400,
+    "glTF Layer Order: Clearcoat, Iridescence, Sheen",
+    "When combining clearcoat, iridescence, and sheen on a single glTF surface, the material system evaluates layers in a strict bottom-to-top hierarchy to maintain physical plausibility and energy conservation. Iridescence acts directly on the base substrate",
+    false
+  ],
+  [
+    399,
+    "Multi-Layer Car Paint with glTF Material Extensions",
+    "Simulating realistic multi-layer automotive paint in glTF requires combining the core physically based rendering (PBR) metallic-roughness model with specific Khronos extensions. Real-world car paint typically features a base primer, a color basecoat often",
+    false
+  ],
+  [
+    398,
+    "Simulating Car Paint Flakes and Pearlescence in glTF",
+    "Simulating advanced automotive finishes like metallic flakes and pearlescent clearcoats poses significant technical hurdles within the glTF 2.0 ecosystem. While the format excels at lightweight, cross-platform physical-based rendering (PBR), the intricate",
+    false
+  ],
+  [
+    397,
+    "Automotive Interior Visualization with glTF",
+    "Modern automotive manufacturers increasingly rely on glTF (GL Transmission Format) pipelines to deliver interactive, photorealistic vehicle interior visualizations across web configurators, mobile apps, and dealership kiosks. This article explores how aut",
+    false
+  ],
+  [
+    396,
+    "Calibrating Spectrophotometer Data for glTF PBR",
+    "This guide details the calibration pipeline required to convert raw laboratory spectrophotometer measurements into compliant glTF Physically Based Rendering (PBR) metallic-roughness maps. Achieving scientific color and material accuracy in digital 3D mode",
+    false
+  ],
+  [
+    395,
+    "How glTF Ensures Physical Accuracy in 3D Models",
+    "The glTF (GL Transmission Format) standard ensures consistent, physically accurate visual fidelity across disparate rendering engines by strictly defining geometry specifications, a standardized Physically Based Rendering (PBR) material model, and measura",
+    false
+  ],
+  [
+    394,
+    "Synthetic Data Generation with Blender Python and glTF",
+    "This article explores how modern rendering pipelines automate synthetic data generation for computer vision by combining the glTF 3D format with Blender’s Python API (bpy). It outlines the primary architectural frameworks used to drive these pipelines, de",
+    false
+  ],
+  [
+    393,
+    "Rendering Multi-View Images from glTF Catalogs",
+    "Generating multi-view synthetic training datasets programmatically from glTF asset catalogs involves parsing 3D meshes, programmatically controlling virtual cameras around the objects, applying domain randomization, and outputting synchronized visual data",
+    false
+  ],
+  [
+    392,
+    "glTF for Computer Vision Synthetic 3D Datasets",
+    "This article examines how the glTF (GL Transmission Format) standard functions as a critical bridge in synthetic data generation pipelines for computer vision. By providing a lightweight, standardized representation of 3D geometry, physically based render",
+    false
+  ],
+  [
+    391,
+    "Extract Bounding Volumes from glTF Accessor Bounds",
+    "This article explains how to compute lightweight bounding volumes—such as Axis-Aligned Bounding Boxes (AABBs) and bounding spheres—directly from glTF accessor metadata without parsing binary vertex buffers. By reading the precomputed minimum and maximum v",
+    false
+  ],
+  [
+    390,
+    "3D Convex Hull Libraries for glTF Geometry",
+    "Computing three-dimensional convex hulls from glTF (GL Transmission Format) assets is a common task in game development, physics simulation, robotics, and 3D web applications. Because glTF files store geometry as indexed vertex buffers, processing them re",
+    false
+  ],
+  [
+    389,
+    "How BVH Accelerates glTF Mesh Collision Detection",
+    "Modern 3D applications frequently rely on the glTF format to deliver complex, high-poly models, but performing naive collision detection against tens of thousands of individual triangles severely degrades performance. Spatial partitioning trees, most nota",
+    false
+  ],
+  [
+    388,
+    "Optimizing Raycasting Performance in glTF Models",
+    "Interactive 3D applications often experience frame rate drops when executing raycasting against complex glTF models due to high polygon counts and deep scene graphs. This guide outlines the most effective strategies to optimize raycasting performance, det",
+    false
+  ],
+  [
+    387,
+    "Anchor Screen-Space UI to Animated glTF Nodes",
+    "Anchoring screen-space user interface (UI) overlays to animated glTF nodes requires extracting dynamic 3D world coordinates from the scene hierarchy, projecting those points through the active camera's view-projection matrix, and mapping the resulting Nor",
+    false
+  ],
+  [
+    386,
+    "Embedding Interactive Hotspots Inside glTF Nodes",
+    "Embedding interactive hotspots or annotation pins into glTF (GL Transmission Format) scenes bridges the gap between raw 3D assets and interactive user interfaces. Because the core glTF 2.0 specification focuses primarily on efficient runtime delivery of g",
+    false
+  ],
+  [
+    385,
+    "glTF Stereoscopic Camera Rigs for VR Rendering",
+    "This article explains how the glTF (GL Transmission Format) 2.0 specification enables stereoscopic camera rigs for virtual reality (VR) rendering. While glTF natively standardizes monoscopic perspective cameras, it accommodates dual-camera stereoscopic se",
+    false
+  ],
+  [
+    384,
+    "Interpolating glTF Camera Position and FOV",
+    "Smoothly transitioning between two glTF cameras requires distinct mathematical techniques for translational coordinates and perspective projection properties. In glTF 2.0, camera nodes define spatial position through transform matrices or translation-rota",
+    false
+  ],
+  [
+    383,
+    "glTF Camera Transitions in Web 3D Engines",
+    "This article explores how modern web 3D engines parse, interpolate, and execute smooth transitions between multiple camera viewpoints defined inside a glTF (GL Transmission Format) file. When a 3D asset contains multiple predefined views, web runtimes suc",
+    false
+  ],
+  [
+    382,
+    "Compressing Binary glTF Assets for Version Control",
+    "Binary glTF (.glb) files present significant challenges in version control systems like Git due to their monolithic binary nature, which causes repository bloat and prevents delta compression. This article examines the most effective compression technique",
+    false
+  ],
+  [
+    381,
+    "How to Track glTF 3D Assets with Git LFS",
+    "Combining Git Large File Storage (Git LFS) with the Graphics Language Transmission Format (glTF) enables development teams to version-control rich 3D pipelines without bloating repository sizes or degrading Git performance. This article explains how to co",
+    false
+  ],
+  [
+    380,
+    "Best Tools to Visually Diff glTF Models",
+    "Tracking visual changes between iterations of 3D assets is essential for quality assurance, asset review, and collaborative version control. This article provides an overview of the dedicated tools and methods available to visually diff glTF and GLB model",
+    false
+  ],
+  [
+    379,
+    "Exporting Maya Blendshapes and Skinning to glTF",
+    "This article provides an overview of how Maya glTF exporters translate proprietary rigging and deformation data into standard glTF 2.0 assets. It covers the conversion of Maya's skinCluster nodes into glTF skins, joint indices, and inverse bind matrices,",
+    false
+  ],
+  [
+    378,
+    "3ds Max glTF Exporter: Preserving Complex Lighting",
+    "Exporting complex architectural lighting rigs from Autodesk 3ds Max to real-time applications requires balancing sophisticated illumination data with the lightweight constraints of the glTF 2.0 format. The 3ds Max glTF exporter achieves this fidelity thro",
+    false
+  ],
+  [
+    377,
+    "Unreal Engine glTF Exporter Material Conversion",
+    "Unreal Engine’s glTF Exporter plugin translates custom, node-based material graphs into standard glTF 2.0 PBR materials primarily through an automated material baking process. Because glTF relies on fixed-function physical parameters rather than arbitrary",
+    false
+  ],
+  [
+    376,
+    "Automated glTF Import Scripts in Godot Engine",
+    "When glTF or GLB files change within a Godot project, the engine automatically detects the updated assets and triggers an import pipeline driven by specialized internal classes and user-defined scripts. This workflow relies on EditorFileSystem detecting f",
+    false
+  ],
+  [
+    375,
+    "Why Godot Engine Uses glTF for 3D Asset Imports",
+    "Godot Engine chose glTF (GL Transmission Format) as its primary 3D asset import standard to eliminate the licensing and technical issues of proprietary formats like FBX. By adopting glTF, Godot provides developers with a reliable, open-source, and standar",
+    false
+  ],
+  [
+    374,
+    "How Godot Uses glTF as a Scene Interchange Format",
+    "Modern game development relies heavily on seamless asset pipelines between digital content creation (DCC) software and game engines. While legacy workflows depended on proprietary formats like FBX, game engines like Godot have adopted glTF (GL Transmissio",
+    false
+  ],
+  [
+    373,
+    "Align UTM Coordinates to glTF Local Origin",
+    "This article provides a direct guide on converting Universal Transverse Mercator (UTM) coordinates into glTF-compatible local origin spaces. You will learn how to handle floating-point precision limitations, reorient axes from UTM's Z-up standard to glTF’",
+    false
+  ],
+  [
+    372,
+    "Drone 3D Mesh to Chunked glTF Pipeline",
+    "Drone mapping platforms convert massive aerial datasets into web-ready 3D models through a pipeline of photogrammetric reconstruction, spatial partitioning, mesh optimization, and hierarchical file export. Because raw photogrammetry meshes of large terrai",
+    false
+  ],
+  [
+    371,
+    "Preserving Ultra-Sharp Textures in glTF 3D Scans",
+    "Digitizing cultural heritage sites and artifacts produces dense photogrammetry scans with microscopic surface information that often degrades during real-time web delivery. This article outlines the core technical workflows—ranging from advanced texture c",
+    false
+  ],
+  [
+    370,
+    "Baking Photogrammetry Details into glTF Normal Maps",
+    "This article explains the technical pipeline for transferring surface detail from high-polygon photogrammetry scans onto lightweight, real-time 3D assets. It covers generating the optimized low-poly proxy, establishing clean UV layouts, casting surface ve",
+    false
+  ],
+  [
+    369,
+    "3D Scan to glTF: Decimation and Retopology",
+    "Transforming dense, millions-of-polygons raw 3D scans into optimized glTF models requires a structured decimation and retopology pipeline to balance visual fidelity with real-time performance. This guide outlines industry-standard workflows for preparing",
+    false
+  ],
+  [
+    368,
+    "How glTF Handles High-Polygon Photogrammetry Scans",
+    "Photogrammetry captures real-world objects with remarkable visual fidelity, but it routinely produces dense meshes with millions of polygons and massive texture atlases that challenge real-time rendering. The glTF (GL Transmission Format) standard is engi",
+    false
+  ],
+  [
+    367,
+    "Managing glTF Material Variants with JavaScript",
+    "This article provides an overview of the core JavaScript design patterns used to switch glTF material variants using WebGL libraries such as Three.js. Standardized through the KHRmaterialsvariants extension, material variants allow 3D assets to bundle mul",
+    false
+  ],
+  [
+    366,
+    "How KHR_materials_variants Reduces Network Requests",
+    "The KHRmaterialsvariants extension for glTF drastically optimizes web-based 3D product configurators by consolidating multiple product appearances into a single 3D file. Instead of making separate network requests for individual models, external textures,",
+    false
+  ],
+  [
+    365,
+    "Configurable Geometry Variants in a Single glTF Hierarchy",
+    "Isolating configurable geometry variants within a single glTF hierarchy allows developers to ship modular 3D assets in one file without duplicating shared components or generating multiple network requests. This article outlines the primary architectural",
+    false
+  ],
+  [
+    364,
+    "Modular glTF Swapping in 3D Product Configurators",
+    "Dynamic component swapping in 3D product configurators allows users to customize modular products—such as furniture, footwear, or electronics—by replacing individual parts in real time. This process utilizes the glTF (GL Transmission Format) scene graph,",
+    false
+  ],
+  [
+    363,
+    "Real-Time glTF to USDZ Transcoding Limitations",
+    "Real-time server-side transcoding from glTF (GL Transmission Format) to USDZ (Universal Scene Description) enables cross-platform augmented reality experiences, allowing iOS devices to preview standard web 3D assets via AR Quick Look. However, converting",
+    false
+  ],
+  [
+    362,
+    "How iOS Quick Look Converts glTF to USDZ On-the-Fly",
+    "Apple’s AR Quick Look enables users to preview 3D models seamlessly across iOS using Safari, Messages, and Files. While Apple natively built Quick Look around Pixar’s Universal Scene Description (USDZ) ecosystem, modern iOS updates have integrated pathway",
+    false
+  ],
+  [
+    361,
+    "Light Estimation and glTF PBR in Mobile AR",
+    "Light estimation APIs bridge the gap between physical reality and virtual objects by extracting real-world lighting conditions from camera sensors and feeding them into 3D rendering engines. In mobile Augmented Reality (AR) sessions, applying this dynamic",
+    false
+  ],
+  [
+    360,
+    "How Mobile AR Engines Calculate glTF Reflections",
+    "This article examines how mobile Augmented Reality (AR) engines, such as Apple ARKit and Google ARCore, analyze real-world surroundings to project dynamic, realistic environmental reflections onto glTF 3D assets. It covers the end-to-end pipeline: capturi",
+    false
+  ],
+  [
+    359,
+    "Algorithms to Align glTF Furniture on 3D Planes",
+    "Automatically placing 3D glTF furniture flat against detected real-world surfaces is a core requirement of Augmented Reality (AR) and spatial computing applications. This process relies on a combination of plane-detection algorithms, geometric transformat",
+    false
+  ],
+  [
+    358,
+    "glTF Bounding Boxes for Automatic AR Floor Placement",
+    "Accurate real-world placement is essential for convincing augmented reality (AR) experiences, particularly when positioning virtual objects on horizontal surfaces like floors. In the glTF (GL Transmission Format) 2.0 specification, bounding box dimensions",
+    false
+  ],
+  [
+    357,
+    "glTF Scale Errors: Centimeters Interpreted as Meters",
+    "When a glTF asset exported with centimeter-based values is imported into an engine that adheres to the glTF specification of meters, the asset renders 100 times larger than intended. Because 3D rendering engines rely on physically based units for depth ca",
+    false
+  ],
+  [
+    356,
+    "Real-World Scaling for glTF in Augmented Reality",
+    "Deploying glTF assets to augmented reality (AR) requires precise, real-world scaling to bridge the gap between digital content and physical space. Because the glTF (GL Transmission Format) specification explicitly defines one unit as one meter, maintainin",
+    false
+  ],
+  [
+    355,
+    "Khronos 3D Commerce glTF Asset Validation Guide",
+    "The Khronos 3D Commerce Asset Checklist establishes standardized criteria to ensure 3D models display predictably, render consistently, and perform efficiently across various e-commerce platforms and augmented reality (AR) viewers. This article details ho",
+    false
+  ],
+  [
+    354,
+    "Khronos 3D Commerce glTF Certification Criteria",
+    "This article outlines the core technical standards, asset optimization rules, and validation checks required for 3D e-commerce assets to achieve official Khronos 3D Commerce certification. Passing certification ensures that glTF and GLB models display con",
+    false
+  ],
+  [
+    353,
+    "glTF in Automated E-Commerce Pipelines",
+    "As online retailers increasingly adopt interactive 3D and augmented reality (AR) to drive conversions and reduce return rates, automated 3D processing has become a necessity. This article explores how the glTF (GL Transmission Format) asset pipeline integ",
+    false
+  ],
+  [
+    352,
+    "Security of Property Mutations in glTF Runtimes",
+    "Permitting arbitrary property mutations in glTF (GL Transmission Format) runtimes introduces critical security challenges across memory integrity, resource allocation, and application sandboxing. Dynamic scenes often require updating node transforms, mate",
+    false
+  ],
+  [
+    351,
+    "How KHR_animation_pointer Improves glTF Animations",
+    "The KHRanimationpointer extension expands the scope of glTF 2.0 by allowing animation channels to target virtually any property within a scene graph using standard JSON Pointers. Traditional glTF animations are strictly limited to node transformations—tra",
+    false
+  ],
+  [
+    350,
+    "glTF KHR_animation_pointer: Runtime Engine Challenges",
+    "The glTF extension KHRanimationpointer transforms how real-time applications handle animation by replacing fixed animation targets with arbitrary property addressing via JSON Pointers. While this approach enables the animation of virtually any glTF proper",
+    false
+  ],
+  [
+    349,
+    "Why KHR_animation_pointer Transforms glTF Scenes",
+    "The KHRanimationpointer extension is revolutionizing the glTF ecosystem by breaking the long-standing restriction that limited animations strictly to node transforms and morph targets. This article explores how KHRanimationpointer operates, why moving bey",
+    false
+  ],
+  [
+    348,
+    "Animating Any glTF Value With KHR_animation_pointer",
+    "This article explains how the KHRanimationpointer extension expands glTF 2.0 animation capabilities beyond rigid transform targets. By leveraging the RFC 6901 JSON Pointer specification, this extension enables creators and developers to drive nearly any n",
+    false
+  ],
+  [
+    347,
+    "Animate Material Properties in glTF",
+    "In base glTF 2.0, animations are strictly limited to node transformations and morph target weights, leaving material parameters static by default. To animate arbitrary material properties—such as base color, roughness, metallic factors, emissive strength,",
+    false
+  ],
+  [
+    346,
+    "Animating glTF Material Factors and emissiveStrength",
+    "In the core glTF 2.0 specification, animation tracks cannot directly manipulate material properties such as emissiveFactor or emissiveStrength. Standard glTF animations are strictly restricted to targeting node transformations—specifically translation, ro",
+    false
+  ],
+  [
+    345,
+    "How to Animate Light Emission in glTF",
+    "Simulating changing light emission over time in glTF models requires specific workarounds or extensions because the core glTF 2.0 specification natively restricts animation channels to node transforms and morph target weights. While you cannot animate mat",
+    false
+  ],
+  [
+    344,
+    "Parallax Occlusion Mapping in Custom glTF Pipelines",
+    "Parallax occlusion mapping (POM) enhances surface depth in real-time rendering by raymarching height maps within tangent space to simulate complex geometric detail without adding polygons. Integrating POM into custom glTF shader pipelines requires bridgin",
+    false
+  ],
+  [
+    343,
+    "Why glTF Uses Normal Maps Instead of Bump Maps",
+    "Height-based bump mapping was largely superseded by normal mapping in the core glTF 2.0 specification because normal maps provide direct vector data that improves runtime performance, eliminates shader-level gradient computations, and guarantees visual co",
+    false
+  ],
+  [
+    342,
+    "EXT_materials_bump vs glTF Normal Mapping",
+    "In the glTF 2.0 ecosystem, simulating surface relief without increasing geometric complexity is essential for real-time rendering performance. While core glTF relies on standard tangent-space normal mapping via the normalTexture property, the EXTmaterials",
+    false
+  ],
+  [
+    341,
+    "Rendering Translucent Paper and Wax in glTF",
+    "This article examines how to visually differentiate translucent paper and wax within 3D scenes by utilizing specific glTF PBR extensions. While both materials allow light to pass through them, their visual properties diverge sharply: paper behaves as a th",
+    false
+  ],
+  [
+    340,
+    "Diffuse vs Specular Transmission in glTF",
+    "In glTF physically based rendering (PBR), light transmission describes how rays pass through a surface rather than being reflected or absorbed. The core distinction between diffuse transmission and specular transmission lies in how directional light rays",
+    false
+  ],
+  [
+    339,
+    "Simulating Leaves in glTF with Diffuse Transmission",
+    "The KHRmaterialsdiffusetransmission extension in glTF enables realistic rendering of thin, translucent objects by simulating diffuse light passing through surfaces. In 3D vegetation rendering, it resolves the visual limitations of traditional opaque Physi",
+    false
+  ],
+  [
+    338,
+    "Rendering GIS Terrain via glTF Heightmap Displacement",
+    "Geographic Information System (GIS) platforms render 3D terrain elevation models by leveraging heightmap displacement within the glTF (GL Transmission Format) standard. This process transforms raw Digital Elevation Models (DEMs) into lightweight, high-per",
+    false
+  ],
+  [
+    337,
+    "Logarithmic Depth Buffer for Astronomical glTF",
+    "Astronomical glTF models frequently suffer from severe z-fighting because standard perspective projection places almost all depth precision near the near clipping plane, leaving distant celestial bodies spanning millions of kilometers competing for the sa",
+    false
+  ],
+  [
+    336,
+    "Depth Buffer Precision in Massive glTF Scenes",
+    "Depth buffer precision dictates how accurately a graphics engine determines the visibility of overlapping surfaces in a 3D environment. When rendering massive glTF scenes—such as expansive architectural models, geographic digital twins, or large-scale ope",
+    false
+  ],
+  [
+    335,
+    "Adding SSAO to glTF Models with Post-Processing",
+    "This article outlines the post-processing pipeline required to implement Screen-Space Ambient Occlusion (SSAO) on 3D models stored in the glTF format. While glTF inherently supports static ambient occlusion via pre-baked texture maps, dynamic SSAO calcula",
+    false
+  ],
+  [
+    334,
+    "Why glTF Edge Outlines Need Custom Shaders",
+    "Creating specialized edge outlines on 3D models stored in the glTF format requires custom shaders because the core glTF standard is strictly optimized for realistic Physically Based Rendering (PBR). Outlining techniques—such as inverted hull extrusion, vi",
+    false
+  ],
+  [
+    333,
+    "How glTF Encodes Line Strip Primitives for CAD",
+    "glTF (GL Transmission Format) encodes continuous vector graphics, such as CAD schematic overlays, by defining geometry through specific primitive topology modes stored in binary buffers and described via JSON metadata. By setting a mesh primitive's topolo",
+    false
+  ],
+  [
+    332,
+    "How to Render Flat Decals on Curved glTF Surfaces",
+    "Rendering flat decals onto curved surfaces presents a common challenge in 3D graphics, particularly within the glTF format, which lacks a native, dynamic screen-space decal specification. Because placing a completely flat polygon onto a curved surface cau",
+    false
+  ],
+  [
+    331,
+    "How glTF Handles Depth Bias for Decal Rendering",
+    "The core glTF 2.0 specification does not natively include depth bias, polygon offset, or decal-specific pipeline parameters. Because glTF is designed as a portable, API-agnostic transmission format rather than a complete rendering engine state descriptor,",
+    false
+  ],
+  [
+    330,
+    "Preventing Z-Fighting on Coplanar glTF Surfaces",
+    "Z-fighting occurs when two or more overlapping surfaces share near-identical depth values, causing the graphics hardware to rapidly alternate between them and produce distracting visual flicker. In glTF architectural models, this issue is common across la",
+    false
+  ],
+  [
+    329,
+    "Exporting IFC to Web-Ready glTF in BIM Platforms",
+    "Exporting heavy Industry Foundation Classes (IFC) models into lightweight glTF (Graphics Language Transmission Format) files requires a pipeline that converts implicit architectural geometries into explicit polygonal meshes, optimizes draw calls, and sepa",
+    false
+  ],
+  [
+    328,
+    "glTF in Web-Based Architectural Walkthroughs",
+    "The glTF (GL Transmission Format) standard serves as the operational backbone for browser-based architectural visualization, functioning as an efficient delivery format often dubbed the \"JPEG of 3D.\" By compressing complex architectural geometry, packing",
+    false
+  ],
+  [
+    327,
+    "Real-Time glTF Lip Sync Using Morph Target Weights",
+    "Synchronizing 3D character speech in real time involves converting generated audio into visual mouth movements using standard 3D web formats. Speech synthesis engines achieve real-time glTF lip sync by converting text or generated audio into phonetic time",
+    false
+  ],
+  [
+    326,
+    "Standard FACS Blend Shapes for glTF Morph Targets",
+    "In real-time 3D facial animation, the Facial Action Coding System (FACS) provides a standardized framework for breaking down facial expressions into individual muscle movements known as Action Units (AUs). When exporting 3D avatars to the glTF (GL Transmi",
+    false
+  ],
+  [
+    325,
+    "glTF Shape Morphing for Facial Animation Blending",
+    "This article explores how the glTF (GL Transmission Format) 2.0 specification enables dynamic facial animations through morph target blending. By defining additive vertex attribute deltas alongside the base geometry, glTF allows game engines and 3D runtim",
+    false
+  ],
+  [
+    324,
+    "Morph Target Normals Before Tangent Lighting in glTF",
+    "In glTF asset rendering, morph targets alter a mesh's geometry dynamically by blending displacements for positions, normals, and tangents. Morph target normals must be accumulated and normalized before computing tangent space lighting because the tangent-",
+    false
+  ],
+  [
+    323,
+    "Vertex Skinning and Morph Targets Order in glTF",
+    "In glTF shaders, morph target calculations must always be applied before vertex skinning. Morph targets (also known as blend shapes) deform the mesh within its local object space, while vertex skinning transforms the local geometry into the skeleton's pos",
+    false
+  ],
+  [
+    322,
+    "How Morph Targets and Skinning Work Together in glTF",
+    "In the glTF 2.0 standard, morph targets (blend shapes) and skeletal animation (skinning) operate concurrently on a single mesh by following a strictly ordered vertex processing pipeline. Rather than conflicting, these two animation techniques occupy seque",
+    false
+  ],
+  [
+    321,
+    "GPU Texture Matrix Palettes for glTF Crowd Rendering",
+    "Rendering large crowds of animated glTF characters in real time introduces significant performance bottlenecks, primarily due to uniform buffer limits and excessive draw calls. Storing skeletal joint transformation matrices inside floating-point GPU textu",
+    false
+  ],
+  [
+    320,
+    "Skinned Character Instancing Memory Bottlenecks in glTF",
+    "Rendering crowds or multiple animated characters using GPU instancing within a glTF pipeline drastically improves draw call efficiency, but it introduces distinct memory constraints. This article examines the primary memory bottlenecks that arise during t",
+    false
+  ],
+  [
+    319,
+    "glTF Vertex Skinning for Large Crowd Animation",
+    "Rendering crowds of thousands of animated meshes requires efficient data layouts to prevent GPU memory bottlenecks and excessive draw calls. In the glTF 2.0 specification, vertex skinning relies on vertex attributes, node hierarchies, and inverse bind mat",
+    false
+  ],
+  [
+    318,
+    "Spatial Bounding Hierarchies for glTF Lazy Loading",
+    "Spatial bounding hierarchies act as the spatial index and scheduling backbone for streaming large-scale 3D assets, allowing rendering engines to dynamically load, render, and discard glTF sub-meshes based on camera movement. By structuring fragmented geom",
+    false
+  ],
+  [
+    317,
+    "Fetch glTF Buffers on Demand via HTTP Range Requests",
+    "Loading massive 3D scenes efficiently on the web requires dynamic data streaming rather than downloading monolithic geometry payloads upfront. By leveraging HTTP range requests, web-based 3D engines can fetch specific byte ranges of glTF binary buffers on",
+    false
+  ],
+  [
+    316,
+    "Multi-Resolution Texture Streaming for glTF",
+    "This article outlines the architecture required to stream multi-resolution textures for high-fidelity glTF assets, mitigating memory bottlenecks and high initial load times. It details the end-to-end pipeline, spanning progressive asset authoring with mod",
+    false
+  ],
+  [
+    315,
+    "Responsive glTF Texture Downsampling by Device",
+    "Responsive asset loading optimizes 3D web experiences by evaluating a client device’s hardware constraints—such as GPU limits, available VRAM, and display resolution—and dynamically downsampling glTF textures to match those capabilities. By serving lower-",
+    false
+  ],
+  [
+    314,
+    "glTF Textures Exceeding Mobile GPU Limits",
+    "When a glTF model contains textures that exceed the maximum hardware texture dimension supported by a mobile GPU, the graphics pipeline cannot allocate or render the asset in its original state. This article explains the technical consequences of surpassi",
+    false
+  ],
+  [
+    313,
+    "NPOT Textures and Mipmaps in WebGL glTF Viewers",
+    "Non-Power-of-Two (NPOT) textures significantly alter how WebGL-based glTF viewers process and display 3D assets, primarily dictating whether mipmaps can be generated natively or require runtime intervention. While modern WebGL 2.0 contexts natively suppor",
+    false
+  ],
+  [
+    312,
+    "Why Use Power-of-Two Textures in glTF Files?",
+    "Power-of-two (POT) texture sizing—using pixel dimensions that are powers of two, such as 512×512, 1024×1024, or 2048×2048—is a fundamental standard in real-time 3D rendering. When embedding or referencing textures within glTF (GL Transmission Format) file",
+    false
+  ],
+  [
+    311,
+    "Mobile glTF Texture Resolution Standards",
+    "Balancing visual fidelity against download speed and runtime memory is one of the most critical challenges when deploying glTF assets to mobile devices. This article outlines the industry-standard texture resolutions, channel-packing practices, and compre",
+    false
+  ],
+  [
+    310,
+    "Baking Procedural Noise to Textures for glTF",
+    "This article explains how 3D baking tools convert dynamic, mathematical procedural noise functions into rasterized 2D texture maps compatible with the glTF 2.0 standard. You will learn why this conversion is necessary for runtime engines, how baking softw",
+    false
+  ],
+  [
+    309,
+    "Procedural Shaders to glTF PBR: Key Limitations",
+    "Converting dynamic procedural shader networks into static Physically Based Rendering (PBR) maps for the glTF format is a critical optimization step for real-time web and game engines, yet it imposes fundamental technical compromises. While procedural shad",
+    false
+  ],
+  [
+    308,
+    "USD to glTF: How usd2gltf Translates Materials",
+    "Converting 3D assets from Universal Scene Description (USD) to glTF requires translating complex shading networks into a standard, runtime-efficient format. The open-source usd2gltf tool achieves this by parsing USD's shading primitives—primarily based on",
+    false
+  ],
+  [
+    307,
+    "glTF to USD Metadata Mapping Guide",
+    "Converting 3D assets from the glTF (GL Transmission Format) standard to Pixar’s Universal Scene Description (USD) requires translating metadata across scene hierarchies, geometry definitions, material schemas, and user data. This article outlines the spec",
+    false
+  ],
+  [
+    306,
+    "glTF Assets in Nvidia Omniverse USD Pipelines",
+    "This article provides an overview of how Nvidia Omniverse integrates glTF (GL Transmission Format) assets into Universal Scene Description (USD) pipelines. It details the mechanisms of asset conversion, material translation, referencing workflows, and the",
+    false
+  ],
+  [
+    305,
+    "glTF for Real-Time Ray Tracing",
+    "This article explores why glTF (GL Transmission Format) has emerged as an optimal asset interchange format for real-time ray tracing. It covers how glTF’s core design—ranging from its standardized Physically Based Rendering (PBR) material specifications a",
+    false
+  ],
+  [
+    304,
+    "Using glTF PBR Materials in Real-Time Path Tracing",
+    "This article explains how real-time ray tracing and path tracing engines consume glTF 2.0 material parameters to evaluate physically based shading models. It covers the pipeline from parsing metallic-roughness texture channels and numeric factors on the h",
+    false
+  ],
+  [
+    303,
+    "Costs of Rendering Dispersive glTF Materials",
+    "Rendering dispersive transmissive materials in glTF entails simulating wavelength-dependent light refraction through transparent volumes, which introduces significant computational overhead. This article breaks down the primary computational costs involve",
+    false
+  ],
+  [
+    302,
+    "glTF KHR_materials_dispersion Refraction Explained",
+    "The KHRmaterialsdispersion extension enhances glTF’s physically based rendering (PBR) pipeline by introducing chromatic dispersion to transmissive surfaces. Chromatic dispersion occurs when different wavelengths of light bend at varying angles as they pas",
+    false
+  ],
+  [
+    301,
+    "Subsurface Scattering Proposals in glTF",
+    "The Khronos 3D Formats Working Group is expanding the glTF physical-based rendering (PBR) ecosystem through its \"PBR Next\" initiative to natively support subsurface scattering (SSS). While current glTF extensions handle surface-level light interactions an",
+    false
+  ],
+  [
+    300,
+    "Challenges of Subsurface Scattering in glTF",
+    "Subsurface scattering (SSS) is an essential optical phenomenon for rendering realistic translucent materials like skin, wax, jade, and marble, yet it remains difficult to represent within standardized glTF. This article examines the core technical hurdles",
+    false
+  ],
+  [
+    299,
+    "glTF KHR_materials_volume Heterogeneous Scattering",
+    "This article examines how the glTF extension KHRmaterialsvolume approaches interior light scattering, specifically focusing on its technical capabilities, architectural scope, and inherent limitations regarding heterogeneous volumetric media. It details t",
+    false
+  ],
+  [
+    298,
+    "Soft Shadows for Multi-Light glTF Scenes",
+    "Simulating realistic soft shadows in multi-light glTF scenes requires balancing visual fidelity with strict rendering performance constraints. This article examines the primary real-time techniques used in modern WebGL and WebGPU engines—such as Percentag",
+    false
+  ],
+  [
+    297,
+    "glTF Directional Light Shadow Map Alignment",
+    "This article provides an overview of how shadow mapping projections align with directional light vectors in the glTF 2.0 format. Aligning shadow maps with glTF directional lights requires transforming the format's local light vector convention into a worl",
+    false
+  ],
+  [
+    296,
+    "glTF Directional Light Coordinate Space Guide",
+    "This article provides an overview of the coordinate space and directional rules governing directional light nodes in the glTF (GL Transmission Format) standard. It details the default emission vector within the node's local coordinate space as defined by",
+    false
+  ],
+  [
+    295,
+    "glTF Spot Light Angular Falloff Explained",
+    "In glTF 2.0, spot light angular falloff is governed by the KHRlightspunctual extension, which defines how light intensity transitions from full brightness to darkness between the cone boundaries. This article explains the exact mathematical formulation us",
+    false
+  ],
+  [
+    294,
+    "glTF Point Light Attenuation and Distance Cutoff",
+    "This article explains the mathematical cutoff mechanism used in glTF-compliant rendering engines to limit the infinite evaluation of point lights. While standard physics dictates an infinite inverse-square falloff, real-time engines rely on defined range",
+    false
+  ],
+  [
+    293,
+    "How glTF Handles Infinite Point Light Range",
+    "This article provides an overview of how the glTF 2.0 format processes point light ranges through the KHRlightspunctual extension. While real-world point lights follow an inverse-square falloff that mathematically extends to infinity, real-time renderers",
+    false
+  ],
+  [
+    292,
+    "glTF Default Fallback Material Visual Attributes",
+    "When a 3D model primitive in a glTF 2.0 file lacks an explicitly assigned material, runtimes must render it using a standardized fallback material based on the Physically Based Rendering (PBR) metallic-roughness workflow. This article breaks down the visu",
+    false
+  ],
+  [
+    291,
+    "glTF Default Material Rules for Unassigned Meshes",
+    "In 3D asset workflows, models frequently encounter instances where geometry is defined without an explicit surface shader. This article explains how the glTF 2.0 specification handles unassigned geometry by detailing the standard fallback Physically Based",
+    false
+  ],
+  [
+    290,
+    "Handling Missing Textures in glTF Scene Loading",
+    "When a glTF or GLB file references external texture assets that are unavailable, corrupted, or blocked by network errors, 3D rendering engines deploy fallback mechanisms to ensure the scene continues rendering without crashing. These strategies include su",
+    false
+  ],
+  [
+    289,
+    "glTF Buffer Isolation in Sandboxed Web Environments",
+    "Rendering glTF (GL Transmission Format) assets in web applications requires loading 3D scene data alongside external resources, such as binary buffers (.bin) and texture images. When parsing untrusted models, arbitrary Uniform Resource Identifiers (URIs)",
+    false
+  ],
+  [
+    288,
+    "Preventing glTF Path Traversal in Image URIs",
+    "The glTF (GL Transmission Format) 2.0 specification allows 3D models to reference external texture assets through relative or absolute Uniform Resource Identifiers (URIs). While this modular approach optimizes asset reuse and streaming, it introduces crit",
+    false
+  ],
+  [
+    287,
+    "How glTF References External Image Files",
+    "The glTF (GL Transmission Format) specification allows 3D assets to reference external textures rather than bundling them into binary containers or Base64-encoded strings. By utilizing the top-level images array within the model's core JSON document, glTF",
+    false
+  ],
+  [
+    286,
+    "Role of mimeType in glTF Image Definitions",
+    "This article explores the structural and operational role of the mimeType field within glTF 2.0 image definitions. In the glTF specification, the mimeType property serves as an explicit metadata declaration that identifies the media format of an image res",
+    false
+  ],
+  [
+    285,
+    "Progressive Geometry Streaming Using Chunked glTF",
+    "Progressive geometry streaming with chunked glTF binary data allows web applications to render low-detail 3D meshes almost instantly while progressively downloading and refining geometry in the background. This article explains how to partition glTF binar",
+    false
+  ],
+  [
+    284,
+    "Meshopt vs Draco: glTF Network Speed Thresholds",
+    "Choosing between uncompressed glTF, Draco, and meshopt compression depends on the critical trade-off between network download time and client-side CPU decompression overhead. As a general rule, Draco is preferable when network speeds fall below 10 to 15 M",
+    false
+  ],
+  [
+    283,
+    "Draco glTF Decoding Time vs Triangle Density",
+    "Draco compression significantly reduces the file size of glTF 3D models, but requires client-side decompression before rendering. The decoding time of Draco-compressed meshes scales primarily linearly with triangle density and mesh complexity, governed by",
+    false
+  ],
+  [
+    282,
+    "Why Draco glTF Decoding Requires WebAssembly",
+    "Draco geometry compression dramatically reduces the file size of 3D models in glTF assets, but unpacking this compressed data in a web browser demands significant computational power. Web browsers rely on WebAssembly (Wasm) runtimes to decode Draco-compre",
+    false
+  ],
+  [
+    281,
+    "glTF to Meshopt GLB Compression Ratio Improvements",
+    "Converting raw glTF assets to binary GLB files using the EXTmeshoptcompression extension dramatically reduces asset size while maintaining fast runtime decoding. On average, meshopt compression shrinks raw geometry data—specifically vertex buffers and ind",
+    false
+  ],
+  [
+    280,
+    "How Meshopt Optimizes glTF Vertex Compression",
+    "The meshoptimizer library optimizes glTF vertex buffers for compression by rearranging geometry data to maximize spatial coherence and predictive patterns. By sorting vertices into the strict sequence in which they are first accessed by the index buffer,",
+    false
+  ],
+  [
+    279,
+    "Optimizing glTF Indices with the Forsyth Algorithm",
+    "This article explores the critical role Tom Forsyth’s algorithm plays in optimizing glTF 3D model assets for real-time rendering. By restructuring a mesh's index buffer, the algorithm maximizes the efficiency of the modern GPU post-transform vertex cache,",
+    false
+  ],
+  [
+    278,
+    "Optimizing glTF Indexed Draw Calls for GPU Cache",
+    "This article explores how the glTF (GL Transmission Format) specification structures indexed draw calls to maximize GPU post-transform and pre-transform cache efficiency. By understanding how glTF organizes accessors, buffer views, and topological indices",
+    false
+  ],
+  [
+    277,
+    "Efficient Vertex Deduplication for glTF Geometry",
+    "When generating or processing 3D models for glTF via code, generating flat polygon lists often creates redundant vertex data that inflates buffer sizes and degrades GPU rendering efficiency. Vertex deduplication transforms unstructured soups of triangles",
+    false
+  ],
+  [
+    276,
+    "Generate Procedural Terrain to glTF Binary Buffers",
+    "Procedural terrain generation creates expansive 3D landscapes algorithmically, but traditional workflows often suffer from costly serialization bottlenecks when converting raw terrain data into consumable 3D formats. By writing vertex positions, surface n",
+    false
+  ],
+  [
+    275,
+    "Generating glTF Files Dynamically in the Browser",
+    "Dynamic programmatic generation of glTF (GL Transmission Format) files directly in the browser allows web applications to create, manipulate, and export 3D models on the client side without relying on server-side rendering pipelines. By leveraging modern",
+    false
+  ],
+  [
+    274,
+    "Catch Broken glTF External Buffers with Headless Validation",
+    "Headless glTF validation provides an automated, non-visual mechanism to inspect 3D assets directly within build pipelines, cloud storage ingestion workflows, and backend services. By evaluating glTF JSON structures and resolving dependent binary (.bin) as",
+    false
+  ],
+  [
+    273,
+    "Automated CI/CD Checks for Web glTF Assets",
+    "Publishing 3D content to the web requires a robust deployment pipeline to guarantee fast load times, broad device compatibility, and visual integrity. Integrating automated Continuous Integration and Continuous Deployment (CI/CD) checks for glTF and GLB f",
+    false
+  ],
+  [
+    272,
+    "How to Preview glTF Files and JSON Schemas in VS Code",
+    "This article explains how Visual Studio Code bridges the gap between raw 3D data and interactive rendering through dedicated glTF extensions. By coupling strict Khronos Group JSON schema validation with embedded Webview engines like Babylon.js or Three.js",
+    false
+  ],
+  [
+    271,
+    "Top Real-Time glTF Inspection and Validation Tools",
+    "Efficient 3D asset delivery requires rigorous quality control, and the glTF (GL Transmission Format) ecosystem offers dedicated tools for real-time inspection and validation. This article outlines the primary tools available to 3D artists, technical direc",
+    false
+  ],
+  [
+    270,
+    "Using glTF for Real-Time Virtual Production Sets",
+    "Virtual production stages rely heavily on real-time rendering to project dynamic, perspective-correct 3D environments onto massive LED volumes. As filmmakers and broadcasters demand seamless in-camera visual effects (ICVFX), the Graphics Language Transmis",
+    false
+  ],
+  [
+    269,
+    "How to Use glTF Avatars in VRChat and Unreal Engine",
+    "While glTF (GL Transmission Format) serves as the open-standard \"JPEG of 3D,\" integrating these avatars into platforms like VRChat and Unreal Engine requires distinct technical bridges. Because VRChat relies on Unity's proprietary avatar framework and Unr",
+    false
+  ],
+  [
+    268,
+    "How VRM Spring Bone Physics Works in glTF",
+    "VRM handles dynamic secondary animation, such as the movement of hair, clothing, and accessories, through specialized glTF extension properties known as SpringBone. Rather than relying on pre-baked keyframes or proprietary engine setups, VRM stores spring",
+    false
+  ],
+  [
+    267,
+    "VRM Metadata for Facial Expressions and Eye Tracking",
+    "VRM extends standard glTF 2.0 to transform generic 3D models into interoperable, humanoid avatars. While glTF provides the baseline geometry, skeleton, and morph targets, it lacks semantic context for humanoid behavior. VRM bridges this gap by embedding s",
+    false
+  ],
+  [
+    266,
+    "How VRM Extends glTF 2.0 for Humanoid Avatars",
+    "The VRM format builds directly on top of the glTF 2.0 3D asset standard, transforming a general-purpose graphics format into a specialized, cross-platform standard for interactive humanoid avatars. While glTF 2.0 provides an efficient way to transmit 3D m",
+    false
+  ],
+  [
+    265,
+    "glTF in the Open Metaverse and Avatars",
+    "glTF (GL Transmission Format) serves as the foundational 3D asset standard enabling true interoperability and asset portability across the open-source metaverse. Often dubbed the \"JPEG of 3D,\" this royalty-free format developed by the Khronos Group provid",
+    false
+  ],
+  [
+    264,
+    "Mapping glTF to WebGPU Bind Groups and Buffers",
+    "Efficiently rendering glTF assets in WebGPU requires bridging the gap between glTF’s hierarchical, property-centric scene model and WebGPU’s explicit, low-overhead resource model. This article explores how modern WebGPU engines optimize this transition by",
+    false
+  ],
+  [
+    263,
+    "WebGPU vs WebGL for Dense glTF Rendering",
+    "Rendering dense glTF (GL Transmission Format) scenes on the web often pushes the limits of browser performance due to heavy draw call overhead, complex node hierarchies, and large geometry buffers. While WebGL has long been the standard for web-based 3D,",
+    false
+  ],
+  [
+    262,
+    "WebGPU Compute Shaders for glTF Morph Targets",
+    "This article explains how to leverage WebGPU compute shaders to process large-scale glTF morph target animations efficiently. By offloading morph target blending from traditional vertex shaders to compute passes, developers can bypass standard vertex attr",
+    false
+  ],
+  [
+    261,
+    "Optimizing WebGL Morph Targets in glTF Shaders",
+    "Evaluating morph targets on the web can quickly saturate GPU resources due to strict vertex attribute limits and memory bandwidth bottlenecks. In glTF workflows, shifting morph target computation to fragment shaders or texture-driven pipelines unlocks sca",
+    false
+  ],
+  [
+    260,
+    "Synchronizing glTF Morph Target Deltas",
+    "In glTF 2.0, morph target animations synchronize delta positions, normals, and tangents by linking them under unified target indices governed by a shared array of scalar weights. Rather than animating spatial channels individually, glTF animation samplers",
+    false
+  ],
+  [
+    259,
+    "Why glTF Cubic Spline Animation Needs 3x Memory",
+    "In glTF 2.0 animation tracks, utilizing cubic spline interpolation results in exactly three times the memory footprint of equivalent linear or step tracks. This footprint expansion occurs because the glTF specification structures cubic spline data as Herm",
+    false
+  ],
+  [
+    258,
+    "glTF Cubic Spline Keyframe Data Structure",
+    "In glTF 2.0 binary files, cubic spline animation data is organized within binary buffers as a contiguous, interleaved array of structural triplets. Rather than storing keyframe values and tangents in separate streams, each keyframe packs an in-tangent, a",
+    false
+  ],
+  [
+    257,
+    "glTF Cubic Spline Interpolation and Tangents",
+    "In glTF 2.0, the CUBICSPLINE interpolation mode uses cubic Hermite splines to produce smooth transitions between animation keyframes. Unlike standard linear interpolation, cubic spline interpolation relies on explicit incoming and outgoing tangent vectors",
+    false
+  ],
+  [
+    256,
+    "Looping Behaviors for glTF Animation Clips",
+    "Understanding animation playback in glTF requires distinguishing between the format's underlying data structure and the rendering engines that process it. This article explores how looping behaviors—including standard repeat cycles, clamp-to-edge playback",
+    false
+  ],
+  [
+    255,
+    "How glTF Handles Out-of-Bounds Animation Time",
+    "This article provides an overview of how glTF 2.0 handles animation time queries outside defined clip boundaries. In glTF, out-of-bounds animation evaluations are resolved via keyframe clamping at the sampler level, leaving playback behaviors like looping",
+    false
+  ],
+  [
+    254,
+    "Why Decouple Mesh Nodes from Joints in glTF?",
+    "In glTF (GL Transmission Format), separating mesh nodes from the bone joint hierarchy is the standard architectural pattern for 3D character modeling and skinning. This article explains why the glTF specification isolates geometry from skeletal joints, ho",
+    false
+  ],
+  [
+    253,
+    "glTF Animation on Nodes with Meshes and Children",
+    "In the glTF 2.0 specification, scene graphs rely on hierarchical transformation trees where modifications to a parent node propagate automatically down the hierarchy. When an animation targets a node that defines both a mesh property and an array of child",
+    false
+  ],
+  [
+    252,
+    "Parenting Non-Skinned Meshes to glTF Bones",
+    "This article explains how to attach rigid, non-skinned geometry directly to skeletal bones within a glTF asset. By utilizing glTF's native scene graph hierarchy, developers can parent standard static meshes—such as weapons, armor pieces, or props—directly",
+    false
+  ],
+  [
+    251,
+    "Role of the Bind Pose Matrix in glTF Skinning",
+    "In glTF (GL Transmission Format) 3D assets, the bind pose matrix—specifically implemented as the inverse bind matrix—serves as the foundational bridge between static mesh geometry and skeletal animation. This article explains the exact mathematical role o",
+    false
+  ],
+  [
+    250,
+    "How glTF Handles Rest Poses and Animation Keyframes",
+    "In the glTF (GL Transmission Format) specification, rest poses and animated states are decoupled into distinct data structures to optimize runtime performance and memory efficiency. This article details how glTF separates resting geometry and joint hierar",
+    false
+  ],
+  [
+    249,
+    "Why glTF Joint Nodes Reside in the Node Graph",
+    "In glTF (GL Transmission Format), skeletal joints are defined directly within the standard nodes array rather than in a separate, dedicated structure. This article breaks down the architectural choices behind this design, highlighting how a unified node g",
+    false
+  ],
+  [
+    248,
+    "How glTF Serializes Bone Hierarchies with Node Indices",
+    "This article provides an overview of how the glTF (GL Transmission Format) 2.0 specification serializes skeletal bone hierarchies using zero-based node indices. It details the structural relationship between the global node graph and skeletal skins, expla",
+    false
+  ],
+  [
+    247,
+    "glTF Bone Weights Precision Issues Explained",
+    "In skeletal animation using the glTF 2.0 standard, each vertex relies on skinning weights to blend transformations from multiple bones. When these bone weights do not strictly sum to 1.0, graphics pipelines encounter arithmetic and visual precision issues",
+    false
+  ],
+  [
+    246,
+    "Prevent glTF Mesh Bursting via Weight Normalization",
+    "Mesh bursting in glTF assets occurs when vertices drastically displace or \"explode\" across 3D space during skeletal animation, typically caused by unnormalized skinning weights. In glTF's linear blend skinning system, each vertex relies on weight values t",
+    false
+  ],
+  [
+    245,
+    "Optimizing Bone Matrix Calculations in glTF Characters",
+    "Rendering crowds of identical glTF characters can quickly bottleneck a graphics pipeline due to redundant forward kinematics and skinning transformations calculated for every individual instance. This article explores animation instancing via shared bone",
+    false
+  ],
+  [
+    244,
+    "Sharing Bone Rigs Across Characters in glTF",
+    "Reusing bone rigs across multiple animated characters in a single glTF file is an effective way to optimize 3D asset workflows and minimize file size. This guide outlines how the glTF 2.0 specification handles skeletal sharing, explaining how multiple mes",
+    false
+  ],
+  [
+    243,
+    "How Lightmaps Are Structured in glTF Models",
+    "This article explores the structural composition of lightmaps embedded in glTF (GL Transmission Format) 3D assets, examining how baked illumination data is integrated into the format's JSON hierarchy and binary payloads. It covers the storage of image and",
+    false
+  ],
+  [
+    242,
+    "How glTF IBL Extensions Reference Specular Cubemaps",
+    "Image-based lighting (IBL) enhances real-time rendering in glTF by simulating realistic ambient light and reflections using environment maps. Because the core glTF 2.0 specification does not natively include environment lighting, extensions such as EXTlig",
+    false
+  ],
+  [
+    241,
+    "glTF Spherical Harmonics Irradiance Parameters",
+    "In glTF 2.0, diffuse irradiance from environment maps is typically encoded using spherical harmonics within image-based lighting (IBL) extensions. This article outlines the specific extensions, parameter formats, coefficient counts, and mathematical conve",
+    false
+  ],
+  [
+    240,
+    "glTF EXT_lights_image_based Environment Lighting",
+    "The EXTlightsimagebased extension provides a standardized way to define high-dynamic-range (HDR) environment lighting directly within glTF 2.0 assets. By decoupling lighting from flat ambient colors or localized punctual lights, this extension enables rea",
+    false
+  ],
+  [
+    239,
+    "Why Mobile glTF Uses Baked AO Over Dynamic Shadows",
+    "Mobile-first 3D pipelines utilizing glTF typically prioritize performance, power efficiency, and universal hardware compatibility over complex real-time lighting calculations. While dynamic shadow maps offer interactive realism, their computational overhe",
+    false
+  ],
+  [
+    238,
+    "Bake Ambient Occlusion into glTF Vertex Colors",
+    "Baking ambient occlusion directly into vertex colors is an efficient optimization technique that enhances depth perception while eliminating the memory overhead and draw calls of dedicated ambient occlusion texture maps. In glTF 2.0 models, this process r",
+    false
+  ],
+  [
+    237,
+    "glTF HDR Texture Compression for Web Delivery",
+    "This article explains how the glTF (GL Transmission Format) ecosystem optimizes high-dynamic-range (HDR) environment maps for web delivery. Delivering high-fidelity image-based lighting (IBL) over the internet requires balancing visual fidelity against ba",
+    false
+  ],
+  [
+    236,
+    "BC7 Texture Compression for Desktop glTF Rendering",
+    "This article explores the core advantages of utilizing BC7 (Block Compression 7) texture compression in desktop glTF rendering pipelines. Adopting BC7 significantly reduces GPU VRAM consumption, eliminates runtime decoding overhead through native hardware",
+    false
+  ],
+  [
+    235,
+    "ASTC glTF Texture Performance on Modern Smartphones",
+    "Delivering Adaptive Scalable Texture Compression (ASTC) via glTF assets offers significant performance advantages for real-time 3D rendering on modern smartphones. By keeping textures compressed directly in GPU memory, this pipeline slashes VRAM usage, dr",
+    false
+  ],
+  [
+    234,
+    "Basis Universal glTF GPU Formats on Mobile",
+    "Basis Universal solves the challenge of cross-platform texture deployment in 3D web and mobile graphics by packaging textures into an intermediate format that rapidly transcodes directly to native GPU-compressed formats at runtime. When utilized in glTF 2",
+    false
+  ],
+  [
+    233,
+    "Why Basis Universal Transcodes at Runtime in glTF",
+    "Basis Universal textures are transcoded at runtime within glTF engines to solve the fundamental incompatibility between lightweight file transmission and GPU hardware architecture. By serving as an intermediate universal texture format, Basis Universal al",
+    false
+  ],
+  [
+    232,
+    "Using KHR_texture_basisu with Internal KTX 2.0 in glTF",
+    "This article explains how the KHRtexturebasisu extension references internally stored KTX 2.0 (.ktx2) textures within glTF and GLB containers. It covers the structural relationship between textures, images, buffer views, and binary buffers, detailing how",
+    false
+  ],
+  [
+    231,
+    "Structural Layout of KTX 2.0 Files in glTF",
+    "This article provides a direct overview of the binary structure and layout of the Khronos Texture 2.0 (KTX 2.0) container format as used within glTF 2.0 assets via the KHRtexturebasisu extension. KTX 2.0 acts as the standardized packaging format for unive",
+    false
+  ],
+  [
+    230,
+    "Basis Universal Compression in glTF Alpha Maps",
+    "Basis Universal compression maintains high visual fidelity across glTF alpha maps by combining versatile intermediate encoding formats, targeted channel allocation, and intelligent run-time transcoding to native GPU textures. By leveraging the KHRtextureb",
+    false
+  ],
+  [
+    229,
+    "Optimizing glTF Texture Streaming and Memory Pooling",
+    "Streaming hundreds of glTF textures concurrently can quickly exhaust GPU and system memory due to texture memory pooling, redundant buffer retention, and uncompressed pixel caching. When runtime engines pool memory to avoid reallocation overhead, they oft",
+    false
+  ],
+  [
+    228,
+    "Mipmapping and Anisotropic Filtering in glTF Engines",
+    "In modern glTF rendering pipelines, mipmapping and anisotropic filtering work in tandem to eliminate texture aliasing and preserve surface sharpness across varying viewing distances and angles. While standard mipmapping prevents shimmering and improves GP",
+    false
+  ],
+  [
+    227,
+    "glTF Texture Filtering Modes for Crisp UI Text",
+    "Rendering legible, high-contrast text on user interface elements in glTF requires selecting the correct texture sampler filtering modes. Because standard 3D mipmapping often introduces unwanted blur to fine typographic details, configuring the appropriate",
+    false
+  ],
+  [
+    226,
+    "Handling Texture Atlas Border Clamping in glTF",
+    "In glTF 2.0, texture samplers apply wrapping and clamping behaviors exclusively to the entire image asset rather than to individual sub-tiles within a texture atlas. Because the specification lacks native sub-rectangle clamping parameters, sampling atlas",
+    false
+  ],
+  [
+    225,
+    "Why glTF Uses OpenGL-Style Texture Coordinates",
+    "glTF mandates OpenGL-style coordinate conventions—featuring a right-handed system with +Y up, outward-facing normals, and specific UV coordinate mapping—to standardize 3D asset delivery across real-time graphics engines. By enforcing a strict, universal s",
+    false
+  ],
+  [
+    224,
+    "glTF Normal Map Flipping: DirectX vs OpenGL",
+    "This article explains how the glTF 2.0 3D asset format handles normal map conventions between DirectX and OpenGL workflows. glTF strictly mandates the OpenGL tangent-space standard (+Y up), meaning it does not use runtime flags or dynamic toggles to flip",
+    false
+  ],
+  [
+    223,
+    "Why glTF Tangents Store Bitangent Sign in W",
+    "In the glTF specification, the tangent attribute is defined as a four-component vector (VEC4), where the first three components represent the XYZ tangent direction and the fourth component (w) is a sign indicator (+1.0 or -1.0). This article explains why",
+    false
+  ],
+  [
+    222,
+    "glTF Normal Mapping and TBN Frame Handedness",
+    "This article provides an overview of how coordinate frame handedness influences normal mapping in glTF assets. It examines the mathematical role of the tangent vector's fourth component, explains how bitangent generation dictates surface orientation, and",
+    false
+  ],
+  [
+    221,
+    "glTF Shader Normal Normalization Visual Artifacts",
+    "In 3D rendering pipelines adhering to the glTF specification, surface normals dictate how light interacts with physically based rendering (PBR) materials. When vertex normals are linearly interpolated across a polygon face during rasterization, their unit",
+    false
+  ],
+  [
+    220,
+    "Why glTF Decouples Ambient Occlusion from Direct Light",
+    "In the glTF 2.0 specification, ambient occlusion (AO) is explicitly applied only to indirect, ambient lighting rather than direct, punctual light sources like point, directional, or spot lights. This design decision stems from physically based rendering (",
+    false
+  ],
+  [
+    219,
+    "Ambient Occlusion in glTF Specular Highlights",
+    "This article provides an overview of how ambient occlusion (AO) maps interact with specular reflections in the glTF 2.0 Physically Based Rendering (PBR) pipeline. While the glTF specification primarily defines ambient occlusion as an attenuation factor fo",
+    false
+  ],
+  [
+    218,
+    "glTF Iridescence Thickness and Color Parameters",
+    "In glTF 2.0, thin-film interference is standardized through the KHRmaterialsiridescence extension, which simulates optical effects like soap bubbles, beetle shells, and tempered metal. This article breaks down the specific parameters governing film thickn",
+    false
+  ],
+  [
+    217,
+    "Simulating Oil Slicks and Bubbles with glTF Iridescence",
+    "This article explains how the KHRmaterialsiridescence extension in glTF enables 3D graphics engines to realistically simulate optical phenomena like soap bubbles and oil slicks. By introducing a physically based thin-film interference model into standard",
+    false
+  ],
+  [
+    216,
+    "glTF Clearcoat Specular Reflection Equation",
+    "In glTF 2.0, the KHRmaterialsclearcoat extension simulates a transparent, thin layer over a base material using physically based rendering principles. Specular reflection off this outer boundary is computed using a microfacet specular Bidirectional Reflec",
+    false
+  ],
+  [
+    215,
+    "Clearcoat and Metalness Interaction in glTF",
+    "In glTF’s physically based rendering (PBR) pipeline, the KHRmaterialsclearcoat extension adds an independent, transparent dielectric layer on top of a standard metallic-roughness base material. When applied over a metallic base (where metallicFactor appro",
+    false
+  ],
+  [
+    214,
+    "Clearcoat Normal Maps in glTF Automotive Paint",
+    "This article examines how clearcoat normal maps function within the glTF 3D format to replicate realistic automotive paint finishes. By utilizing the KHRmaterialsclearcoat extension, technical artists can decouple the outermost glossy layer of a vehicle f",
+    false
+  ],
+  [
+    213,
+    "glTF Sheen Color and Microfiber Backscattering",
+    "In glTF 2.0, the KHRmaterialssheen extension simulates the soft, fuzzy appearance of fabrics such as velvet, satin, and peach fuzz. This article explains how sheen color factors dictate the backscattering behavior of microfibers by controlling specular re",
+    false
+  ],
+  [
+    212,
+    "glTF Sheen Roughness vs Standard Roughness",
+    "In glTF PBR rendering, standard surface roughness and sheen roughness dictate light diffusion at entirely different physical layers and viewing angles. While standard surface roughness governs the sharpness and spread of specular reflections across the un",
+    false
+  ],
+  [
+    211,
+    "How KHR_materials_sheen Simulates Fabric in glTF",
+    "The KHRmaterialssheen extension in glTF simulates the soft backscattering and edge-glow characteristic of woven fabrics by adding an extra microfacet layer designed specifically for grazing-angle reflections. Standard physically based rendering (PBR) work",
+    false
+  ],
+  [
+    210,
+    "Thin-Walled Transmission for glTF Shaders",
+    "This article explores the technical mechanisms in the glTF 2.0 ecosystem that enable thin-walled transmission for materials such as hollow glass, soap bubbles, and plant leaves. By combining standard PBR properties with specific vendor-neutral extensions,",
+    false
+  ],
+  [
+    209,
+    "Beer's Law in Transmissive glTF Materials",
+    "This article provides an overview of how the Beer-Lambert Law governs light attenuation within transmissive glTF 2.0 materials. It explains the physical principles of exponential light absorption through a medium, details the implementation through the KH",
+    false
+  ],
+  [
+    208,
+    "glTF KHR_materials_volume Glass Light Extinction",
+    "In glTF 2.0, creating realistic colored glass requires simulating how light is absorbed as it travels through a medium, a physical process known as light extinction or attenuation. The KHRmaterialsvolume extension governs this behavior by implementing the",
+    false
+  ],
+  [
+    207,
+    "How glTF Simulates Chromatic Fringing in Optics",
+    "Simulating chromatic fringing in glTF requires splitting transmitted light into its constituent wavelengths as it passes through a transparent medium. By combining physical extensions such as KHRmaterialstransmission, KHRmaterialsior, KHRmaterialsvolume,",
+    false
+  ],
+  [
+    206,
+    "Role of IOR in glTF Total Internal Reflection",
+    "In glTF physically based rendering (PBR), the Index of Refraction (IOR) is the critical parameter that dictates how light bends and reflects when crossing the boundary between different media. Specifically, when handling transparent or transmissive materi",
+    false
+  ],
+  [
+    205,
+    "glTF Refraction and Opaque Material Transitions",
+    "This article provides an overview of how glTF 2.0 physically based rendering (PBR) materials transition between transparent refraction and opaque baseline approximations. It covers the interaction between the core metallic-roughness model, the role of mat",
+    false
+  ],
+  [
+    204,
+    "glTF KHR Materials Transmission Rendering Fallbacks",
+    "This article provides an overview of how glTF client applications handle rendering fallbacks when they cannot decode or do not support the KHRmaterialstransmission extension. It explains the structural dependency on the core glTF 2.0 PBR model, the behavi",
+    false
+  ],
+  [
+    203,
+    "glTF Advanced PBR Extension Fallback Guide",
+    "This article examines how the glTF 3D format ensures fallback compatibility when advanced Physically Based Rendering (PBR) extensions are unsupported by a runtime engine. By establishing the core metallic-roughness workflow as an immutable baseline and ut",
+    false
+  ],
+  [
+    202,
+    "glTF Material Requests Missing UV Set: What Happens?",
+    "When a glTF material requests a texture coordinate set that does not exist on a mesh primitive, the asset violates the official glTF 2.0 specification. While the specification strictly mandates that primitives must provide all attributes required by their",
+    false
+  ],
+  [
+    201,
+    "Ambient Occlusion on UV1 with Base Color on UV0 in glTF",
+    "In glTF 2.0, materials can simultaneously utilize multiple UV sets by routing different texture maps to specific texture coordinate channels. This allows developers and 3D artists to map a tiled base color texture to the primary UV layout (UV0) while appl",
+    false
+  ],
+  [
+    200,
+    "glTF Attribute Naming for Primary and Secondary UVs",
+    "In the glTF (GL Transmission Format) 2.0 specification, vertex texture coordinates rely on a strict naming convention to organize multiple UV sets. This article explains how glTF identifies and separates primary and secondary UV channels using the TEXCOOR",
+    false
+  ],
+  [
+    199,
+    "glTF Multiple UV Sets for Multi-Layered Materials",
+    "The glTF (GL Transmission Format) specification handles complex, multi-layered materials by separating texture coordinates at the vertex level and mapping them individually at the material level. By defining indexed UV channels in mesh primitives and refe",
+    false
+  ],
+  [
+    198,
+    "Why Avoid Rendering Logic in glTF Extras",
+    "Storing rendering logic inside the glTF extras object compromises asset portability, introduces pipeline instability, and breaks the core philosophy of glTF as a universal 3D transmission format. While the extras field offers a tempting shortcut for passi",
+    false
+  ],
+  [
+    197,
+    "Understanding the glTF extras Field for Custom Data",
+    "The extras field in glTF (GL Transmission Format) is a reserved property that allows developers to store custom, application-specific metadata directly within a 3D asset without violating the format's core specification. This article explains what the ext",
+    false
+  ],
+  [
+    196,
+    "Embedding Custom Metadata and Tags in glTF",
+    "Embedding custom user metadata and engine-specific tags natively into glTF (GL Transmission Format) allows developers to carry custom logic, gameplay parameters, and pipeline instructions alongside 3D assets without altering core geometry or rendering dat",
+    false
+  ],
+  [
+    195,
+    "Preventing Gimbal Lock in glTF Matrix Decomposition",
+    "This article examines how glTF runtimes prevent gimbal lock when decomposing 4x4 transformation matrices into their component transforms. It details the role of quaternion mathematics, the direct conversion from rotation matrices to unit quaternions, the",
+    false
+  ],
+  [
+    194,
+    "glTF Transform Matrices in Nested Node Trees",
+    "In a glTF scene, 3D objects are organized hierarchically as directed acyclic graphs of nodes. Evaluating this hierarchy requires computing the absolute world transform for each node by combining parent and child transformations from the root down to the l",
+    false
+  ],
+  [
+    193,
+    "glTF Root Nodes and Transformation Hierarchies",
+    "This article examines the procedural relationship between root nodes and transformation hierarchies within the glTF (GL Transmission Format) specification. It details how scenes define top-level root nodes, how transformation data is defined at the node l",
+    false
+  ],
+  [
+    192,
+    "How glTF Represents Blend Shapes for Deformation",
+    "In glTF (GL Transmission Format), non-rigid mesh deformations such as facial expressions and organic flexing are achieved using morph targets, commonly known as vertex blend shapes. Rather than storing full duplicates of the geometry for every variation,",
+    false
+  ],
+  [
+    191,
+    "Optimizing glTF Models for Standalone VR",
+    "Standalone virtual reality headsets operate on constrained mobile chipsets while demanding consistent frame rates between 72 and 120 frames per second to prevent motion sickness. Achieving this performance profile requires eliminating hardware bottlenecks",
+    false
+  ],
+  [
+    190,
+    "How glTF and WebXR Power Browser-Based VR",
+    "Modern web-based virtual reality relies on a synergy between hardware communication and efficient asset delivery to produce smooth, high-fidelity experiences directly in the browser. WebXR serves as the foundational browser API that interfaces with VR hea",
+    false
+  ],
+  [
+    189,
+    "Why the Smithsonian Uses glTF for 3D Digitization",
+    "The Smithsonian Institution's Digitization Program Office is actively transforming millions of rare historical, scientific, and cultural artifacts into high-resolution 3D models. Central to this monumental effort is the adoption of glTF (GL Transmission F",
+    false
+  ],
+  [
+    188,
+    "How Museums Digitize Artifacts into 3D glTF Files",
+    "Museums digitize historical artifacts into archival glTF formats through a structured pipeline that combines high-precision optical capture, detailed mesh optimization, and standardized web-ready conversion. By utilizing techniques such as photogrammetry",
+    false
+  ],
+  [
+    187,
+    "glTF in Medical Visualization and Anatomy Models",
+    "The glTF (Graphics Language Transmission Format) standard plays a transformative role in medical visualization by enabling fast, cross-platform delivery of complex, interactive 3D anatomical models. Known as the \"JPEG of 3D,\" glTF minimizes file sizes and",
+    false
+  ],
+  [
+    186,
+    "Real-Time glTF Rendering for Virtual Try-On",
+    "Virtual try-on (VTO) platforms utilize the GL Transmission Format (glTF) to bridge high-fidelity 3D assets with web and mobile platforms in real time. By taking advantage of glTF’s compact file size, standard Physically Based Rendering (PBR) workflows, an",
+    false
+  ],
+  [
+    185,
+    "Why glTF is Ideal for Web 3D Product Visualizers",
+    "The Graphics Language Transmission Format (glTF) has established itself as the standard file format for real-time 3D delivery on the web, often dubbed the \"JPEG of 3D.\" This article breaks down the architectural features that make glTF the premier choice",
+    false
+  ],
+  [
+    184,
+    "How to Optimize glTF Assets Using gltf-pipeline",
+    "The open-source tool gltf-pipeline optimizes glTF and GLB 3D models to reduce file sizes, decrease network latency, and improve runtime rendering performance in web and real-time applications. Developed by Cesium, this command-line and Node.js library str",
+    false
+  ],
+  [
+    183,
+    "Batch Convert OBJ and FBX to Optimized glTF",
+    "Converting 3D assets like OBJ and FBX into the web-standard glTF (or binary GLB) format is essential for modern real-time graphics pipelines. This article details the most effective command-line utilities available for automating and batch-processing conv",
+    false
+  ],
+  [
+    182,
+    "Batch Processing glTF Files Using pygltflib",
+    "Batch processing 3D assets is essential for scalable 3D pipelines, game development asset validation, and preparing datasets for machine learning or web presentation. The Python library pygltflib simplifies this process by providing a lightweight, pure-Py",
+    false
+  ],
+  [
+    181,
+    "Manipulate glTF JSON in Node.js: Best NPM Packages",
+    "Manipulating glTF (GL Transmission Format) files programmatically is a common requirement for 3D asset pipelines, scene optimization, dynamic material swapping, and automated metadata insertion. This article reviews the primary npm packages available for",
+    false
+  ],
+  [
+    180,
+    "How Webpack and Vite Bundle glTF and GLB Files",
+    "Modern web applications often integrate 3D graphics using glTF (GL Transmission Format) and its binary counterpart, GLB. Automated build tools like Webpack and Vite process these assets differently depending on whether they are packaged as self-contained",
+    false
+  ],
+  [
+    179,
+    "Interleaved vs Planar Vertex Data in glTF",
+    "In 3D graphics rendering with glTF assets, structuring vertex attributes in either an interleaved or planar layout directly impacts memory bandwidth, GPU cache efficiency, and runtime rendering throughput. This article examines the core performance trade-",
+    false
+  ],
+  [
+    178,
+    "glTF Interleaved vs Non-Interleaved Vertex Buffers",
+    "The glTF 2.0 specification natively supports both interleaved and non-interleaved vertex buffer layouts through its hierarchical data storage architecture consisting of buffers, buffer views, and accessors. In glTF, the choice between structuring vertex a",
+    false
+  ],
+  [
+    177,
+    "Why glTF bufferView byteStride Must Be a Multiple of 4",
+    "In the glTF 2.0 specification, bufferView.byteStride defines the stride in bytes between consecutive vertex attributes and must strictly be a multiple of 4 (between 4 and 252 bytes). This constraint exists primarily to enforce GPU memory alignment, ensure",
+    false
+  ],
+  [
+    176,
+    "WebGL Alignment Rules for glTF Binary Buffers",
+    "This article provides an overview of how memory alignment specifications in the glTF 2.0 format correspond directly with WebGL’s buffer consumption requirements. Efficiently rendering 3D assets requires feeding binary data from .bin files directly to the",
+    false
+  ],
+  [
+    175,
+    "How glTF Enables Zero-Copy to GPU Buffers",
+    "The GL Transmission Format (glTF) is explicitly architected as a runtime-ready transmission format that minimizes CPU processing during 3D asset loading. By isolating heavy geometry and animation data into contiguous binary blobs designed to mirror standa",
+    false
+  ],
+  [
+    174,
+    "Chunking glTF Geometry for HTTP Range Streaming",
+    "Chunking glTF geometry transforms massive 3D models into modular, byte-addressable segments, enabling progressive streaming via HTTP range requests. Instead of forcing a browser or 3D engine to download an entire asset before rendering, this architecture",
+    false
+  ],
+  [
+    173,
+    "How Splitting glTF Files Improves CDN Caching",
+    "Splitting 3D models using the glTF format into separate files—typically separating the JSON descriptor, binary geometry data (.bin), and image textures—significantly enhances Content Delivery Network (CDN) efficiency. Rather than serving a monolithic GLB",
+    false
+  ],
+  [
+    172,
+    "Sanitizing User-Uploaded glTF Models for Web Servers",
+    "Serving user-uploaded 3D assets like glTF (GL Transmission Format) and GLB files introduces significant security risks, ranging from path traversal and cross-site scripting (XSS) to denial-of-service (DoS) via decompression bombs. To safeguard your infras",
+    false
+  ],
+  [
+    171,
+    "How to Prevent Buffer Overflows in glTF Accessors",
+    "Securing glTF (GL Transmission Format) parsers against buffer overflow vulnerabilities requires strict, deterministic validation of memory layouts before accessing binary data. In a glTF asset, an accessor defines typed attributes (such as vertex position",
+    false
+  ],
+  [
+    170,
+    "Security Vulnerabilities in glTF Parsing",
+    "The GL Transmission Format (glTF) is the standard file format for 3D scenes and models, packaging structured JSON metadata alongside raw binary chunks that store vertex attributes, indices, animations, and textures. When 3D engines, web viewers, or native",
+    false
+  ],
+  [
+    169,
+    "How CORS Affects glTF External Buffer Loading",
+    "The glTF (GL Transmission Format) standard frequently relies on separate external files, such as .bin binary buffers and image textures, to store mesh data, animations, and materials. Because web browsers enforce security policies like the Same-Origin Pol",
+    false
+  ],
+  [
+    168,
+    "Why Wide Lines Are Restricted in glTF Rendering",
+    "In standard glTF (GL Transmission Format) rendering, wide lines—lines with a width greater than one pixel—are unsupported or heavily restricted by default to guarantee visual consistency across devices. Because glTF is designed as a universal, cross-platf",
+    false
+  ],
+  [
+    167,
+    "glTF Line Primitives for Wireframe Rendering",
+    "This article provides an overview of the line primitive topologies supported by the glTF 2.0 specification for rendering wireframes and outlines. It details the three native line primitive modes—LINES, LINESTRIP, and LINELOOP—explaining their structure, i",
+    false
+  ],
+  [
+    166,
+    "How Point Size Works in glTF Point Clouds",
+    "This article examines how point size parameters operate when rendering point cloud primitives within the glTF 2.0 specification. While glTF inherently supports point cloud geometry through its primitive rendering modes, the core specification does not def",
+    false
+  ],
+  [
+    165,
+    "How glTF Supports Point Primitive Rendering",
+    "This article explores the mechanisms glTF uses to support point primitive rendering modes, detailing how the file format defines, structures, and renders point-based geometry such as point clouds. It covers the core mode topology enumeration, accessor dat",
+    false
+  ],
+  [
+    164,
+    "How to Encode Point Clouds Using glTF and Draco",
+    "This article provides an overview of how point cloud datasets are structured, compressed, and encoded using the glTF 2.0 format paired with Google Draco compression. It covers the structural definition of points within glTF primitives, the configuration o",
+    false
+  ],
+  [
+    163,
+    "How Cesium Streams Massive 3D Data with glTF Tiling",
+    "Rendering terabyte-scale city models in a web browser requires an architecture that avoids loading entire datasets into memory at once. Cesium achieves this through 3D Tiles, an open spatial data structure that hierarchically partitions massive geospatial",
+    false
+  ],
+  [
+    162,
+    "3D Tiles 2.0 Direct glTF Integration",
+    "The 3D Tiles 2.0 specification marks a major evolutionary step in streaming massive 3D geospatial datasets by natively adopting glTF 2.0 as its core content format. In previous versions, geospatial content was trapped within proprietary tile containers th",
+    false
+  ],
+  [
+    161,
+    "How b3dm Wraps glTF for Geospatial Mapping",
+    "Batched 3D Models (.b3dm) wrap standard glTF (GL Transmission Format) containers to adapt high-performance 3D graphics for large-scale geospatial visualization. Defined as part of the OGC 3D Tiles 1.0 specification, the b3dm format combines raw 3D mesh da",
+    false
+  ],
+  [
+    160,
+    "What Is 3D Tiles and How Does It Use glTF?",
+    "The 3D Tiles standard is an open specification designed for streaming and rendering massive heterogeneous 3D geospatial datasets over the web. This article explains what the 3D Tiles standard is, how it organizes large-scale environments using spatial ind",
+    false
+  ],
+  [
+    159,
+    "Preventing glTF Precision Loss in Geographic Spaces",
+    "Rendering large-scale geospatial environments requires exceptional coordinate accuracy, but standard 32-bit floating-point graphics pipelines quickly break down over planetary distances. The glTF format mitigates precision loss and eliminates visual artif",
+    false
+  ],
+  [
+    158,
+    "HDR Formats for glTF Pre-Filtered Environment Maps",
+    "Generating pre-filtered environment maps for glTF physically based rendering (PBR) requires balancing high dynamic range fidelity with efficient runtime GPU performance. This article outlines the best HDR formats suited for authoring, pre-filtering, and d",
+    false
+  ],
+  [
+    157,
+    "glTF Sample Viewer Split-Sum Environment Lighting",
+    "The glTF Sample Viewer implements image-based lighting (IBL) using the split-sum approximation technique to evaluate the physically based rendering (PBR) specular reflectance equation in real time. By decoupling the radiance integral into two separate, pr",
+    false
+  ],
+  [
+    156,
+    "Realistic glTF Lighting with Environment Maps",
+    "Environment map lighting, commonly known as Image-Based Lighting (IBL), is the cornerstone of achieving photorealism when rendering glTF 3D assets. By utilizing High Dynamic Range Images (HDRIs) to capture real-world lighting conditions, IBL provides rich",
+    false
+  ],
+  [
+    155,
+    "How Anisotropy Tangents Work with Normal Maps in glTF",
+    "In glTF 2.0, achieving realistic brushed metals, hair, and woven fabrics requires combining surface micro-detail from standard normal maps with directional highlights via the KHRmaterialsanisotropy extension. This article breaks down how anisotropic tange",
+    false
+  ],
+  [
+    154,
+    "glTF Anisotropy: Highlight Direction and Strength",
+    "In glTF 2.0, controlling the shape and orientation of specular reflections relies on the KHRmaterialsanisotropy extension. This extension defines how specular highlights stretch and rotate across a surface using a combination of scalar factors, texture ch",
+    false
+  ],
+  [
+    153,
+    "glTF Anisotropy: KHR_materials_anisotropy Guide",
+    "This article provides an overview of how glTF handles anisotropic reflections using the KHRmaterialsanisotropy extension. It explains the principles of anisotropic reflection, breaks down the key parameters and texture mappings defined by the specificatio",
+    false
+  ],
+  [
+    152,
+    "Dynamic MikkTSpace Tangent Generation for glTF Meshes",
+    "Generating MikkTSpace tangents dynamically for glTF meshes requires implementing Morten Mikkelsen’s standardized tangent space algorithm directly within a runtime pipeline. When a glTF asset supplies normal maps but omits the four-component TANGENT vertex",
+    false
+  ],
+  [
+    151,
+    "glTF Tangent Space Without Tangent Vectors",
+    "When a 3D model in the glTF format utilizes normal maps, it relies on tangent space to orient surface details correctly. However, glTF assets frequently omit precomputed tangent vectors from their vertex attribute buffers to reduce file size and transmiss",
+    false
+  ],
+  [
+    150,
+    "Why Metallic glTF Models Have Zero Diffuse Reflections",
+    "In the glTF 2.0 physically based rendering (PBR) specification, setting the metallic parameter to 1.0 eliminates diffuse reflection entirely. This article explains the physical principles separating conductors from dielectrics, outlines the mathematical f",
+    false
+  ],
+  [
+    149,
+    "Energy Conservation in glTF PBR Materials",
+    "This article provides an overview of how the glTF 2.0 file format achieves physical plausibility by enforcing energy conservation between diffuse and specular light reflections. It details the underlying mathematical formulations of the core metallic-roug",
+    false
+  ],
+  [
+    148,
+    "Why glTF Uses 0.04 Dielectric Reflectance",
+    "In the glTF 2.0 specification, the default specular reflectance at normal incidence ($F0$) for dielectrics is set to a linear value of 0.04 (4%). This article explains the physical significance of this value, detailing how it derives from the Fresnel equa",
+    false
+  ],
+  [
+    147,
+    "Override Default F0 with glTF KHR_materials_specular",
+    "This article explains how the glTF extension KHRmaterialsspecular enables 3D artists to override the fixed baseline specular reflectance ($F0$) used in standard glTF PBR workflows. In standard glTF 2.0, non-metallic (dielectric) surfaces are hardcoded to",
+    false
+  ],
+  [
+    146,
+    "glTF 2.0 PBR Standard Dielectric Base Reflectance F0",
+    "This article examines the standard dielectric base reflectance ($F0$) hardcoded into the glTF 2.0 physically based rendering (PBR) specification. It explains the exact numeric value defined by the core specification, the physics behind why this constant w",
+    false
+  ],
+  [
+    145,
+    "Schlick's Fresnel Approximation in glTF PBR",
+    "This article provides an overview of how Schlick’s approximation is implemented within the glTF Physically Based Rendering (PBR) metallic-roughness pipeline. It explains the fundamental role of the Fresnel term in microfacet theory, presents the mathemati",
+    false
+  ],
+  [
+    144,
+    "Smith GGX Geometry Shadowing in glTF Shading",
+    "This article explains the critical role of the Smith GGX geometry shadowing function within the glTF 2.0 standard. It covers how the function models microfacet occlusion, integrates into the Cook-Torrance bidirectional reflectance distribution function (B",
+    false
+  ],
+  [
+    143,
+    "Cook-Torrance Specular Reflection in glTF",
+    "This article provides an overview of how the glTF 2.0 specification implements the Cook-Torrance microfacet BRDF (Bidirectional Reflectance Distribution Function) to calculate specular reflection. It breaks down the mathematical formulation defined by the",
+    false
+  ],
+  [
+    142,
+    "glTF PBR BRDF Mathematical Foundation Explained",
+    "The glTF 2.0 specification relies on a physically based rendering (PBR) metallic-roughness model to achieve consistent, realistic surface appearance across diverse rendering engines. At its core, the standard glTF lighting model employs a microfacet Bidir",
+    false
+  ],
+  [
+    141,
+    "How glTF Ensures Cross-Platform Visual Consistency",
+    "The GL Transmission Format (glTF), maintained by the Khronos Group, solves the long-standing issue of 3D assets appearing differently across varied digital environments by providing a strict, standardized runtime specification. Rather than functioning mer",
+    false
+  ],
+  [
+    140,
+    "glTF Skeletal Nodes and Inverse Bind Matrices",
+    "In glTF 2.0 asset pipelines, character rigging and vertex skinning depend on the mathematical coordination between the node hierarchy and skin definitions. This article explains how glTF skeletal nodes (joints) and inverse bind pose matrices function toge",
+    false
+  ],
+  [
+    139,
+    "How glTF Prevents Gimbal Lock in Skeletal Skinning",
+    "This article examines how the glTF (GL Transmission Format) specification eliminates gimbal lock during complex character skinning and skeletal animation. By enforcing unit quaternions for rotational data instead of traditional Euler angles and combining",
+    false
+  ],
+  [
+    138,
+    "Minimizing glTF Morph Target Memory Footprint",
+    "Morph targets—commonly known as blend shapes—allow for complex skeletal-free animations such as facial expressions, but they can quickly inflate memory consumption because each target duplicate portions of the base mesh data. This article explores practic",
+    false
+  ],
+  [
+    137,
+    "glTF Morph Target Normalization and Out-of-Range Deltas",
+    "glTF handles morph target deltas through additive blending, distinguishing between mathematical accessor normalization and geometric vector re-normalization. When delta attributes or the accumulated results exceed standard ranges—such as unit vector limit",
+    false
+  ],
+  [
+    136,
+    "Max Vertex Count in glTF Using 16-Bit Indices",
+    "In glTF, the maximum vertex count achievable in a single mesh primitive using 16-bit indices is exactly 65,536 vertices. This limit is dictated by the maximum value of an unsigned 16-bit integer, which can address index values ranging from 0 to 65,535. Th",
+    false
+  ],
+  [
+    135,
+    "glTF 16-Bit vs 32-Bit Index Buffers in 3D Models",
+    "The glTF (GL Transmission Format) specification handles mesh topology by referencing index data through accessors, which support unsigned byte, unsigned short, and unsigned int component types. For complex, high-polygon models, the choice between 16-bit a",
+    false
+  ],
+  [
+    134,
+    "Converting NURBS to Lightweight glTF Meshes",
+    "Converting mathematically precise Non-Uniform Rational B-Splines (NURBS) surfaces into lightweight glTF triangle meshes is a critical pipeline for bringing engineering-grade CAD data into real-time WebGL, AR, and virtual environments. While glTF provides",
+    false
+  ],
+  [
+    133,
+    "How CAD Tools Convert B-Rep Geometry to glTF",
+    "This article provides an overview of the conversion pipeline used by modern CAD software to translate mathematically continuous Boundary Representation (B-Rep) models into discrete, real-time glTF polygonal meshes. Converting CAD models to glTF requires b",
+    false
+  ],
+  [
+    132,
+    "glTF GPU Instancing Transformation Matrices Explained",
+    "This article provides an overview of how instance transformation matrices are structured and stored in glTF using the EXTmeshgpuinstancing extension. It explains the decomposed transformation format, how attributes are mapped within binary buffer views, a",
+    false
+  ],
+  [
+    131,
+    "EXT_mesh_gpu_instancing Performance for glTF Vegetation",
+    "The EXTmeshgpuinstancing extension provides dramatic performance scaling for large vegetation scenes in glTF by offloading duplicate mesh transformations to the GPU and collapsing thousands of individual draw calls into single draw commands. In typical en",
+    false
+  ],
+  [
+    130,
+    "glTF Instanced Mesh Rendering: EXT_mesh_gpu_instancing",
+    "The EXTmeshgpuinstancing extension enables glTF 2.0 to efficiently replicate identical 3D geometries by offloading transform and attribute calculations directly to the GPU. Instead of relying on individual nodes and multiple draw calls for repeated object",
+    false
+  ],
+  [
+    129,
+    "Colliders and Constraints in glTF Physics Extensions",
+    "Emerging glTF physics extensions, primarily developed under the Khronos Group’s draft KHRphysicsrigidbodies specification, introduce standardized real-time physics metadata directly into 3D asset transmission. This article outlines the specific collider g",
+    false
+  ],
+  [
+    128,
+    "glTF Physics and Rigid Body Mechanics Explained",
+    "The proposed Khronos draft extension for glTF physics, primarily formulated as KHRphysicsrigidbodies, standardizes how real-time physics data is authored and exchanged across 3D tools and runtime engines. This article examines the extension's architecture",
+    false
+  ],
+  [
+    127,
+    "Streaming Audio and Physics Metadata with glTF",
+    "Streaming external audio and physics metadata alongside glTF enables rich, interactive 3D environments without inflating initial model download sizes. By decoupling secondary data streams from the primary geometry and texture payloads, applications can dy",
+    false
+  ],
+  [
+    126,
+    "glTF Multiple Buffers in One JSON Descriptor",
+    "The glTF (GL Transmission Format) standard uses a flexible, modular architecture that allows a single JSON descriptor file (.gltf) to link to multiple separate binary buffer files (.bin). Instead of embedding all binary payloads into a monolithic containe",
+    false
+  ],
+  [
+    125,
+    "Why GLB Is Better Than Base64 glTF in Production",
+    "While glTF is the standard transmission format for real-time 3D assets on the web, distributing scenes as self-contained base64-encoded glTF files creates severe performance bottlenecks. Binary GLB containers solve these issues by packaging JSON scene des",
+    false
+  ],
+  [
+    124,
+    "Storing Inline Base64 Data URIs in glTF",
+    "This article provides an overview of how the glTF (GL Transmission Format) 3D asset specification uses inline base64-encoded Data URIs to create self-contained files. By embedding binary buffers and image textures directly into the primary JSON structure",
+    false
+  ],
+  [
+    123,
+    "Valid glTF Sampler Filter Flags",
+    "In glTF 2.0, texture sampler definitions use WebGL integer constants to configure magnification (magFilter) and minification (minFilter) behavior. This guide details the valid numeric constants, their corresponding OpenGL/WebGL enumerations, and how mipma",
+    false
+  ],
+  [
+    122,
+    "How glTF Manages Texture Wrapping Modes",
+    "The glTF (GL Transmission Format) specification handles texture wrapping modes by defining sampler configurations directly within its JSON structure, dictating how a runtime engine samples texture coordinates (UVs) that fall outside the standard [0.0, 1.0",
+    false
+  ],
+  [
+    121,
+    "Mipmap Generation for Compressed Textures in glTF",
+    "In 3D graphics pipelines utilizing the glTF format, mipmap generation is vital for maximizing rendering performance, eliminating visual artifacts, and optimizing GPU cache efficiency. When dealing with compressed texture extensions, such as KHRtexturebasi",
+    false
+  ],
+  [
+    120,
+    "How glTF Optimizes Mobile GPU Memory Bandwidth",
+    "This article examines how the GL Transmission Format (glTF) minimizes memory bandwidth consumption on mobile Graphics Processing Units (GPUs). Mobile system architectures are severely constrained by thermal envelopes and battery capacity, making external",
+    false
+  ],
+  [
+    119,
+    "What is the MSFT_lod Extension in glTF?",
+    "This article provides an overview of the MSFTlod extension in glTF 2.0, detailing its purpose, structure, and operational mechanics. You will learn what the extension is, how it organizes discrete geometric detail levels within a 3D asset, and how runtime",
+    false
+  ],
+  [
+    118,
+    "Progressive LOD in glTF Using Extensions",
+    "The glTF (GL Transmission Format) specification is designed for efficient delivery and loading of 3D content, but core glTF does not natively define Level-of-Detail (LOD) mechanisms. To deliver progressive and discrete LOD representations, glTF relies on",
+    false
+  ],
+  [
+    117,
+    "glTF Size and Triangle Count for E-Commerce",
+    "This guide provides the standard file size, triangle count, and optimization specifications for deploying glTF/GLB models in e-commerce. Following these benchmarks ensures fast load times, high visual fidelity, and seamless real-time rendering across web",
+    false
+  ],
+  [
+    116,
+    "How Khronos 3D Commerce Leverages glTF for Retail",
+    "The Khronos 3D Commerce Working Group establishes industry-wide standards for creating, managing, and displaying real-time 3D assets in retail, utilizing glTF (GL Transmission Format) as its primary foundation. By extending glTF with advanced Physically B",
+    false
+  ],
+  [
+    115,
+    "glTF Sample Viewer: The 3D Industry Baseline",
+    "The glTF Sample Viewer is the official reference application maintained by the Khronos Group to demonstrate the correct rendering of glTF (GL Transmission Format) 2.0 assets. This article explores what the viewer is, its core capabilities, and how it func",
+    false
+  ],
+  [
+    114,
+    "Convert glTF to USDZ Losslessly for Apple AR",
+    "Converting glTF assets to USDZ without quality degradation requires mapping glTF PBR materials directly to Apple’s UsdPreviewSurface specification while preserving geometry, textures, and animations. This article covers the essential tools and technical w",
+    false
+  ],
+  [
+    113,
+    "Why Google Scene Viewer Requires glTF and GLB Models",
+    "Google Scene Viewer requires glTF (GL Transmission Format) and its binary counterpart, GLB, because they provide the ideal balance of compact file size, rapid loading, and standardized 3D rendering for web-based augmented reality. Designed specifically fo",
+    false
+  ],
+  [
+    112,
+    "AR Quick Look vs Scene Viewer: glTF and USDZ Explained",
+    "Mobile augmented reality (AR) runtimes allow users to interact with 3D digital objects placed within their physical environments directly from mobile browsers and native applications. Apple’s AR Quick Look and Google’s Scene Viewer are the two dominant na",
+    false
+  ],
+  [
+    111,
+    "glTF to Unreal Engine Coordinate Mapping Challenges",
+    "Importing glTF 3D models into Unreal Engine introduces technical hurdles driven by conflicting spatial conventions. glTF relies on a right-handed, Y-up coordinate system standardizing units in meters, whereas Unreal Engine operates on a left-handed, Z-up",
+    false
+  ],
+  [
+    110,
+    "How Unity Converts glTF to Prefabs and Meshes",
+    "Unity converts glTF (GL Transmission Format) and GLB files into native engine assets through an import pipeline that parses the source data, reconstructs 3D geometry into UnityEngine.Mesh objects, translates PBR materials, and packages the resulting hiera",
+    false
+  ],
+  [
+    109,
+    "3ds Max glTF Export: Skinning and Joint Settings",
+    "Exporting rigged characters and animated models from Autodesk 3ds Max to the glTF format requires specific scene setup and exporter configurations to avoid collapsed hierarchies, detached meshes, and distorted vertex weights. This guide details the essent",
+    false
+  ],
+  [
+    108,
+    "How Maya Maps Arnold Materials to glTF PBR",
+    "Exporting 3D assets from Autodesk Maya to the glTF (GL Transmission Format) standard requires translating proprietary shader networks—predominantly Arnold's aiStandardSurface—into the standardized glTF 2.0 Metallic-Roughness PBR material model. This proce",
+    false
+  ],
+  [
+    107,
+    "Exporting Non-PBR Shaders from Blender to glTF",
+    "Exporting non-PBR shader node trees from Blender to the glTF format results in stripped node data, missing material attributes, or flat fallback colors because glTF strictly adheres to a standardized Physically Based Rendering (PBR) specification. Because",
+    false
+  ],
+  [
+    106,
+    "Custom Attributes in Blender glTF Export Workflows",
+    "Exporting custom attributes from Blender to the glTF 2.0 format allows technical artists and developers to pass specialized data—such as procedural masks, gameplay parameters, and custom vertex data—directly into real-time engines and web viewers. Blender",
+    false
+  ],
+  [
+    105,
+    "Babylon.js glTF Streaming Performance Benefits",
+    "Babylon.js incorporates native glTF loader streaming to significantly enhance asset loading speeds and runtime efficiency in web-based 3D applications. By incrementally reading, parsing, and rendering 3D assets as binary data arrives over the network, str",
+    false
+  ],
+  [
+    104,
+    "How Three.js Loads and Displays glTF Models",
+    "This article explores how modern web graphics engines, particularly Three.js, ingest, decode, and render 3D assets using the glTF (GL Transmission Format) standard. It details the entire technical pipeline, covering network retrieval, parsing the JSON hie",
+    false
+  ],
+  [
+    103,
+    "Common glTF Buffer Alignment Errors Explained",
+    "The glTF 2.0 specification enforces strict data alignment rules to guarantee that binary data can be loaded directly into GPU buffers without costly CPU-side re-indexing or copying. When these rules are broken, the official glTF Validator flags specific b",
+    false
+  ],
+  [
+    102,
+    "How the Khronos glTF Validator Inspects Assets",
+    "The official Khronos glTF Validator is an open-source tool designed to ensure 3D assets conform strictly to the glTF (GL Transmission Format) 2.0 specification. Written in Dart and compiled for both command-line interfaces and web environments, it recursi",
+    false
+  ],
+  [
+    101,
+    "glTF-Transform in 3D Asset Optimization Pipelines",
+    "The glTF-Transform library is a modular, open-source toolset designed to read, edit, and optimize 3D models stored in the glTF 2.0 format. Acting as a critical bridge between 3D authoring software and real-time runtime environments, it enables developers",
+    false
+  ],
+  [
+    100,
+    "KHR_xmp_json_ld: Embedding Provenance and Copyright in glTF",
+    "The KHRxmpjsonld extension standardizes how 3D assets carry identification, licensing, and digital history by embedding Adobe’s Extensible Metadata Platform (XMP) data directly into glTF 2.0 files using JSON-LD (JavaScript Object Notation for Linked Data)",
+    false
+  ],
+  [
+    99,
+    "glTF EXT_structural_metadata: Node Metadata Guide",
+    "The EXTstructuralmetadata extension provides a standardized way to embed rich, strongly typed, and schema-driven metadata into glTF assets. When applied to nodes, it allows developers to associate non-visual properties—such as BIM parameters, GIS attribut",
+    false
+  ],
+  [
+    98,
+    "How KHR_materials_variants Enables glTF Colorways",
+    "The KHRmaterialsvariants extension allows a single glTF or GLB 3D asset to store multiple material variations—such as different colors, patterns, and finishes—without duplicating the underlying geometry. By defining a global list of variant names and mapp",
+    false
+  ],
+  [
+    97,
+    "ETC1S vs UASTC in glTF Texture Compression",
+    "When optimizing 3D assets using the glTF format, developers face a critical choice between ETC1S and UASTC texture compression modes via the KHRtexturebasisu extension. Both formats originate from the Basis Universal technology to deliver GPU-ready textur",
+    false
+  ],
+  [
+    96,
+    "How KHR_texture_basisu Works in glTF",
+    "The KHRtexturebasisu extension enables glTF 2.0 assets to utilize Basis Universal compressed textures stored in KTX v2 (.ktx2) containers. By replacing standard PNG and JPEG formats, this extension dramatically reduces both download sizes over the network",
+    false
+  ],
+  [
+    95,
+    "Why Meshopt glTF Compression Is Fast and GPU-Friendly",
+    "The EXTmeshoptcompression extension for glTF addresses a fundamental bottleneck in real-time 3D delivery: the trade-off between file size and decompression latency. While alternative compression algorithms often focus purely on minimizing asset size over",
+    false
+  ],
+  [
+    94,
+    "EXT_meshopt_compression vs Draco in glTF",
+    "When optimizing 3D assets for the web and real-time engines, choosing the right compression method is crucial for balancing delivery bandwidth with runtime performance. While Google's Draco compression produces slightly smaller raw file sizes, the EXTmesh",
+    false
+  ],
+  [
+    93,
+    "Draco Geometry Decoding CPU Overhead in glTF",
+    "Draco compression significantly reduces the file size of 3D models stored in the glTF format, optimizing network transmission times for web and real-time applications. However, this bandwidth efficiency introduces a compute trade-off: the client CPU must",
+    false
+  ],
+  [
+    92,
+    "glTF KHR_draco_mesh_compression Explained",
+    "The KHRdracomeshcompression extension dramatically reduces glTF 3D asset file sizes by structurally altering how geometric data—specifically vertex attributes and triangle connectivity—is packaged and stored. This article outlines the specific structural",
+    false
+  ],
+  [
+    91,
+    "How KHR_mesh_quantization Reduces glTF File Sizes",
+    "The KHRmeshquantization extension reduces glTF 3D model buffer sizes and GPU memory footprints by truncating high-precision vertex attributes into compact, lower-bit formats. Standard glTF files typically store geometry using 32-bit floating-point numbers",
+    false
+  ],
+  [
+    90,
+    "Optimize glTF Texture Atlases with KHR_texture_transform",
+    "The KHRtexturetransform extension is a fundamental tool in the glTF ecosystem that enables scale, offset, and rotation properties to be applied to UV coordinates at the material level. By decoupling texture coordinates from static vertex data, this extens",
+    false
+  ],
+  [
+    89,
+    "KHR_texture_transform UV Mapping in glTF",
+    "The KHRtexturetransform extension in glTF provides a standardized way to modify UV texture coordinates directly within material definitions without altering the underlying mesh geometry. By allowing runtime adjustments to texture scale, offset, and rotati",
+    false
+  ],
+  [
+    88,
+    "glTF Light Attenuation: Point and Spot Falloff",
+    "glTF manages point and spot light falloff primarily through the KHRlightspunctual extension, using physically based inverse-square distance attenuation coupled with an optional range clamp and angular cone factors. While point lights attenuate purely base",
+    false
+  ],
+  [
+    87,
+    "Directional Lights in glTF KHR_lights_punctual",
+    "This article explains the behavior, properties, and implementation details of directional lights defined using the KHRlightspunctual glTF 2.0 extension. Directional lights act as distant light sources with parallel rays, and understanding their default or",
+    false
+  ],
+  [
+    86,
+    "glTF KHR_lights_punctual Extension Explained",
+    "This article provides an overview of the KHRlightspunctual extension for glTF 2.0, detailing the analytical lighting setups it introduces to 3D scenes. While the core glTF specification primarily relies on image-based lighting (IBL) for ambient illuminati",
+    false
+  ],
+  [
+    85,
+    "How KHR_materials_dispersion Works in glTF",
+    "The KHRmaterialsdispersion extension introduces realistic optical dispersion to the glTF ecosystem, enabling real-time 3D engines to simulate the wavelength-dependent refraction of light—commonly recognized as chromatic aberration or prismatic color separ",
+    false
+  ],
+  [
+    84,
+    "glTF KHR_materials_iridescence and Thin-Film Optics",
+    "The KHRmaterialsiridescence extension introduces physically based thin-film interference to the glTF 2.0 standard, allowing 3D rendering engines to accurately simulate color-shifting optical phenomena without requiring custom shaders. By defining properti",
+    false
+  ],
+  [
+    83,
+    "HDR Glows with glTF KHR_materials_emissive_strength",
+    "The KHRmaterialsemissivestrength extension allows 3D artists and developers to produce high-dynamic-range (HDR) glows and bloom effects in glTF assets by decoupling emissive intensity from standard color ranges. In core glTF 2.0, emissive surfaces are str",
+    false
+  ],
+  [
+    82,
+    "Optical Properties of glTF KHR_materials_specular",
+    "The KHRmaterialsspecular extension expands the standard glTF 2.0 physically based rendering (PBR) workflow by reintroducing fine-grained specular controls that were intentionally simplified in the core specification. By decoupling specular reflection from",
+    false
+  ],
+  [
+    81,
+    "How KHR_materials_sheen Renders Velvet in glTF",
+    "The KHRmaterialssheen extension enhances glTF's core Physically Based Rendering (PBR) pipeline by introducing an additional reflection layer designed to simulate the scattering of light from microfibers on cloth and fabric. By replacing standard microface",
+    false
+  ],
+  [
+    80,
+    "KHR_materials_ior: Index of Refraction in glTF",
+    "The KHRmaterialsior extension allows developers and 3D artists to define a custom Index of Refraction (IOR) for materials in glTF 2.0. By overriding the default fixed IOR value used in core glTF physically based rendering (PBR), this extension enables the",
+    false
+  ],
+  [
+    79,
+    "KHR_materials_volume: Absorption and Thickness in glTF",
+    "The KHRmaterialsvolume extension in glTF enables realistic rendering of transparent and translucent objects by turning a polygonal shell into a virtual solid volume. This article examines how the extension defines physical thickness and light absorption,",
+    false
+  ],
+  [
+    78,
+    "glTF KHR_materials_transmission Explained",
+    "The KHRmaterialstransmission extension introduces realistic glass and transparent dielectric rendering to the glTF 2.0 ecosystem by modeling the physical transmission of light through surfaces. Unlike basic alpha blending, which simply reduces pixel opaci",
+    false
+  ],
+  [
+    77,
+    "KHR_materials_clearcoat Roughness and Normal Maps",
+    "The KHRmaterialsclearcoat extension in glTF adds an independent, specular dielectric layer on top of a standard physically based rendering (PBR) material to simulate lacquered, varnished, or wet surfaces. This article outlines how the extension parameteri",
+    false
+  ],
+  [
+    76,
+    "glTF KHR_materials_clearcoat Extension Explained",
+    "The KHRmaterialsclearcoat extension in glTF simulates a thin, transparent, and glossy protective layer applied over a base physical material. This article explains how the clearcoat model functions within physically based rendering (PBR), the specific opt",
+    false
+  ],
+  [
+    75,
+    "How KHR_materials_unlit Bypasses PBR in glTF",
+    "The KHRmaterialsunlit extension allows glTF 2.0 assets to completely bypass physically based rendering (PBR) calculations in favor of a constant, flat-shading model. By instructing compatible renderers to skip the standard lighting equation, this extensio",
+    false
+  ],
+  [
+    74,
+    "Purpose of glTF Extension Prefixes like MSFT and EXT",
+    "glTF relies on standardized prefixes such as MSFT, EXT, and KHR to systematically organize feature additions, prevent naming conflicts, and indicate the governance level of new capabilities. These prefixes serve as vital namespaces within the 3D asset eco",
+    false
+  ],
+  [
+    73,
+    "Khronos glTF Extension Prefixes Explained",
+    "This article explores the extension architecture of the glTF (GL Transmission Format) 3D standard, focusing on how extensions are categorized and standardized. It specifically identifies the official naming prefix assigned to Khronos-ratified extensions a",
+    false
+  ],
+  [
+    72,
+    "extensionsUsed vs extensionsRequired in glTF",
+    "In glTF 2.0, extensions allow creators to introduce advanced features, shaders, and compression methods beyond the core specification. The critical distinction between extensionsUsed and extensionsRequired governs how a 3D runtime handles missing capabili",
+    false
+  ],
+  [
+    71,
+    "How glTF extensionsUsed Informs Runtime Engines",
+    "The extensionsUsed array in a glTF (GL Transmission Format) asset acts as an explicit manifest that lists all extension capabilities incorporated within the file. This article examines how runtime engines parse this array to prepare pipelines, the operati",
+    false
+  ],
+  [
+    70,
+    "The glTF Extension Mechanism Explained",
+    "This article explains how the glTF (GL Transmission Format) extension mechanism works to expand the core specification's capabilities. Readers will learn about the role of the top-level extension arrays, how individual elements implement custom properties",
+    false
+  ],
+  [
+    69,
+    "How glTF doubleSided Ensures Two-Sided Visibility",
+    "This article explains how the doubleSided property in the glTF (GL Transmission Format) 2.0 specification enables two-sided polygon rendering. It details the default behavior of 3D graphics pipelines regarding backface culling, how setting the doubleSided",
+    false
+  ],
+  [
+    68,
+    "The Role of alphaCutoff in glTF Alpha Masking",
+    "In the glTF 2.0 specification, the alphaCutoff property defines the exact threshold used to determine whether a fragment is rendered or completely discarded when a material uses the MASK alpha mode. This article explains how alphaCutoff functions within 3",
+    false
+  ],
+  [
+    67,
+    "glTF Alpha Modes: OPAQUE, MASK, and BLEND Explained",
+    "In the glTF 2.0 specification, a material's transparency behavior is governed by the alphaMode property, which dictates how source alpha values are interpreted during rendering. This article provides an overview of the three standard alpha modes supported",
+    false
+  ],
+  [
+    66,
+    "glTF Emissive Color Calculation and emissiveFactor",
+    "In glTF 2.0, the emissive color determines the light emitted by a material independently of scene illumination. This guide explains the exact numeric formula used to calculate linear emissive color using emissiveFactor, how optional texture sampling inter",
+    false
+  ],
+  [
+    65,
+    "Combining AO, Roughness, and Metallic Textures in glTF",
+    "In the glTF 2.0 specification, ambient occlusion, roughness, and metallic maps are combined into a single image using a technique called channel packing. Instead of loading three individual grayscale textures, glTF stores these distinct material propertie",
+    false
+  ],
+  [
+    64,
+    "How glTF Normal Map Scale Controls Surface Relief",
+    "The normal map scale factor in glTF is a floating-point multiplier that modulates the perceived depth and intensity of high-frequency surface details on a 3D model. Stored within the material’s normalTextureInfo object, this parameter scales the horizonta",
+    false
+  ],
+  [
+    63,
+    "How glTF Encodes Normal Maps in RGB Channels",
+    "This article provides an overview of how the glTF (GL Transmission Format) 2.0 specification encodes surface normal perturbation maps into RGB color textures. In glTF, normal maps simulate micro-surface detail by mapping tangent-space 3D vector coordinate",
+    false
+  ],
+  [
+    62,
+    "Why glTF Requires Linear Normal and Roughness Maps",
+    "In modern Physically Based Rendering (PBR) pipelines, maintaining accurate material definitions depends entirely on how texture data is decoded. The glTF 2.0 specification strictly mandates that metallic-roughness and normal maps be sampled in linear colo",
+    false
+  ],
+  [
+    61,
+    "glTF Base Color Texture Color Space Conversion",
+    "When sampling base color textures from a glTF 2.0 asset, rendering engines must convert the color data from the non-linear sRGB color space to a linear color space prior to performing lighting calculations. This article explains the exact color space requ",
+    false
+  ],
+  [
+    60,
+    "Combining Base Color Factor and Texture in glTF",
+    "In the glTF 2.0 physically based rendering (PBR) specification, the final surface color is determined by blending the material's baseColorFactor and the baseColorTexture. This article explains the mathematical formula used to combine these two inputs, how",
+    false
+  ],
+  [
+    59,
+    "glTF Metallic Roughness Texture Channels Explained",
+    "In the glTF 2.0 specification, physical material properties are packed into single texture files to optimize memory and rendering performance. This article explains exactly which color channels within the metallicRoughnessTexture define roughness and meta",
+    false
+  ],
+  [
+    58,
+    "Metallic-Roughness Workflow in glTF PBR Materials",
+    "The metallic-roughness workflow is the standard Physically Based Rendering (PBR) model defined by the glTF 2.0 specification to achieve predictable, photorealistic surface rendering across real-time 3D engines. This workflow relies on standard physical pr",
+    false
+  ],
+  [
+    57,
+    "Default Material Model in glTF 2.0 Explained",
+    "This article explores the standard material model serving as the default visual foundation for glTF 2.0: the Physically Based Rendering (PBR) Metallic-Roughness workflow. It covers how this model functions, outlines its primary texture parameters, and exp",
+    false
+  ],
+  [
+    56,
+    "How to Package Multiple Animations in glTF",
+    "The glTF (GL Transmission Format) standard packages multiple concurrent animation clips by defining discrete animation objects within a single top-level array, allowing 3D engines to isolate, blend, and play them simultaneously. This article explains the",
+    false
+  ],
+  [
+    55,
+    "Animating Morph Target Weights in glTF",
+    "The glTF (GL Transmission Format) specification allows morph target weights to be animated through standard animation channels to provide a unified, lightweight, and hardware-friendly approach to mesh deformation. By integrating weight manipulation direct",
+    false
+  ],
+  [
+    54,
+    "glTF Animation Channel Target Properties",
+    "In the glTF 2.0 specification, animations modify scene elements over time by linking input keyframe data to specific node attributes through animation channels. This article identifies the four core node properties that channel targets can directly animat",
+    false
+  ],
+  [
+    53,
+    "How glTF CUBICSPLINE Computes Keyframe Tangents",
+    "This article provides an overview of how glTF 2.0 handles CUBICSPLINE animation interpolation. In glTF, tangents are not dynamically computed or derived from neighboring values at runtime; rather, explicit in-tangent and out-tangent values are precomputed",
+    false
+  ],
+  [
+    52,
+    "glTF STEP Interpolation Curve and Mathematics",
+    "This article provides an overview of how the STEP interpolation mode operates within glTF keyframe tracks, identifying the exact mathematical function that drives it. While traditional keyframe animation frequently uses continuous curves like linear or cu",
+    false
+  ],
+  [
+    51,
+    "How glTF Linear Animation Interpolation Works",
+    "This article provides a technical overview of how glTF animation samplers calculate intermediate values between keyframes using the LINEAR interpolation mode. It explains the mechanics of determining the interpolation factor between keyframe timestamps an",
+    false
+  ],
+  [
+    50,
+    "glTF Animation Timeline Sampling Explained",
+    "In the glTF 2.0 specification, the animation object drives runtime motion by pairing keyframe timelines with specific node transformations. This article provides a technical breakdown of how glTF structures timeline sampling, focusing on the relationship",
+    false
+  ],
+  [
+    49,
+    "How glTF Defines Baseline Morph Target Weights",
+    "This article explains how the glTF 2.0 specification defines baseline target weights for morph target animations. It covers the structural hierarchy between mesh primitives and node instances, details how default weights are declared and inherited, and ou",
+    false
+  ],
+  [
+    48,
+    "glTF Morph Targets Beyond Vertex Positions",
+    "glTF 2.0 supports morph target animation beyond simple geometry displacements, allowing real-time renderers to deform surface details alongside vertex geometry. While dynamic mesh deformation typically focuses on vertex positions, the glTF specification o",
+    false
+  ],
+  [
+    47,
+    "How glTF Stores Relative Deltas for Morph Targets",
+    "glTF (GL Transmission Format) handles morph targets, commonly known as shape keys, by storing additive displacement vectors rather than full duplicate geometry. Instead of redefining entire meshes for each target pose, glTF defines relative positional del",
+    false
+  ],
+  [
+    46,
+    "Role of inverseBindMatrices in glTF Mesh Skinning",
+    "This article provides a concise technical explanation of the inverseBindMatrices accessor in the glTF (GL Transmission Format) 2.0 specification. It covers why this data is mathematically necessary for linear blend skinning, how it transforms vertex data",
+    false
+  ],
+  [
+    45,
+    "How glTF Skin References the Skeletal Hierarchy",
+    "In glTF (GL Transmission Format), skeletal animation relies on the skin object to bridge renderable mesh geometry with hierarchical transformation trees. Rather than introducing a specialized data type for bones, glTF repurposes standard scene graph nodes",
+    false
+  ],
+  [
+    44,
+    "glTF Max Skinning Joints Per Vertex Explained",
+    "The glTF 2.0 format handles skeletal animation through joint and weight vertex attributes, allowing models to deform realistically across complex skeletons. While the specification defines joint influences in sets of four, the architecture natively suppor",
+    false
+  ],
+  [
+    43,
+    "How glTF Assigns Joint Indices Across Vertex Streams",
+    "This article explains how the glTF (GL Transmission Format) specification handles skeletal skinning when vertices are influenced by more than four bones. It covers the mechanics of partitioning joint data across multiple vertex attribute streams, how join",
+    false
+  ],
+  [
+    42,
+    "glTF Vertex Weight Constraints for Skeletal Meshes",
+    "Preparing skeletal meshes for the glTF 2.0 format requires adhering to strict vertex weight and joint influence rules to ensure broad compatibility across real-time 3D engines. This guide outlines the core vertex weight constraints in glTF, including the",
+    false
+  ],
+  [
+    41,
+    "glTF Vertex Color Encoding and Interpretation",
+    "This article provides an overview of how raw vertex colors are defined, stored, and rendered according to the glTF 2.0 specification. It covers the required attribute naming conventions, supported data formats, component normalization, linear color space",
+    false
+  ],
+  [
+    40,
+    "glTF Sparse Accessor Indices and Values Explained",
+    "In glTF (GL Transmission Format), sparse accessors provide an efficient method to store modifications or sparse data—such as morph targets or blend shapes—without duplicating an entire base buffer. This article explains how the indices and values arrays w",
+    false
+  ],
+  [
+    39,
+    "Role of Sparse Accessors in glTF Mesh Deformations",
+    "This article explores how glTF utilizes sparse accessors to optimize the storage and transmission of irregular or localized mesh deformations, such as morph targets and blend shapes. By defining only the vertices that actively change rather than storing d",
+    false
+  ],
+  [
+    38,
+    "Optimizing Frustum Culling with glTF Accessor Bounds",
+    "The glTF (GL Transmission Format) specification optimizes frustum culling by embedding precomputed axis-aligned bounding box (AABB) data directly into the min and max properties of its position accessors. This architecture allows real-time graphics engine",
+    false
+  ],
+  [
+    37,
+    "glTF Accessor Min and Max Bounds Explained",
+    "In the glTF (GL Transmission Format) specification, the min and max properties of an accessor define the minimum and maximum values present in its corresponding data array. This article explores the computational purposes of these bounds, explaining how t",
+    false
+  ],
+  [
+    36,
+    "glTF Normalized Integers to Float Conversion",
+    "In glTF assets, vertex attributes can be stored as integers to save bandwidth and memory, then converted to floating-point values during processing. When an accessor sets the normalized boolean property to true, runtime parsers and graphics hardware autom",
+    false
+  ],
+  [
+    35,
+    "glTF Accessor Types: Scalar vs Vector vs Matrix",
+    "In a glTF file, accessors act as the bridge between raw binary buffer data and structured 3D graphics information. The accessor's type attribute specifies how individual data elements are grouped mathematically, defining whether an entry represents a sing",
+    false
+  ],
+  [
+    34,
+    "glTF componentType Constants Explained",
+    "glTF relies on accessor objects to interpret raw binary data into 3D geometry and animations. Within these accessors, integer componentType values, such as 5126, define the scalar data type of the stored elements. This article explains how glTF implements",
+    false
+  ],
+  [
+    33,
+    "glTF Byte Alignment for Accessors and BufferViews",
+    "In glTF 2.0, precise byte alignment constraints govern how binary data is organized within bufferView and accessor structures to ensure efficient GPU memory mapping and prevent CPU memory alignment faults. This article details the specific alignment rules",
+    false
+  ],
+  [
+    32,
+    "glTF BufferView Byte Offsets and Stride Explained",
+    "In a glTF asset, the bufferView component bridges raw binary blobs and high-level 3D model data by carving a contiguous chunk out of a buffer. It establishes structural boundaries using properties such as byteOffset to designate the starting point of data",
+    false
+  ],
+  [
+    31,
+    "glTF Accessors: Bridging JSON and Binary Data",
+    "In the glTF (GL Transmission Format) 3D asset pipeline, data is divided between lightweight JSON metadata and high-performance binary storage. This article explains how accessors serve as the vital translation layer bridging these two domains. By defining",
+    false
+  ],
+  [
+    30,
+    "glTF Indexing Modes for Triangle Topologies",
+    "This article provides an overview of how the glTF (GL Transmission Format) specification defines topology types and index modes for rendering triangular meshes. In glTF, primitive geometry can be represented either with explicit index buffers or sequentia",
+    false
+  ],
+  [
+    29,
+    "Standard glTF Vertex Attribute Semantics",
+    "The glTF 2.0 specification defines a set of standard vertex attribute semantics used by renderers to correctly interpret mesh geometry. These standardized names ensure portability across rendering engines and authoring tools, identifying geometric data su",
+    false
+  ],
+  [
+    28,
+    "How glTF Mesh Primitives Structure 3D Geometry",
+    "In the glTF (GL Transmission Format) 3D asset specification, geometry is structured hierarchically, positioning mesh primitives as the atomic units of renderable data. While a mesh represents a high-level 3D object in a scene, it does not hold vertex or s",
+    false
+  ],
+  [
+    27,
+    "glTF Mesh Entity Base Definition Explained",
+    "In the glTF (GL Transmission Format) 2.0 specification, a mesh defines the geometric shape of a 3D object through an array of renderable components known as primitives. This article explains the base structural definition of a glTF mesh entity, breaking d",
+    false
+  ],
+  [
+    26,
+    "Switching Multiple Cameras in a glTF Scene",
+    "This article explains how to define multiple cameras within the glTF 2.0 file format and switch between them dynamically in WebGL engines. While glTF natively stores multiple camera definitions and binds them to the scene hierarchy, the actual switching m",
+    false
+  ],
+  [
+    25,
+    "glTF Orthographic Camera Configuration Fields",
+    "In glTF 2.0, an orthographic camera defines a parallel projection where objects maintain the same visual size regardless of their distance from the viewer. Defining this projection involves setting the camera's base type to \"orthographic\" and specifying f",
+    false
+  ],
+  [
+    24,
+    "glTF Perspective Camera Projection Parameters",
+    "In glTF (GL Transmission Format), a camera node defines a perspective projection by referencing a reusable perspective camera object stored in the asset's root arrays. This article explains how glTF separates spatial transformation from camera optics, det",
+    false
+  ],
+  [
+    23,
+    "How glTF Prevents Cyclic Scene Graph Loops",
+    "The glTF (GL Transmission Format) specification prevents cyclic dependency loops within its scene graph hierarchy by enforcing strict structural rules in its schema, requiring a strict tree hierarchy with single-parent ownership, and relying on specificat",
+    false
+  ],
+  [
+    22,
+    "How to Define a 4x4 Matrix in a glTF Node",
+    "In glTF (GL Transmission Format), node transformations can be defined either by individual translation, rotation, and scale (TRS) properties or by a single 4x4 transformation matrix. Replacing separate TRS vectors with a unified matrix property simplifies",
+    false
+  ],
+  [
+    21,
+    "Why glTF Uses Quaternions Instead of Euler Angles",
+    "This article explores why the glTF (GL Transmission Format) standard uses unit quaternions instead of Euler angles to encode rotational transform data. By adopting unit quaternions, glTF ensures smooth animation interpolation, avoids the mathematical pitf",
+    false
+  ],
+  [
+    20,
+    "How TRS Properties Are Serialized in glTF Nodes",
+    "In the glTF (GL Transmission Format) 2.0 specification, a node's spatial transform can be represented either as a single 4x4 affine transformation matrix or decomposed into separate Translation, Rotation, and Scale (TRS) properties. This article provides",
+    false
+  ],
+  [
+    19,
+    "Understanding glTF Nodes and Coordinate Spaces",
+    "In the glTF (GL Transmission Format) specification, scenes are structured as hierarchical trees where nodes define the spatial positioning, orientation, and scale of elements. This article explains how glTF nodes establish local coordinate spaces and how",
+    false
+  ],
+  [
+    18,
+    "Parent-Child Relationships in glTF Scene Graphs",
+    "This article provides an overview of how the glTF (GL Transmission Format) specification defines scene graph hierarchies. It explains how nodes reference child elements using index-based arrays, how local transformation matrices propagate down the hierarc",
+    false
+  ],
+  [
+    17,
+    "glTF Winding Order for Front-Facing Triangles",
+    "This article explains the standard winding order enforced by the glTF 2.0 specification for front-facing triangle primitives, examining how this rule interacts with right-handed coordinate systems, back-face culling in major graphics APIs, and negative no",
+    false
+  ],
+  [
+    16,
+    "glTF Units for Spatial Dimensions and Distance",
+    "The GL Transmission Format (glTF), established by the Khronos Group, is an open-standard runtime asset format designed for the efficient delivery and loading of 3D content. To maintain consistency across various renderers, game engines, and platforms, the",
+    false
+  ],
+  [
+    15,
+    "Default Coordinate System in glTF",
+    "This article provides an overview of the mathematical conventions that define the default coordinate system orientation in glTF (GL Transmission Format). It details the primary axis directions, handedness rules, and standard units used across the format t",
+    false
+  ],
+  [
+    14,
+    "Why glTF 2.0 Deprecated GLSL Shaders for PBR",
+    "glTF 2.0 deprecated arbitrary GLSL shader code to solve severe cross-platform compatibility issues and achieve visual consistency across different rendering engines. While glTF 1.0 embedded raw WebGL/OpenGL Shading Language (GLSL) code to define surface a",
+    false
+  ],
+  [
+    13,
+    "glTF 1.0 vs glTF 2.0 Pipeline Changes",
+    "The transition from glTF 1.0 to glTF 2.0 marked a fundamental evolution in 3D asset delivery, shifting the format from a WebGL-dependent representation into a universally compatible, runtime-ready standard. This article breaks down the major rendering and",
+    false
+  ],
+  [
+    12,
+    "glTF Versioning and Compatibility: 1.0 to 2.0",
+    "This article explores how the glTF (GL Transmission Format) specification handles versioning and compatibility across its major releases, focusing on the shift from glTF 1.0 to glTF 2.0. It outlines the implementation of Semantic Versioning via JSON metad",
+    false
+  ],
+  [
+    11,
+    "The Role of the Asset Object in glTF Metadata",
+    "In the glTF (GL Transmission Format) specification, the asset object serves as the standardized container for top-level metadata, validating file compatibility and providing vital context about the 3D model's origin. This article explores the specific rol",
+    false
+  ],
+  [
+    10,
+    "Which JSON Schemas Validate a glTF File?",
+    "This article outlines the specific JSON schemas that validate the top-level structure of a standard glTF (GL Transmission Format) 2.0 asset. It identifies the root schema definitions provided by the Khronos Group, breaks down the core object arrays define",
+    false
+  ],
+  [
+    9,
+    "How Are GLB Chunk Types Defined and Ordered?",
+    "A GLB container packages glTF 3D assets into a single binary stream composed of a 12-byte file header followed by sequentially packed data chunks. Each chunk consists of an 8-byte descriptor header—storing its byte length and a 4-byte ASCII type code—pair",
+    false
+  ],
+  [
+    8,
+    "What Defines the Binary GLB Container Header in glTF?",
+    "A binary glTF (GLB) file begins with a fixed 12-byte header that identifies the container format, specifies the specification version, and defines the total byte length of the entire file. Following this header, the file structure consists of structured b",
+    false
+  ],
+  [
+    7,
+    "How Does GLB Differ Mechanically From glTF?",
+    "This article examines the structural, architectural, and operational differences between standard glTF and its binary counterpart, GLB. While both formats are governed by the Khronos Group specification to transmit 3D scenes efficiently over the web, glTF",
+    false
+  ],
+  [
+    6,
+    "What Is the Relation Between .gltf and .bin Files?",
+    "The relationship between a .gltf file and its companion .bin file is a division of labor between scene structure and raw geometric payload. A .gltf file contains a human-readable JSON schema defining the scene hierarchy, materials, node transformations, a",
+    false
+  ],
+  [
+    5,
+    "Why Is glTF Called the JPEG of 3D?",
+    "glTF (GL Transmission Format) earned the nickname \"JPEG of 3D\" because it serves the exact same purpose for three-dimensional graphics that JPEG serves for digital photography: a compact, universal, and highly optimized delivery format built specifically",
+    false
+  ],
+  [
+    4,
+    "How Does glTF Optimize Runtime Asset Delivery Over OBJ?",
+    "glTF (GL Transmission Format) optimizes runtime asset delivery by packaging complete 3D scene data into GPU-ready binary buffers, bypassing the slow parsing, fragmented asset references, and bloated text overhead inherent to legacy formats like OBJ. While",
+    false
+  ],
+  [
+    3,
+    "What Is the Difference Between glTF and FBX Files?",
+    "This article explores the core distinctions between glTF (Graphics Language Transmission Format) and Autodesk FBX, highlighting why both formats exist and how their architectures serve opposite ends of the 3D pipeline. While FBX was built as an authoring",
+    false
+  ],
+  [
+    2,
+    "Who Oversees the Development of glTF?",
+    "The glTF (Graphics Language Transmission Format) standard is governed and maintained by the Khronos Group, an open, non-profit, member-driven industry consortium. Designed as an efficient, interoperable runtime asset delivery format for 3D scenes and mode",
+    false
+  ],
+  [
+    1,
+    "What Is the Purpose of glTF in 3D Web Workflows?",
+    "The Graphics Language Transmission Format (glTF) serves as an efficient transmission standard designed to bridge the gap between 3D authoring applications and real-time runtime rendering engines. Often described as the \"JPEG of 3D,\" glTF streamlines asset",
+    false
+  ]
+]

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interpolating glTF Camera Position and FOV - gltf</title>
+    <meta name="description" content="Smoothly transitioning between two glTF cameras requires distinct mathematical techniques for translational coordinates and perspective projection properties. In glTF 2.0, camera nodes define spatial position through transform matrices or translation-rota">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/interpolating-gl-tf-camera-position-and-fov">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Interpolating glTF Camera Position and FOV - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/interpolating-gl-tf-camera-position-and-fov" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Smoothly transitioning between two glTF cameras requires distinct mathematical techniques for translational coordinates and perspective projection properties. In glTF 2.0, camera nodes define spatial position through transform matrices or translation-rota" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="interpolating-gltf-camera-position-and-fov">Interpolating glTF
+Camera Position and FOV</h1>
+<p>Smoothly transitioning between two glTF cameras requires distinct
+mathematical techniques for translational coordinates and perspective
+projection properties. In glTF 2.0, camera nodes define spatial position
+through transform matrices or translation-rotation-scale (TRS) vectors,
+while perspective optics are defined by vertical field-of-view
+(<code>yfov</code>) values stored in radians. Achieving visually natural
+camera animation involves applying easing functions to position vectors
+and interpolating field-of-view through tangent space rather than simple
+linear angle blending.</p>
+<h2 id="position-interpolation">Position Interpolation</h2>
+<p>A glTF node's camera position is represented as a 3D Cartesian vector
+<span class="math inline">\(P = (x, y, z)\)</span>. Moving from an
+initial camera position <span class="math inline">\(P_0\)</span> to a
+target position <span class="math inline">\(P_1\)</span> over a
+normalized time interval <span class="math inline">\(t \in [0,
+1]\)</span> relies on vector interpolation.</p>
+<h3 id="linear-interpolation-lerp">Linear Interpolation (Lerp)</h3>
+<p>The baseline formula for translation is standard linear
+interpolation:</p>
+<p><span class="math display">\[P(t) = (1 - t)P_0 + t P_1\]</span></p>
+<p>While computationally simple, standard linear interpolation causes
+abrupt starts and stops because velocity jumps instantaneously from zero
+to a constant rate.</p>
+<h3 id="smooth-easing-functions">Smooth Easing Functions</h3>
+<p>To remove mechanical jarring, map the normalized time parameter <span
+class="math inline">\(t\)</span> through an S-curve easing function
+before applying it to the position vector.</p>
+<p>A standard cubic smoothstep function provides zero velocity at both
+endpoints:</p>
+<p><span class="math display">\[s(t) = 3t^2 - 2t^3\]</span></p>
+<p>For zero acceleration at the endpoints (yielding even smoother
+motion), use the quintic smootherstep function:</p>
+<p><span class="math display">\[s(t) = 6t^5 - 15t^4 + 10t^3\]</span></p>
+<p>The eased position is then calculated as:</p>
+<p><span class="math display">\[P(t) = (1 - s(t))P_0 +
+s(t)P_1\]</span></p>
+<h2 id="field-of-view-interpolation">Field-of-View Interpolation</h2>
+<p>In a glTF schema, perspective cameras specify the vertical
+field-of-view via the <code>yfov</code> property in radians.</p>
+<h3 id="the-problem-with-direct-angular-lerp">The Problem with Direct
+Angular Lerp</h3>
+<p>Directly interpolating the angle using <span
+class="math inline">\(\text{FOV}(t) = (1 - t)\text{FOV}_0 +
+t\text{FOV}_1\)</span> causes non-linear perceptual distortion. Because
+perspective projection maps world coordinates to normalized device
+coordinates using trigonometric division, the perceived size of objects
+changes non-linearly with angle changes. A uniform change in radians
+does not produce a uniform visual zoom.</p>
+<h3 id="tangent-space-interpolation">Tangent-Space Interpolation</h3>
+<p>To achieve visually uniform transitions, interpolate in the
+half-angle tangent domain, which directly corresponds to focal length
+and image magnification.</p>
+<ol type="1">
+<li>Convert both glTF <code>yfov</code> angles to their half-angle
+tangents:</li>
+</ol>
+<p><span class="math display">\[k_0 =
+\tan\left(\frac{\text{yfov}_0}{2}\right)\]</span></p>
+<p><span class="math display">\[k_1 =
+\tan\left(\frac{\text{yfov}_1}{2}\right)\]</span></p>
+<ol start="2" type="1">
+<li>Interpolate linearly (or with an easing function <span
+class="math inline">\(s(t)\)</span>) between the tangent scales:</li>
+</ol>
+<p><span class="math display">\[k(t) = (1 - s(t))k_0 +
+s(t)k_1\]</span></p>
+<ol start="3" type="1">
+<li>Reconstruct the interpolated field-of-view angle:</li>
+</ol>
+<p><span class="math display">\[\text{yfov}(t) = 2 \cdot
+\arctan(k(t))\]</span></p>
+<p>This preserves constant visual scale acceleration across the
+transition.</p>
+<h2 id="combined-camera-matrix-construction">Combined Camera Matrix
+Construction</h2>
+<p>To render the interpolated camera state at any time step <span
+class="math inline">\(t\)</span>:</p>
+<ol type="1">
+<li>Compute the interpolated scalar <span
+class="math inline">\(s(t)\)</span> using the quintic curve.</li>
+<li>Evaluate <span class="math inline">\(P(t)\)</span> for the position
+translation.</li>
+<li>If camera orientation changes, interpolate the glTF node rotation
+quaternions using Spherical Linear Interpolation (Slerp):</li>
+</ol>
+<p><span class="math display">\[\text{Slerp}(q_0, q_1, s(t)) =
+\frac{\sin((1 - s(t))\theta)}{\sin(\theta)}q_0 +
+\frac{\sin(s(t)\theta)}{\sin(\theta)}q_1\]</span></p>
+<p>where <span class="math inline">\(\cos(\theta) = q_0 \cdot
+q_1\)</span>.</p>
+<ol start="4" type="1">
+<li>Evaluate <span class="math inline">\(\text{yfov}(t)\)</span> using
+the tangent-space formula.</li>
+<li>Reconstruct the projection matrix using <span
+class="math inline">\(\text{yfov}(t)\)</span> alongside the interpolated
+or constant <code>znear</code>, <code>zfar</code>, and
+<code>aspectRatio</code> attributes defined in the glTF camera
+payload.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

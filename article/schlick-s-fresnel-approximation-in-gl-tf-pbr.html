@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schlick&#39;s Fresnel Approximation in glTF PBR - gltf</title>
+    <meta name="description" content="This article provides an overview of how Schlick’s approximation is implemented within the glTF Physically Based Rendering (PBR) metallic-roughness pipeline. It explains the fundamental role of the Fresnel term in microfacet theory, presents the mathemati">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/schlick-s-fresnel-approximation-in-gl-tf-pbr">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Schlick&#39;s Fresnel Approximation in glTF PBR - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/schlick-s-fresnel-approximation-in-gl-tf-pbr" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of how Schlick’s approximation is implemented within the glTF Physically Based Rendering (PBR) metallic-roughness pipeline. It explains the fundamental role of the Fresnel term in microfacet theory, presents the mathemati" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="schlicks-fresnel-approximation-in-gltf-pbr">Schlick's Fresnel
+Approximation in glTF PBR</h1>
+<p>This article provides an overview of how Schlick’s approximation is
+implemented within the glTF Physically Based Rendering (PBR)
+metallic-roughness pipeline. It explains the fundamental role of the
+Fresnel term in microfacet theory, presents the mathematical formulation
+used to calculate angle-dependent reflectance, details how base
+reflectance (<span class="math inline">\(F_0\)</span>) is derived from
+glTF material properties, and addresses adjustments made for surface
+roughness.</p>
+<h3 id="the-purpose-of-fresnel-in-microfacet-brdf">The Purpose of
+Fresnel in Microfacet BRDF</h3>
+<p>In physically based rendering, surface reflectance depends heavily on
+the angle of incidence. The Fresnel effect dictates that surfaces become
+increasingly reflective when viewed at grazing angles compared to when
+viewed directly perpendicular (normal incidence).</p>
+<p>The glTF standard utilizes the Cook-Torrance microfacet specular
+Bidirectional Reflectance Distribution Function (BRDF):</p>
+<p><span class="math display">\[f_{\text{specular}} = \frac{D \cdot F
+\cdot G}{4(N \cdot L)(N \cdot V)}\]</span></p>
+<p>In this formulation:</p>
+<ul>
+<li><span class="math inline">\(D\)</span> is the microfacet
+distribution function (Trowbridge-Reitz / GGX).</li>
+<li><span class="math inline">\(G\)</span> is the geometric
+shadowing-masking function.</li>
+<li><span class="math inline">\(F\)</span> is the Fresnel reflectance
+term.</li>
+<li><span class="math inline">\(N\)</span>, <span
+class="math inline">\(L\)</span>, and <span
+class="math inline">\(V\)</span> represent the surface normal, light
+vector, and view vector, respectively.</li>
+</ul>
+<p>While the exact Fresnel equations derived from Maxwell’s equations
+require complex arithmetic involving refractive indices and polarization
+states, real-time renderers like glTF rely on Christophe Schlick’s 1994
+empirical approximation to minimize computational overhead.</p>
+<h3 id="mathematical-formulation-of-schlicks-approximation">Mathematical
+Formulation of Schlick's Approximation</h3>
+<p>Schlick’s approximation models the increase in reflectance from
+normal incidence to grazing angles via a fifth-power polynomial
+curve:</p>
+<p><span class="math display">\[F(V, H) = F_0 + (1.0 - F_0)(1.0 - (V
+\cdot H))^5\]</span></p>
+<p>Where:</p>
+<ul>
+<li><span class="math inline">\(F_0\)</span> represents the specular
+reflectance at normal incidence (an angle of <span
+class="math inline">\(0^\circ\)</span>).</li>
+<li><span class="math inline">\(V\)</span> is the unit vector pointing
+toward the camera/viewer.</li>
+<li><span class="math inline">\(H\)</span> is the normalized half-vector
+between the view direction (<span class="math inline">\(V\)</span>) and
+light direction (<span class="math inline">\(L\)</span>), calculated as
+<span class="math inline">\(H = \frac{V + L}{\|V + L\|}\)</span>.</li>
+<li><span class="math inline">\(V \cdot H\)</span> is the cosine of the
+angle between the viewing vector and the microfacet normal, clamped to
+the range <span class="math inline">\([0.0, 1.0]\)</span>.</li>
+<li>At grazing angles where <span class="math inline">\(V \cdot H \to
+0\)</span>, <span class="math inline">\((1.0 - (V \cdot H))^5 \to
+1\)</span>, driving the total reflectance toward <span
+class="math inline">\(1.0\)</span> (100% reflectance).</li>
+</ul>
+<h3 id="deriving-f_0-in-the-gltf-metallic-roughness-workflow">Deriving
+<span class="math inline">\(F_0\)</span> in the glTF Metallic-Roughness
+Workflow</h3>
+<p>In the standard glTF 2.0 specification, <span
+class="math inline">\(F_0\)</span> is not exposed as an arbitrary
+parameter. Instead, it is calculated dynamically based on the material's
+<code>baseColor</code> and <code>metallic</code> factor:</p>
+<ol type="1">
+<li><strong>Dielectric Materials (Non-Metals):</strong> Dielectrics have
+relatively low, non-colored reflectance at normal incidence. glTF
+establishes a fixed standard baseline of 4% reflectance (<span
+class="math inline">\(F_0 = 0.04\)</span>), which corresponds to a
+linear RGB value of <code>vec3(0.04, 0.04, 0.04)</code>.</li>
+<li><strong>Conductor Materials (Metals):</strong> Metals have high,
+wavelength-dependent reflectance with no diffuse scattering. Their <span
+class="math inline">\(F_0\)</span> is defined directly by the
+<code>baseColor</code> parameter.</li>
+<li><strong>Interpolation:</strong> The runtime shader linearly
+interpolates (<code>lerp</code>) between the dielectric constant and the
+base color based on the <code>metallic</code> texture value:</li>
+</ol>
+<p><span class="math display">\[F_0 = \text{mix}(\text{vec3}(0.04),
+\text{baseColor.rgb}, \text{metallic})\]</span></p>
+<h3 id="roughness-adaptation-for-image-based-lighting-ibl">Roughness
+Adaptation for Image-Based Lighting (IBL)</h3>
+<p>When evaluating the Fresnel term against ambient environment maps
+(Image-Based Lighting) rather than analytical point or directional
+lights, the standard formulation causes excessively sharp, bright
+reflections at grazing angles on rough surfaces.</p>
+<p>To account for microfacet scattering on rough surfaces, glTF
+implementations often modify the grazing term (<span
+class="math inline">\(F_{90}\)</span>) using Sebastien Lagarde's
+roughness-dependent adaptation:</p>
+<p><span class="math display">\[F_{\text{ambient}} = F_0 +
+(\max(\text{vec3}(1.0 - \text{roughness}), F_0) - F_0)(1.0 - (N \cdot
+V))^5\]</span></p>
+<p>This ensures that as surface roughness increases, grazing reflections
+soften and scatter realistically rather than converging to a mirror-like
+sheen.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

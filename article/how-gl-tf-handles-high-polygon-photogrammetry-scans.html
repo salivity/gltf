@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How glTF Handles High-Polygon Photogrammetry Scans - gltf</title>
+    <meta name="description" content="Photogrammetry captures real-world objects with remarkable visual fidelity, but it routinely produces dense meshes with millions of polygons and massive texture atlases that challenge real-time rendering. The glTF (GL Transmission Format) standard is engi">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-gl-tf-handles-high-polygon-photogrammetry-scans">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How glTF Handles High-Polygon Photogrammetry Scans - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-gl-tf-handles-high-polygon-photogrammetry-scans" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Photogrammetry captures real-world objects with remarkable visual fidelity, but it routinely produces dense meshes with millions of polygons and massive texture atlases that challenge real-time rendering. The glTF (GL Transmission Format) standard is engi" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-gltf-handles-high-polygon-photogrammetry-scans">How glTF
+Handles High-Polygon Photogrammetry Scans</h1>
+<p>Photogrammetry captures real-world objects with remarkable visual
+fidelity, but it routinely produces dense meshes with millions of
+polygons and massive texture atlases that challenge real-time rendering.
+The glTF (GL Transmission Format) standard is engineered specifically to
+transmit and load 3D assets efficiently over networks and directly onto
+GPUs. While raw, unoptimized photogrammetry meshes can overwhelm runtime
+environments, glTF manages these high-polygon datasets through geometry
+compression algorithms, GPU-friendly texture formats, level-of-detail
+extensions, and integration with spatial streaming frameworks.</p>
+<h3 id="geometry-compression">Geometry Compression</h3>
+<p>Standard glTF files store geometry as binary buffers containing
+vertex attributes such as positions, normals, and texture coordinates.
+For raw photogrammetry scans, these binary buffers can quickly reach
+hundreds of megabytes. glTF solves this primarily through two key
+compression extensions:</p>
+<ul>
+<li><strong><code>KHR_draco_mesh_compression</code>:</strong> Uses
+Google’s Draco library to aggressively compress vertex buffers and index
+data. Draco can reduce mesh file sizes by up to 90%, making network
+transfer over the web fast. However, Draco requires client-side CPU
+decompression before data can be uploaded to the GPU, which can
+introduce a frame-rate hitch or loading delay for extremely high-poly
+meshes.</li>
+<li><strong><code>EXT_meshopt_compression</code>:</strong> Designed by
+the meshoptimizer project, this extension compresses vertex and index
+streams while focusing on decoding speed. Meshopt decompresses
+significantly faster than Draco (often at multiple gigabytes per
+second), allowing high-polygon geometry to be parsed and sent to the GPU
+with minimal latency.</li>
+</ul>
+<h3 id="gpu-native-texture-compression">GPU-Native Texture
+Compression</h3>
+<p>Photogrammetry scans rely heavily on high-resolution diffuse/albedo
+maps (often 4K or 8K) to preserve photographic realism. In standard
+formats like PNG or JPEG, textures must be fully decompressed into raw
+RGBA in system memory, consuming gigabytes of video RAM (VRAM).</p>
+<p>glTF addresses this bottleneck via the
+<strong><code>KHR_texture_basisu</code></strong> extension, which
+incorporates KTX 2.0 containers and Basis Universal compression. This
+format keeps textures compressed in system memory and transcodes them on
+the fly directly into native GPU-compressed formats (such as BCn, ASTC,
+or ETC) supported by the target hardware. This reduces VRAM consumption
+by 70–80%, preventing out-of-memory crashes when rendering
+photorealistic assets on mobile devices or lower-end GPUs.</p>
+<h3 id="pre-processing-pipelines-decimation-and-baking">Pre-Processing
+Pipelines: Decimation and Baking</h3>
+<p>Because glTF is an <em>intermediate transmission format</em> (often
+called the "JPEG of 3D") rather than an authoring format, best practices
+dictate preparing photogrammetry scans before exporting them to
+glTF:</p>
+<ol type="1">
+<li><strong>Mesh Decimation:</strong> High-density meshes (e.g., 5 to 20
+million triangles) are decimated down to manageable budgets (e.g.,
+50,000 to 500,000 triangles) using quadric edge collapse
+algorithms.</li>
+<li><strong>Texture Baking:</strong> Surface details from the
+ultra-high-poly original are baked into normal, ambient occlusion, and
+roughness maps applied to the lower-poly mesh.</li>
+<li><strong>PBR Conversion:</strong> Pure photographic captures are
+converted into Physically Based Rendering (PBR) materials, aligning with
+the core glTF PBR specification to ensure consistent lighting behavior
+across different engines.</li>
+</ol>
+<h3 id="handling-massive-datasets-via-lod-and-3d-tiles">Handling Massive
+Datasets via LOD and 3D Tiles</h3>
+<p>When a photogrammetry scan is too large to fit into memory as a
+single asset—such as an entire building, archaeological site, or terrain
+scan—glTF handles the data hierarchically:</p>
+<ul>
+<li><strong>Hierarchical Level of Detail (HLOD):</strong> Extensions
+like <code>MSFT_lod</code> allow a glTF file to define multiple
+representations of the same object at varying polygon and texture
+resolutions. The runtime engine swaps between these levels based on
+camera distance or screen coverage.</li>
+<li><strong>3D Tiles and OGC Standards:</strong> For geospatial
+photogrammetry, glTF serves as the underlying payload format inside the
+<strong>3D Tiles</strong> specification (using B3DM or direct glTF
+integration in 3D Tiles 1.1). The scan is spatially partitioned into a
+bounding volume hierarchy (BVH). Only the visible chunks at the
+appropriate resolution are streamed and rendered, allowing users to
+navigate photogrammetry models containing billions of points and
+triangles smoothly.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

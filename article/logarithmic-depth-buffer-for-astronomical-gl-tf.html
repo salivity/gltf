@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logarithmic Depth Buffer for Astronomical glTF - gltf</title>
+    <meta name="description" content="Astronomical glTF models frequently suffer from severe z-fighting because standard perspective projection places almost all depth precision near the near clipping plane, leaving distant celestial bodies spanning millions of kilometers competing for the sa">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/logarithmic-depth-buffer-for-astronomical-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Logarithmic Depth Buffer for Astronomical glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/logarithmic-depth-buffer-for-astronomical-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Astronomical glTF models frequently suffer from severe z-fighting because standard perspective projection places almost all depth precision near the near clipping plane, leaving distant celestial bodies spanning millions of kilometers competing for the sa" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="logarithmic-depth-buffer-for-astronomical-gltf">Logarithmic
+Depth Buffer for Astronomical glTF</h1>
+<p>Astronomical glTF models frequently suffer from severe z-fighting
+because standard perspective projection places almost all depth
+precision near the near clipping plane, leaving distant celestial bodies
+spanning millions of kilometers competing for the same few depth values.
+Implementing a logarithmic depth buffer redistributes this precision
+exponentially across the entire view frustum, allowing render engines to
+accurately sort geometry from planetary surfaces up to interstellar
+scales within a single rendering pass without flickering or visual
+artifacts.</p>
+<h3 id="the-scale-challenge-in-astronomical-scenes">The Scale Challenge
+in Astronomical Scenes</h3>
+<p>A standard glTF model rendering in WebGL or WebGPU uses a 24-bit or
+32-bit depth buffer tied to a standard perspective projection matrix. In
+this setup, depth precision falls off with the reciprocal of distance
+(<span class="math inline">\(1/z\)</span>). In astronomical
+visualizations, the ratio between the far clipping plane (<span
+class="math inline">\(10^{12}\text{ m}\)</span>) and the near clipping
+plane (<span class="math inline">\(1\text{ m}\)</span>) is
+astronomically high. Consequently, two planetary bodies, rings, or
+satellite orbits separated by thousands of kilometers at a distance can
+map to identical floating-point depth integers, triggering aggressive
+z-fighting.</p>
+<h3 id="fragment-based-logarithmic-depth">Fragment-Based Logarithmic
+Depth</h3>
+<p>The most accurate method to solve this in glTF engines is computing
+depth directly in the fragment shader and writing to the depth buffer
+via <code>gl_FragDepth</code>.</p>
+<p>The standard logarithmic mapping function is expressed as:</p>
+<p><span class="math display">\[z_{\text{log}} = \frac{\log(C \cdot w +
+1.0)}{\log(C \cdot \text{far} + 1.0)} \cdot w\]</span></p>
+<p>Where:</p>
+<ul>
+<li><span class="math inline">\(w\)</span> is the clip-space view
+distance (often the interpolated view-space <span
+class="math inline">\(z\)</span>).</li>
+<li><span class="math inline">\(C\)</span> is a constant factor
+determining resolution near the near clipping plane.</li>
+<li><span class="math inline">\(\text{far}\)</span> is the distance to
+the far clipping plane.</li>
+</ul>
+<p>By executing this calculation inside the fragment shader, modern glTF
+renderers ensure that depth values are calculated per-pixel rather than
+linearly interpolated across large polygons. This prevents curvature
+artifacts and clipping errors on massive celestial spheres composed of
+low-to-medium triangle densities.</p>
+<h3 id="vertex-based-logarithmic-depth">Vertex-Based Logarithmic
+Depth</h3>
+<p>For hardware setups where writing to <code>gl_FragDepth</code>
+disables early-z optimizations and lowers fill rates, a vertex-stage
+logarithmic depth calculation can be used. The vertex shader maps the
+clip-space <span class="math inline">\(z\)</span> coordinates
+logarithmically before passing them to rasterization:</p>
+<p><span class="math display">\[z_{\text{clip}} = \left(
+\frac{2.0}{\log(C \cdot \text{far} + 1.0)} \cdot \log(C \cdot
+z_{\text{eye}} + 1.0) - 1.0 \right) \cdot w_{\text{clip}}\]</span></p>
+<p>While this preserves early depth testing, it introduces non-linear
+interpolation across polygon faces. To prevent distorted clipping
+boundaries when using glTF models under this approach, meshes must be
+sufficiently tessellated so that vertices are closely spaced relative to
+the camera view.</p>
+<h3 id="reversed-z-floating-point-alternative">Reversed-Z Floating Point
+Alternative</h3>
+<p>When native floating-point depth buffers are available (such as in
+WebGPU or desktop OpenGL/Vulkan contexts running glTF pipelines), an
+inverted floating-point depth approach (Reversed-Z) is often preferred
+over logarithmic depth.</p>
+<p>Reversed-Z maps the near plane to <span
+class="math inline">\(1.0\)</span> and the far plane to <span
+class="math inline">\(0.0\)</span> using a 32-bit floating-point depth
+buffer (<code>DEPTH_COMPONENT32F</code>). Because IEEE 754
+floating-point numbers have greater precision near zero, reversing the
+range aligns natural float precision with far-plane requirements. This
+eliminates the need for expensive logarithmic math in fragment shaders
+while resolving z-fighting across dynamic ranges exceeding <span
+class="math inline">\(1:10^9\)</span>.</p>
+<h3 id="engine-configurations-for-gltf">Engine Configurations for
+glTF</h3>
+<p>Astronomical engines implement these logarithmic techniques natively
+for glTF pipelines through specific configuration steps:</p>
+<ul>
+<li><strong>Three.js</strong>: Enabling
+<code>logarithmicDepthBuffer: true</code> on the
+<code>WebGLRenderer</code>. This injects logarithmic depth calculations
+directly into standard glTF material shaders
+(<code>MeshStandardMaterial</code>,
+<code>MeshPhysicalMaterial</code>).</li>
+<li><strong>CesiumJS</strong>: Employs a multi-frustum logarithmic
+rendering technique combined with custom shaders that dynamically
+segment astronomical space into near, mid, and deep-space rendering
+bands to preserve sub-millimeter precision on planetary terrain while
+drawing distant celestial objects.</li>
+<li><strong>Babylon.js</strong>: Supports logarithmic depth through the
+engine's material flags (<code>useLogarithmicDepth = true</code>),
+modifying shader chunks during glTF asset compilation.</li>
+</ul>
+<h3 id="mitigating-floating-point-vertex-jitter">Mitigating
+Floating-Point Vertex Jitter</h3>
+<p>A logarithmic depth buffer resolves depth-buffer precision, but
+astronomical glTF assets can still exhibit vertex jitter due to 32-bit
+single-precision float limitations in standard GPU vertex
+transformations. For complete rendering stability, logarithmic depth
+must be paired with Relative-to-Center (RTC) rendering or floating-point
+camera offsets, where the camera's coordinates are subtracted from the
+glTF model's world coordinates on the CPU using 64-bit precision before
+passing the transformation matrix to the GPU.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Vulnerabilities in glTF Parsing - gltf</title>
+    <meta name="description" content="The GL Transmission Format (glTF) is the standard file format for 3D scenes and models, packaging structured JSON metadata alongside raw binary chunks that store vertex attributes, indices, animations, and textures. When 3D engines, web viewers, or native">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/security-vulnerabilities-in-gl-tf-parsing">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Security Vulnerabilities in glTF Parsing - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/security-vulnerabilities-in-gl-tf-parsing" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The GL Transmission Format (glTF) is the standard file format for 3D scenes and models, packaging structured JSON metadata alongside raw binary chunks that store vertex attributes, indices, animations, and textures. When 3D engines, web viewers, or native" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="security-vulnerabilities-in-gltf-parsing">Security
+Vulnerabilities in glTF Parsing</h1>
+<p>The GL Transmission Format (glTF) is the standard file format for 3D
+scenes and models, packaging structured JSON metadata alongside raw
+binary chunks that store vertex attributes, indices, animations, and
+textures. When 3D engines, web viewers, or native applications consume
+untrusted glTF or GLB (binary glTF) files, parsing flaws in either the
+text or binary layers can introduce severe security risks. Attackers can
+exploit these flaws to trigger memory corruption, denial of service,
+arbitrary file reads, server-side request forgery, and potential remote
+code execution.</p>
+<h3 id="buffer-overflows-and-out-of-bounds-memory-access">Buffer
+Overflows and Out-of-Bounds Memory Access</h3>
+<p>The binary portion of glTF relies on an indexing hierarchy consisting
+of <code>buffers</code>, <code>bufferViews</code>, and
+<code>accessors</code>. Malicious assets can exploit the arithmetic used
+to navigate these structures:</p>
+<ul>
+<li><strong>Integer Overflows in Size Calculations:</strong> Accessors
+declare a <code>count</code>, a <code>componentType</code>, and a
+<code>type</code> (such as <code>VEC3</code>), while buffer views define
+a <code>byteOffset</code> and <code>byteStride</code>. Native parsers
+written in C or C++ often multiply these fields to compute total memory
+allocation sizes. If an attacker supplies extremely large integers, the
+multiplication can wrap around to a small number, causing the engine to
+allocate an undersized buffer while copying a larger payload, resulting
+in a heap-based buffer overflow.</li>
+<li><strong>Out-of-Bounds Reads and Writes:</strong> An accessor can
+specify a <code>byteOffset</code> or index <code>count</code> that
+exceeds the physical boundary of its referenced <code>bufferView</code>
+or the underlying raw binary chunk. Without strict bounds checking, the
+renderer reads or writes past allocated memory boundaries, leading to
+application crashes or arbitrary code execution.</li>
+<li><strong>Malformed Sparse Accessors:</strong> glTF supports
+<code>sparse</code> accessors, which overwrite specific indices of an
+existing buffer with custom values. If an engine fails to validate that
+sparse index arrays point within valid buffer bounds, it can allow an
+attacker to write arbitrary values to out-of-bounds offsets in
+memory.</li>
+</ul>
+<h3 id="type-confusion">Type Confusion</h3>
+<p>An accessor defines how raw binary data is cast into typed values for
+the graphics pipeline (e.g., unsigned bytes, signed shorts, or 32-bit
+floats). If the parser does not enforce strict alignment and type
+constraints:</p>
+<ul>
+<li>Misaligned reads can cause hardware exceptions or undefined behavior
+on strict-alignment architectures.</li>
+<li>Casting mismatches can cause native engines to interpret arbitrary
+binary data as pointers or internal structural metadata, enabling
+control-flow hijacking.</li>
+</ul>
+<h3 id="path-traversal-and-server-side-request-forgery-ssrf">Path
+Traversal and Server-Side Request Forgery (SSRF)</h3>
+<p>glTF permits referencing assets like textures and buffers via
+URIs:</p>
+<ul>
+<li><strong>Directory Traversal:</strong> If a parser naively resolves
+relative paths defined in the <code>uri</code> property (e.g.,
+<code>../../../../etc/passwd</code> or
+<code>..\..\Windows\win.ini</code>), an attacker can cause the
+application to load or leak sensitive local files.</li>
+<li><strong>SSRF and Protocol Smuggling:</strong> When glTF files are
+parsed on a backend server (such as in asset optimization pipelines or
+3D model converters), external URIs using protocols like
+<code>http://</code>, <code>https://</code>, or <code>file://</code> can
+force the host to query internal services, cloud metadata endpoints
+(e.g., <code>169.254.169.254</code>), or private network resources.</li>
+</ul>
+<h3 id="json-specific-vulnerabilities">JSON-Specific
+Vulnerabilities</h3>
+<p>The JSON payload defines the scene hierarchy, node transforms, and
+pipeline descriptions. Processing this text layer introduces specific
+hazards:</p>
+<ul>
+<li><strong>Denial of Service (DoS) via Deep Nesting:</strong> Attackers
+can craft JSON structures with thousands of nested arrays or objects.
+Parsers relying on recursive descent can suffer call stack exhaustion,
+crashing the runtime.</li>
+<li><strong>Prototype Pollution:</strong> In WebGL-based parsers
+operating within JavaScript environments, untrusted JSON containing keys
+such as <code>__proto__</code> or <code>constructor.prototype</code> can
+modify base object prototypes, potentially bypassing security checks or
+leading to client-side code execution.</li>
+<li><strong>Resource Exhaustion via Massive Allocations:</strong> An
+attacker can declare millions of empty nodes, textures, or materials
+within valid JSON syntax. If the host environment allocates memory for
+every declared object before validating its contents or availability in
+the binary chunk, it can exhaust system RAM and cause an out-of-memory
+crash.</li>
+</ul>
+<h3 id="extension-parsing-vulnerabilities">Extension Parsing
+Vulnerabilities</h3>
+<p>glTF features an extensible architecture (<code>extensionsUsed</code>
+and <code>extensionsRequired</code>) allowing third-party compression
+and rendering techniques:</p>
+<ul>
+<li><strong>Decompression Bombs (Zip Bombs):</strong> Extensions like
+<code>KHR_draco_mesh_compression</code> or
+<code>KHR_texture_basisu</code> process compressed geometry and
+textures. A malformed asset can contain a tiny compressed payload that
+expands into gigabytes of uncompressed geometric data, leading to
+decompression loops or memory exhaustion.</li>
+<li><strong>Unvalidated Extension Deserialization:</strong> Custom
+extensions processed through dynamic dispatch or reflection can expose
+the host application to insecure deserialization vulnerabilities if data
+from the JSON dictionary is passed directly into native system
+calls.</li>
+</ul>
+<h3 id="mitigation-requirements">Mitigation Requirements</h3>
+<p>Securing a glTF pipeline requires defensive parsing practices across
+both format layers:</p>
+<ul>
+<li>Enforce strict arithmetic bounds checking before allocating or
+accessing memory, using safe math libraries that check for integer
+overflow.</li>
+<li>Disallow external URIs by default, or strictly isolate the parser
+inside a sandbox where URIs are validated against an allowlist and
+prohibited from accessing local files or private network spaces.</li>
+<li>Validate all accessor offsets, strides, and counts against the total
+byte length of the binary chunk prior to executing render or copy
+calls.</li>
+<li>Restrict maximum JSON recursion depth, total object count, and
+decompressed buffer dimensions to bounded thresholds.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How the Khronos glTF Validator Inspects Assets - gltf</title>
+    <meta name="description" content="The official Khronos glTF Validator is an open-source tool designed to ensure 3D assets conform strictly to the glTF (GL Transmission Format) 2.0 specification. Written in Dart and compiled for both command-line interfaces and web environments, it recursi">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-the-khronos-gl-tf-validator-inspects-assets">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How the Khronos glTF Validator Inspects Assets - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-the-khronos-gl-tf-validator-inspects-assets" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The official Khronos glTF Validator is an open-source tool designed to ensure 3D assets conform strictly to the glTF (GL Transmission Format) 2.0 specification. Written in Dart and compiled for both command-line interfaces and web environments, it recursi" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-the-khronos-gltf-validator-inspects-assets">How the Khronos
+glTF Validator Inspects Assets</h1>
+<p>The official Khronos glTF Validator is an open-source tool designed
+to ensure 3D assets conform strictly to the glTF (GL Transmission
+Format) 2.0 specification. Written in Dart and compiled for both
+command-line interfaces and web environments, it recursively inspects
+the asset’s JSON hierarchy, binary payloads, external dependencies, and
+mathematical constructs. By systematically checking everything from
+buffer alignments to texture formats, the validator outputs categorized
+reports that identify syntax errors, logical inconsistencies, and
+non-standard practices.</p>
+<h3 id="1-json-schema-and-structural-validation">1. JSON Schema and
+Structural Validation</h3>
+<p>The validation process begins with the structural parsing of the
+<code>.gltf</code> JSON text or the <code>JSON</code> chunk embedded
+inside a binary <code>.glb</code> container. The engine checks this
+against the core glTF 2.0 JSON schema. This stage ensures that:</p>
+<ul>
+<li>All property names are recognized and types match their schema
+definitions (e.g., arrays, numbers, objects).</li>
+<li>Required attributes are present (such as
+<code>asset.version</code>).</li>
+<li>References to IDs, indices, and extensions are well-formed and do
+not reference non-existent elements.</li>
+<li>Any declared glTF extensions are listed under
+<code>extensionsUsed</code> or <code>extensionsRequired</code>.</li>
+</ul>
+<h3 id="2-binary-chunk-and-buffer-layout-inspection">2. Binary Chunk and
+Buffer Layout Inspection</h3>
+<p>For <code>.glb</code> containers, the validator checks the header
+(magic number <code>0x46546C67</code>, version, and file length) and
+evaluates the chunk boundaries. Once the binary chunks or external
+<code>.bin</code> files are read, the validator inspects the buffer
+memory layout:</p>
+<ul>
+<li><strong>Byte Offsets and Alignments:</strong> Ensures that offsets
+for <code>bufferView</code> and <code>accessor</code> elements align
+strictly to component size boundaries (e.g., 4-byte boundaries for
+32-bit floats and integers).</li>
+<li><strong>Buffer Bounds:</strong> Confirms that no buffer view or
+accessor references memory beyond the total length of the assigned
+buffer.</li>
+<li><strong>Byte Stride:</strong> Validates that interleaved vertex
+attributes adhere to the allowed multiples of 4 and do not exceed the
+252-byte limit.</li>
+</ul>
+<h3 id="3-accessor-and-data-integrity-checks">3. Accessor and Data
+Integrity Checks</h3>
+<p>The validator decodes the binary arrays via accessor definitions to
+verify semantic and numerical correctness:</p>
+<ul>
+<li><strong>Bounding Boxes (<code>min</code> and
+<code>max</code>):</strong> Accessors must declare accurate minimum and
+maximum values for their components. The validator recalculates these
+values directly from the binary data and flags discrepancies.</li>
+<li><strong>Component Types:</strong> Validates that attributes use
+appropriate data types (e.g., indices must be unsigned bytes, unsigned
+shorts, or unsigned integers; weights must be normalized floats or
+unsigned integers).</li>
+<li><strong>Sparse Accessors:</strong> Ensures that sparse accessor
+indices are sorted, within range, and correctly override the base buffer
+data.</li>
+</ul>
+<h3 id="4-geometry-and-mesh-topology">4. Geometry and Mesh Topology</h3>
+<p>Mesh validation focuses on the integrity of primitives, indices, and
+vertex attributes:</p>
+<ul>
+<li><strong>Index Range:</strong> Verifies that index values do not
+reference vertex indices outside the valid range defined by the
+primitive's vertex attributes.</li>
+<li><strong>Attribute Requirements:</strong> Checks that primitives
+provide necessary companion data. For example, if normal maps are used,
+the mesh must supply valid tangents, or if skinning is enabled, both
+<code>JOINTS_0</code> and <code>WEIGHTS_0</code> must be present.</li>
+<li><strong>Degenerate Geometry:</strong> Identifies issues such as
+zero-area triangles, duplicate vertex positions, or unnormalized
+normals.</li>
+</ul>
+<h3 id="5-node-hierarchy-and-scene-graph">5. Node Hierarchy and Scene
+Graph</h3>
+<p>The validator reconstructs the scene graph to prevent structural
+rendering bugs:</p>
+<ul>
+<li><strong>Acyclic Structure:</strong> Ensures the node hierarchy
+contains no circular references or parent-child loops.</li>
+<li><strong>Transformations:</strong> Confirms that nodes define
+transformations using either a valid 4x4 matrix or separate Translation,
+Rotation, and Scale (TRS) properties, but not both. Rotation quaternions
+are verified for unit-length normalization.</li>
+<li><strong>Skins and Skeletons:</strong> Validates that joint node
+hierarchies match inverse bind matrices and that referenced joint
+indices exist within the node tree.</li>
+</ul>
+<h3 id="6-animations-and-morph-targets">6. Animations and Morph
+Targets</h3>
+<p>Animation tracks and morph targets undergo chronological and
+interpolation checks:</p>
+<ul>
+<li><strong>Time Keys:</strong> Checks that animation input accessors
+have strictly increasing, non-negative floating-point values.</li>
+<li><strong>Interpolation Compatibility:</strong> Verifies that output
+accessor component counts match the selected interpolation method
+(<code>LINEAR</code>, <code>STEP</code>, or
+<code>CUBICSPLINE</code>).</li>
+<li><strong>Morph Weights:</strong> Ensures that target counts match the
+weights defined in meshes and nodes.</li>
+</ul>
+<h3 id="7-material-and-texture-conformance">7. Material and Texture
+Conformance</h3>
+<p>The validator checks PBR (Physically Based Rendering) parameters and
+associated image assets:</p>
+<ul>
+<li><strong>Color and Texture Coordinates:</strong> Checks that texture
+coordinate sets (e.g., <code>TEXCOORD_0</code>, <code>TEXCOORD_1</code>)
+referenced by materials exist in the corresponding mesh primitives.</li>
+<li><strong>Image Formats:</strong> Verifies that embedded or external
+images adhere to standard formats (PNG, JPEG) or valid extension formats
+(such as KTX2 via <code>KHR_texture_basisu</code>), and that image
+dimensions meet format requirements.</li>
+</ul>
+<h3 id="reporting-system">Reporting System</h3>
+<p>Upon completing the inspection, the validator issues a detailed
+report with issues grouped into four severity tiers:</p>
+<ul>
+<li><strong>Errors:</strong> Severe violations of the glTF specification
+that will prevent the asset from rendering reliably.</li>
+<li><strong>Warnings:</strong> Issues that do not strictly break the
+specification but represent bad practices, optimization issues, or
+potential visual defects.</li>
+<li><strong>Information:</strong> Notable characteristics of the asset,
+such as active extensions or generator metadata.</li>
+<li><strong>Hints:</strong> Optimization suggestions, such as removing
+unused accessors or consolidating duplicate material definitions.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

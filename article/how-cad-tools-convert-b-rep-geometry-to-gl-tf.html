@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How CAD Tools Convert B-Rep Geometry to glTF - gltf</title>
+    <meta name="description" content="This article provides an overview of the conversion pipeline used by modern CAD software to translate mathematically continuous Boundary Representation (B-Rep) models into discrete, real-time glTF polygonal meshes. Converting CAD models to glTF requires b">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-cad-tools-convert-b-rep-geometry-to-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How CAD Tools Convert B-Rep Geometry to glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-cad-tools-convert-b-rep-geometry-to-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of the conversion pipeline used by modern CAD software to translate mathematically continuous Boundary Representation (B-Rep) models into discrete, real-time glTF polygonal meshes. Converting CAD models to glTF requires b" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-cad-tools-convert-b-rep-geometry-to-gltf">How CAD Tools
+Convert B-Rep Geometry to glTF</h1>
+<p>This article provides an overview of the conversion pipeline used by
+modern CAD software to translate mathematically continuous Boundary
+Representation (B-Rep) models into discrete, real-time glTF polygonal
+meshes. Converting CAD models to glTF requires bridging the gap between
+exact mathematical definitions (NURBS and analytic surfaces) and
+lightweight, GPU-ready triangle arrays. The process involves adaptive
+tessellation, edge-stitching to ensure watertightness, analytical normal
+generation, and mapping complex CAD assemblies to the glTF scene graph
+hierarchy.</p>
+<h3 id="understanding-the-structural-difference">Understanding the
+Structural Difference</h3>
+<p>CAD systems store 3D models as Boundary Representations (B-Rep). A
+B-Rep model consists of two parts:</p>
+<ol type="1">
+<li><strong>Geometry:</strong> Mathematical definitions of shapes, such
+as Non-Uniform Rational B-Splines (NURBS), planes, cylinders, and
+tori.</li>
+<li><strong>Topology:</strong> The relational data structure defining
+how surfaces meet, comprising faces, edges, and vertices.</li>
+</ol>
+<p>In contrast, glTF (GL Transmission Format) is designed for efficient
+transmission and direct rendering by graphics APIs like WebGL, Vulkan,
+and DirectX. It does not support parametric curves or equations; it only
+accepts discrete geometric primitives—primarily indexed triangle lists,
+point clouds, and line segments.</p>
+<h3 id="step-1-surface-tessellation-and-discretization">Step 1: Surface
+Tessellation and Discretization</h3>
+<p>The core phase of the conversion is tessellation, where CAD kernels
+(such as Parasolid, ACIS, or Open CASCADE) evaluate parametric
+mathematical surfaces to generate planar triangles.</p>
+<p>To produce a usable mesh, CAD tools rely on user-defined or automated
+tolerance criteria:</p>
+<ul>
+<li><strong>Chordal Deviation (Sagitta):</strong> The maximum allowable
+linear distance between the true curved surface and the flat triangle
+plane.</li>
+<li><strong>Angular Tolerance:</strong> The maximum angle between the
+surface normals at adjacent vertices, preventing visible faceting on
+tightly curved fillets or rounds.</li>
+<li><strong>Maximum Edge Length:</strong> A constraint ensuring
+triangles do not stretch disproportionately, preventing rendering and
+lighting artifacts.</li>
+</ul>
+<p>The mesher evaluates the surface across its parametric <span
+class="math inline">\((u, v)\)</span> domain, inserting vertices and
+connecting them into a Delaunay triangulation or similar planar
+triangulation structure.</p>
+<h3 id="step-2-boundary-trimming-and-crack-prevention">Step 2: Boundary
+Trimming and Crack Prevention</h3>
+<p>Parametric surfaces in CAD are rarely untrimmed rectangles; they are
+bounded by trimming curves (such as intersections with other surfaces).
+During export, the CAD tool must discretize these trimming curves into
+1D polyline segments before filling the interior with triangles.</p>
+<p>A critical engineering challenge is preventing "cracking"
+(T-junctions or gaps) between adjacent faces. If two neighboring
+surfaces with different curvatures are meshed independently, their
+shared boundary might receive differing numbers of vertices. CAD
+exporters prevent this by meshing shared topological edges first. Once
+the edge vertices are locked, the adjacent faces are tessellated using
+those shared boundary points, ensuring a watertight mesh.</p>
+<h3 id="step-3-generating-gpu-attributes-from-cad-geometry">Step 3:
+Generating GPU Attributes from CAD Geometry</h3>
+<p>Because the tessellator has direct access to the original
+mathematical surfaces, it generates vertex attributes with higher
+fidelity than traditional mesh decimation tools:</p>
+<ul>
+<li><strong>Normals:</strong> Instead of calculating face normals or
+averaging adjacent polygon planes, the exporter evaluates the true
+surface derivative at each vertex coordinate. This produces smooth,
+accurate lighting on curved surfaces without requiring dense
+geometry.</li>
+<li><strong>UV Coordinates:</strong> The <span class="math inline">\((u,
+v)\)</span> parameters of the underlying surface are normalized and
+mapped to texture coordinates for PBR (Physically Based Rendering)
+materials.</li>
+<li><strong>Color and Materials:</strong> CAD face colors and material
+properties are mapped to glTF’s standard metallic-roughness PBR
+model.</li>
+</ul>
+<h3 id="step-4-structuring-the-gltf-scene-graph">Step 4: Structuring the
+glTF Scene Graph</h3>
+<p>CAD data is inherently hierarchical, structured as parts,
+sub-assemblies, and top-level assemblies. The exporter translates this
+directly into the glTF JSON structure:</p>
+<ul>
+<li><strong>Assemblies and Components:</strong> Exported as nested
+<code>nodes</code> with their respective local transform matrices
+(translation, rotation, scale).</li>
+<li><strong>B-Rep Solids:</strong> Mapped to glTF
+<code>meshes</code>.</li>
+<li><strong>Individual Faces:</strong> Can either be grouped into a
+single <code>mesh</code> composed of multiple <code>primitives</code>
+(if different faces have unique materials) or merged into a single
+contiguous vertex buffer to minimize GPU draw calls.</li>
+</ul>
+<h3 id="step-5-binary-packing-and-optimization">Step 5: Binary Packing
+and Optimization</h3>
+<p>Once geometry and topology are resolved into arrays of indices and
+vertex attributes, the exporter packages the data for minimal file size
+and fast GPU ingestion:</p>
+<ul>
+<li><strong>Array Buffering:</strong> Vertex positions, normals, and UVs
+are packed into contiguous binary blobs (<code>.bin</code> files or
+embedded Base64 data) aligned to 4-byte boundaries.</li>
+<li><strong>Indexing:</strong> Vertices are deduplicated, and an index
+buffer is created to allow vertex reuse across adjacent triangles.</li>
+<li><strong>Compression (Optional):</strong> Many CAD exporters apply
+extensions such as <code>KHR_draco_mesh_compression</code> or
+<code>KHR_mesh_quantization</code> to convert floating-point attributes
+into 8-bit or 16-bit integers, significantly reducing network transfer
+times without visible loss of fidelity.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

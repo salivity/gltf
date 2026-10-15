@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic MikkTSpace Tangent Generation for glTF Meshes - gltf</title>
+    <meta name="description" content="Generating MikkTSpace tangents dynamically for glTF meshes requires implementing Morten Mikkelsen’s standardized tangent space algorithm directly within a runtime pipeline. When a glTF asset supplies normal maps but omits the four-component TANGENT vertex">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/dynamic-mikk-t-space-tangent-generation-for-gl-tf-meshes">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Dynamic MikkTSpace Tangent Generation for glTF Meshes - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/dynamic-mikk-t-space-tangent-generation-for-gl-tf-meshes" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Generating MikkTSpace tangents dynamically for glTF meshes requires implementing Morten Mikkelsen’s standardized tangent space algorithm directly within a runtime pipeline. When a glTF asset supplies normal maps but omits the four-component TANGENT vertex" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="dynamic-mikktspace-tangent-generation-for-gltf-meshes">Dynamic
+MikkTSpace Tangent Generation for glTF Meshes</h1>
+<p>Generating MikkTSpace tangents dynamically for glTF meshes requires
+implementing Morten Mikkelsen’s standardized tangent space algorithm
+directly within a runtime pipeline. When a glTF asset supplies normal
+maps but omits the four-component <code>TANGENT</code> vertex attribute,
+the host application must derive these tangents on the fly to prevent
+visual seams and distorted surface shading. This dynamic process
+extracts position, normal, and texture coordinate buffers, computes
+triangle-level directional derivatives in texture space, performs
+angle-weighted averaging across shared vertices, orthogonalizes the
+resulting vectors against vertex normals, and computes a handedness
+scalar to produce the final four-component vector required by the glTF
+specification.</p>
+<h3 id="1-mesh-buffer-extraction-and-pre-conditioning">1. Mesh Buffer
+Extraction and Pre-Conditioning</h3>
+<p>The glTF format stores mesh data across disparate accessor buffers.
+Dynamic generation begins by obtaining three core vertex attributes:</p>
+<ul>
+<li><strong>Positions:</strong> 3-component float vectors
+(<code>VEC3</code>).</li>
+<li><strong>Normals:</strong> 3-component float vectors
+(<code>VEC3</code>).</li>
+<li><strong>UV Coordinates:</strong> 2-component float vectors
+(<code>VEC2</code> from <code>TEXCOORD_0</code>).</li>
+<li><strong>Indices:</strong> Triangle list indices defining primitive
+topology.</li>
+</ul>
+<p>MikkTSpace assumes indexed triangle meshes where vertices are
+distinct if their geometric attributes diverge. If positions, normals,
+or UV coordinates differ, or if an edge represents a sharp seam, those
+vertices must not share calculated tangents. The algorithm operates
+either by unwrapping the mesh into an unindexed triangle array or by
+maintaining an adjacency map based on combined
+<code>(Position, Normal, UV)</code> identity.</p>
+<h3 id="2-triangle-level-tangent-and-bitangent-calculation">2.
+Triangle-Level Tangent and Bitangent Calculation</h3>
+<p>For every individual triangle defined by vertices <span
+class="math inline">\(P_0, P_1, P_2\)</span> with corresponding UV
+coordinates <span class="math inline">\(UV_0, UV_1, UV_2\)</span>, edge
+vectors in object space and parametric texture space are
+established:</p>
+<p><span class="math display">\[\Delta P_1 = P_1 - P_0, \quad \Delta P_2
+= P_2 - P_0\]</span> <span class="math display">\[\Delta U_1 = U_1 -
+U_0, \quad \Delta V_1 = V_1 - V_0\]</span> <span
+class="math display">\[\Delta U_2 = U_2 - U_0, \quad \Delta V_2 = V_2 -
+V_0\]</span></p>
+<p>The relationship between spatial coordinates and texture space
+coordinates forms a linear system:</p>
+<p><span class="math display">\[\begin{bmatrix} \Delta P_1 \\ \Delta P_2
+\end{bmatrix} = \begin{bmatrix} \Delta U_1 &amp; \Delta V_1 \\ \Delta
+U_2 &amp; \Delta V_2 \end{bmatrix} \begin{bmatrix} T \\ B
+\end{bmatrix}\]</span></p>
+<p>Solving for the unnormalized tangent vector <span
+class="math inline">\(T\)</span> and bitangent vector <span
+class="math inline">\(B\)</span> yields:</p>
+<p><span class="math display">\[r = \frac{1}{\Delta U_1 \Delta V_2 -
+\Delta U_2 \Delta V_1}\]</span> <span class="math display">\[T = (\Delta
+P_1 \Delta V_2 - \Delta P_2 \Delta V_1) \cdot r\]</span> <span
+class="math display">\[B = (\Delta P_2 \Delta U_1 - \Delta P_1 \Delta
+U_2) \cdot r\]</span></p>
+<p>If the determinant <span class="math inline">\((\Delta U_1 \Delta V_2
+- \Delta U_2 \Delta V_1)\)</span> is zero or near-zero, the triangle
+exhibits degenerate mapping. In dynamic implementations, these triangles
+assign zero vectors to <span class="math inline">\(T\)</span> and <span
+class="math inline">\(B\)</span> to avoid division by zero.</p>
+<h3 id="3-angle-weighted-neighborhood-accumulation">3. Angle-Weighted
+Neighborhood Accumulation</h3>
+<p>Unlike basic tangent generation that uses uniform or area-weighted
+averaging, MikkTSpace dictates an angle-weighted accumulation scheme to
+avoid bias introduced by tessellation density:</p>
+<ol type="1">
+<li><strong>Vertex Angle Weighting:</strong> For each vertex of a
+triangle, the internal angle <span class="math inline">\(\alpha\)</span>
+subtended by the incident edges is evaluated using the dot product:
+<span class="math display">\[\alpha = \arccos\left(\frac{E_1 \cdot
+E_2}{|E_1| |E_2|}\right)\]</span></li>
+<li><strong>Grouping Criteria:</strong> Triangles contribute their
+weighted tangents (<span class="math inline">\(\alpha \cdot T\)</span>)
+and bitangents (<span class="math inline">\(\alpha \cdot B\)</span>) to
+an accumulator mapped to the vertex.</li>
+<li><strong>Discontinuity Detection:</strong> Neighboring faces only
+merge their tangent spaces if:
+<ul>
+<li>They share identical position, normal, and UV coordinates.</li>
+<li>The angle between their unnormalized face normals does not exceed a
+smoothing threshold.</li>
+<li>The sign of their determinants (texture orientation) matches. If a
+texture is mirrored across a seam, the vertices must be split to prevent
+canceling out tangent contributions.</li>
+</ul></li>
+</ol>
+<h3 id="4-gram-schmidt-orthogonalization">4. Gram-Schmidt
+Orthogonalization</h3>
+<p>Because interpolated surface normals (<span
+class="math inline">\(N\)</span>) are not guaranteed to be strictly
+perpendicular to accumulated surface tangents (<span
+class="math inline">\(T_{acc}\)</span>), the tangent must be
+re-projected onto the tangent plane perpendicular to the normal:</p>
+<p><span class="math display">\[T_{\text{ortho}} = T_{acc} - N \cdot (N
+\cdot T_{acc})\]</span> <span class="math display">\[T_{\text{final}} =
+\text{normalize}(T_{\text{ortho}})\]</span></p>
+<p>If <span class="math inline">\(T_{\text{ortho}}\)</span> has a length
+near zero (which occurs when the UV coordinates are degenerately mapped
+parallel to the normal), an arbitrary vector orthogonal to <span
+class="math inline">\(N\)</span> is generated programmatically to
+maintain pipeline stability.</p>
+<h3 id="5-handedness-evaluation-for-gltf-compliance">5. Handedness
+Evaluation for glTF Compliance</h3>
+<p>glTF requires tangents to be stored as a <code>VEC4</code> attribute:
+<span class="math inline">\((T_x, T_y, T_z, w)\)</span>. The fourth
+component, <span class="math inline">\(w\)</span>, is a sign scalar
+(<span class="math inline">\(+1.0\)</span> or <span
+class="math inline">\(-1.0\)</span>) indicating the handedness of the
+coordinate basis. This value allows the vertex or fragment shader to
+reconstruct the bitangent vector (<span
+class="math inline">\(B\)</span>) dynamically:</p>
+<p><span class="math display">\[B = (N \times T_{\text{final}}) \cdot
+w\]</span></p>
+<p>To determine <span class="math inline">\(w\)</span>, the algorithm
+compares the cross product of the normal and the final tangent with the
+accumulated bitangent <span class="math inline">\(B_{acc}\)</span>:</p>
+<p><span class="math display">\[w = \operatorname{sgn}((N \times
+T_{\text{final}}) \cdot B_{acc})\]</span></p>
+<p>If the dot product is greater than or equal to zero, <span
+class="math inline">\(w = 1.0\)</span>; otherwise, <span
+class="math inline">\(w = -1.0\)</span>.</p>
+<h3 id="6-execution-strategies-for-dynamic-generation">6. Execution
+Strategies for Dynamic Generation</h3>
+<p>Executing this algorithm dynamically can become a bottleneck during
+runtime glTF loading. High-performance dynamic implementations apply
+several architectural optimizations:</p>
+<ul>
+<li><strong>Compute Shaders:</strong> The algorithm maps efficiently to
+GPU compute pipelines. Stage one computes triangle differentials; stage
+two groups and accumulates tangents atomically or via pre-sorted spatial
+bins; stage three orthogonalizes and packs the <code>VEC4</code>
+output.</li>
+<li><strong>WebAssembly / SIMD Compilation:</strong> For CPU-bound
+loaders (such as WebGL/WebGPU browser runtimes), the official C
+reference implementation by Morten Mikkelsen is typically compiled to
+WebAssembly with SIMD vectorization enabled, operating on flat typed
+arrays directly allocated in shared memory.</li>
+<li><strong>In-Place Cache Optimization:</strong> Reusing vertex index
+arrays and operating on interleaved attribute buffers limits cache
+misses when traversing large index lists.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

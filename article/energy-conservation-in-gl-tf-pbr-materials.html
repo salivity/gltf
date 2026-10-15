@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy Conservation in glTF PBR Materials - gltf</title>
+    <meta name="description" content="This article provides an overview of how the glTF 2.0 file format achieves physical plausibility by enforcing energy conservation between diffuse and specular light reflections. It details the underlying mathematical formulations of the core metallic-roug">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/energy-conservation-in-gl-tf-pbr-materials">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Energy Conservation in glTF PBR Materials - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/energy-conservation-in-gl-tf-pbr-materials" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of how the glTF 2.0 file format achieves physical plausibility by enforcing energy conservation between diffuse and specular light reflections. It details the underlying mathematical formulations of the core metallic-roug" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="energy-conservation-in-gltf-pbr-materials">Energy Conservation
+in glTF PBR Materials</h1>
+<p>This article provides an overview of how the glTF 2.0 file format
+achieves physical plausibility by enforcing energy conservation between
+diffuse and specular light reflections. It details the underlying
+mathematical formulations of the core metallic-roughness model, the role
+of the Fresnel reflectance factor, and how light energy is dynamically
+partitioned to ensure a surface never reflects more light than it
+receives.</p>
+<h2 id="the-core-principle-of-energy-conservation">The Core Principle of
+Energy Conservation</h2>
+<p>In physically based rendering (PBR), the law of conservation of
+energy states that the total light reflected and absorbed by a surface
+cannot exceed the total amount of incident light. Light striking an
+opaque interface is partitioned into two primary components:</p>
+<ol type="1">
+<li><strong>Specular Reflection:</strong> Light reflected directly off
+the micro-surface interface.</li>
+<li><strong>Diffuse Reflection:</strong> Light that refracts into the
+material, scatters internally, and re-emerges across various angles (or
+is absorbed as heat).</li>
+</ol>
+<p>To obey physics, glTF dictates that any light reflected specularly
+cannot also contribute to diffuse reflection.</p>
+<h2 id="metalness-workflow-and-base-color-derivation">Metalness Workflow
+and Base Color Derivation</h2>
+<p>glTF primarily relies on the metallic-roughness workflow. In this
+model, surfaces are defined by a <code>baseColorFactor</code> (and
+texture) alongside a <code>metallicFactor</code>.</p>
+<p>Before applying lighting, glTF derives the base reflectance at normal
+incidence (<span class="math inline">\(F_0\)</span>) and the diffuse
+color (<span class="math inline">\(c_{\text{diff}}\)</span>) based on
+the metalness value:</p>
+<ul>
+<li><strong>Dielectrics (non-metals):</strong> Most dielectric materials
+reflect roughly 4% (<span class="math inline">\(0.04\)</span>) of light
+at normal incidence. The remaining light penetrates the surface, meaning
+the diffuse color retains nearly all of the base color.</li>
+<li><strong>Conductors (metals):</strong> Metals have no internal
+scattering (diffuse component is effectively black), and their <span
+class="math inline">\(F_0\)</span> specular reflectance takes on the
+tint of the base color.</li>
+</ul>
+<p>The mathematical derivation in glTF is calculated as follows:</p>
+<p><span class="math display">\[F_0 = \text{lerp}(0.04,
+\text{baseColor}, \text{metallic})\]</span></p>
+<p><span class="math display">\[c_{\text{diff}} = \text{baseColor}
+\times (1.0 - 0.04) \times (1.0 - \text{metallic})\]</span></p>
+<p>If <code>metallic</code> is <span class="math inline">\(1.0\)</span>,
+<span class="math inline">\(c_{\text{diff}}\)</span> evaluates to zero,
+naturally eliminating diffuse energy for pure conductors.</p>
+<h2 id="directional-energy-balancing-via-fresnel">Directional Energy
+Balancing via Fresnel</h2>
+<p>While <span class="math inline">\(F_0\)</span> determines specular
+reflection when viewing a surface straight on, reflection increases
+toward 100% (<span class="math inline">\(1.0\)</span>) at grazing
+angles. glTF uses the Schlick approximation of the Fresnel equation to
+calculate the viewing-angle-dependent reflectance <span
+class="math inline">\(F\)</span>:</p>
+<p><span class="math display">\[F = F_0 + (1.0 - F_0)(1.0 - \langle v, h
+\rangle)^5\]</span></p>
+<p>Where <span class="math inline">\(v\)</span> is the view vector and
+<span class="math inline">\(h\)</span> is the half-vector between the
+view and light directions.</p>
+<p>To conserve energy at all angles, glTF scales the diffuse component
+by the inverse of the Fresnel term:</p>
+<p><span class="math display">\[\text{Factor}_{\text{diffuse}} = 1.0 -
+F\]</span></p>
+<p>Because <span class="math inline">\(F\)</span> represents the exact
+fraction of light reflected specularly at that specific angle,
+multiplying the diffuse reflection by <span class="math inline">\((1.0 -
+F)\)</span> guarantees that the remaining light available for diffuse
+scattering decreases as specular reflection increases.</p>
+<h2 id="the-combined-gltf-brdf-formulation">The Combined glTF BRDF
+Formulation</h2>
+<p>glTF combines the microfacet specular BRDF and the Lambertian diffuse
+BRDF into a single evaluation:</p>
+<p><span class="math display">\[f(l, v) = (1.0 - F)
+\frac{c_{\text{diff}}}{\pi} + f_{\text{specular}}(l, v)\]</span></p>
+<p>Where:</p>
+<ul>
+<li><span class="math inline">\(f_{\text{specular}}(l, v) = \frac{D
+\cdot V \cdot F}{4 (\langle n, l \rangle)(\langle n, v
+\rangle)}\)</span></li>
+<li><span class="math inline">\(D\)</span> is the GGX/Trowbridge-Reitz
+normal distribution function.</li>
+<li><span class="math inline">\(V\)</span> is the height-correlated
+Smith shadowing-masking visibility function.</li>
+<li><span class="math inline">\(\frac{c_{\text{diff}}}{\pi}\)</span>
+represents standard Lambertian diffuse reflectance.</li>
+</ul>
+<p>By scaling the Lambertian term directly by <span
+class="math inline">\((1.0 - F)\)</span>, the sum of the outgoing
+specular and diffuse radiance remains mathematically bounded by the
+incoming irradiance.</p>
+<h2 id="multi-layer-energy-conservation-in-gltf-extensions">Multi-Layer
+Energy Conservation in glTF Extensions</h2>
+<p>Advanced glTF extensions follow a layered energy-conservation
+hierarchy:</p>
+<ul>
+<li><strong>Clearcoat (<code>KHR_materials_clearcoat</code>):</strong>
+The clearcoat layer sits on top of the base material. The light
+reflected by the clearcoat Fresnel term (<span
+class="math inline">\(F_c\)</span>) reduces the total energy that
+penetrates to the base layer by multiplying incoming base light by <span
+class="math inline">\((1.0 - F_c)\)</span>.</li>
+<li><strong>Specular (<code>KHR_materials_specular</code>):</strong>
+Allows explicit modification of <span class="math inline">\(F_0\)</span>
+and specular color for dielectrics, automatically adjusting the
+remaining diffuse energy via an updated <span class="math inline">\((1.0
+- F)\)</span> term.</li>
+<li><strong>Transmission
+(<code>KHR_materials_transmission</code>):</strong> Any light not
+reflected specularly or scattered diffusely is made available for
+transmission through the volume, scaling transmitted light by <span
+class="math inline">\((1.0 - \text{diffuse} -
+\text{specular})\)</span>.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

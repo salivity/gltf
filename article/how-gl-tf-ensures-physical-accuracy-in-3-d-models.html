@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How glTF Ensures Physical Accuracy in 3D Models - gltf</title>
+    <meta name="description" content="The glTF (GL Transmission Format) standard ensures consistent, physically accurate visual fidelity across disparate rendering engines by strictly defining geometry specifications, a standardized Physically Based Rendering (PBR) material model, and measura">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-gl-tf-ensures-physical-accuracy-in-3-d-models">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How glTF Ensures Physical Accuracy in 3D Models - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-gl-tf-ensures-physical-accuracy-in-3-d-models" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The glTF (GL Transmission Format) standard ensures consistent, physically accurate visual fidelity across disparate rendering engines by strictly defining geometry specifications, a standardized Physically Based Rendering (PBR) material model, and measura" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-gltf-ensures-physical-accuracy-in-3d-models">How glTF
+Ensures Physical Accuracy in 3D Models</h1>
+<p>The glTF (GL Transmission Format) standard ensures consistent,
+physically accurate visual fidelity across disparate rendering engines
+by strictly defining geometry specifications, a standardized Physically
+Based Rendering (PBR) material model, and measurable photometric
+lighting properties. By replacing proprietary, ad-hoc shading formulas
+with mathematical implementations grounded in real-world physics, glTF
+guarantees that a 3D asset looks identical and behaves realistically
+under any lighting environment regardless of the platform running the
+simulation.</p>
+<h3 id="standardized-geometry-and-real-world-scale">Standardized
+Geometry and Real-World Scale</h3>
+<p>To match physical ground truth, rendering equations require accurate
+spatial metrics. glTF enforces standard geometric rules:</p>
+<ul>
+<li><strong>Real-World Units:</strong> The glTF specification explicitly
+defines one unit as one real-world meter. This metric convention is
+critical for accurate calculations of light attenuation, camera depth of
+field, and volumetric absorption.</li>
+<li><strong>Coordinate Space:</strong> glTF uses a right-handed
+Cartesian coordinate system where the positive Y-axis points up, the
+positive Z-axis points toward the viewer, and the positive X-axis points
+to the right.</li>
+<li><strong>Surface Normals and Tangents:</strong> Geometry meshes
+require explicitly defined or mathematically derived vertex normals and
+four-component tangents. Standardized orientation prevents inverted
+surfaces or distorted reflections during normal mapping, ensuring that
+surface micro-details deflect light as physical materials would.</li>
+</ul>
+<h3 id="reflectance-and-the-core-pbr-workflow">Reflectance and the Core
+PBR Workflow</h3>
+<p>Traditional 3D models relied on empirical shading models like Phong
+or Blinn-Phong, which violated the fundamental laws of thermodynamics by
+frequently reflecting more light than they received. glTF resolves this
+by standardizing the Metallic-Roughness PBR workflow based on microfacet
+theory.</p>
+<ul>
+<li><strong>Energy Conservation:</strong> The core glTF material model
+strictly preserves energy conservation: the sum of reflected (specular)
+and scattered (diffuse) light cannot exceed the incoming light
+energy.</li>
+<li><strong>The Microfacet Model (Cook-Torrance):</strong> glTF defines
+specular reflection using the microfacet distribution function. It
+standardizes on the Trowbridge-Reitz (GGX) normal distribution function,
+the Smith geometric shadowing/masking function, and the Schlick
+approximation for the Fresnel effect (<span
+class="math inline">\(F_0\)</span>). This mathematical pipeline ensures
+realistic grazing-angle reflectance (Fresnel reflectance approaching
+100% at extreme angles).</li>
+<li><strong>Color Space Management:</strong> All calculations must
+happen in linear photometric space. Texture maps specifying base color
+and emissive properties are strictly decoded from non-linear sRGB into
+linear space, while data-only maps (metallic, roughness, normal,
+occlusion) are stored and read purely as linear values to avoid
+non-physical value scaling.</li>
+</ul>
+<h3 id="advanced-optical-properties-via-standard-extensions">Advanced
+Optical Properties via Standard Extensions</h3>
+<p>Because the base metallic-roughness model only covers opaque,
+isotropic materials, the Khronos Group introduced official PBR
+extensions to calculate complex physical interactions:</p>
+<ul>
+<li><strong>Index of Refraction
+(<code>KHR_materials_ior</code>):</strong> Defines the exact physical
+IOR value of a dielectric interface (defaulting to 1.5 for common
+glass/plastics) rather than relying on estimated reflectance
+values.</li>
+<li><strong>Volume and Transmission (<code>KHR_materials_volume</code>,
+<code>KHR_materials_transmission</code>):</strong> Replaces simple alpha
+transparency with true optical transmission, calculating light
+refraction through thin-walled or thick solids. It implements the
+Beer-Lambert law to physically compute how light is absorbed and
+scattered as it travels through a defined depth of material.</li>
+<li><strong>Clearcoat and Sheen (<code>KHR_materials_clearcoat</code>,
+<code>KHR_materials_sheen</code>):</strong> Allows multi-layer
+microfacet calculations, simulating a secondary reflective layer (such
+as automotive lacquer over metallic base coat) or backscattering
+micro-fibers (such as velvet or fabric peach fuzz).</li>
+<li><strong>Dispersion and Iridescence
+(<code>KHR_materials_dispersion</code>,
+<code>KHR_materials_iridescence</code>):</strong> Computes
+wavelength-dependent refraction (chromatic aberration in gems and
+lenses) and thin-film wave interference based on nanometer-scale
+thickness.</li>
+</ul>
+<h3 id="photometric-lighting-and-conformance">Photometric Lighting and
+Conformance</h3>
+<p>Reflectance is only half of the physical equation; light behavior
+must also follow physical law. Through the
+<code>KHR_lights_punctual</code> extension, glTF standardizes
+directional, point, and spot lights using real-world photometric
+measurements (candelas, lumens, and lux). Point and spot lights require
+realistic inverse-square distance attenuation (<span
+class="math inline">\(1 / r^2\)</span>), preventing arbitrary light
+falloffs.</p>
+<p>Finally, glTF ensures ground-truth consistency through the Khronos 3D
+Commerce and Asset Certification initiatives. Automated validation tools
+and vendor-neutral sample renderers verify that graphics drivers and
+game engines adhere strictly to the underlying BRDF formulas,
+eliminating divergence between authoring tools and runtime
+environments.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

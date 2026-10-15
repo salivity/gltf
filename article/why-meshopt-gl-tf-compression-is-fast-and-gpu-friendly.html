@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Meshopt glTF Compression Is Fast and GPU-Friendly - gltf</title>
+    <meta name="description" content="The EXTmeshoptcompression extension for glTF addresses a fundamental bottleneck in real-time 3D delivery: the trade-off between file size and decompression latency. While alternative compression algorithms often focus purely on minimizing asset size over">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/why-meshopt-gl-tf-compression-is-fast-and-gpu-friendly">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Why Meshopt glTF Compression Is Fast and GPU-Friendly - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/why-meshopt-gl-tf-compression-is-fast-and-gpu-friendly" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The EXTmeshoptcompression extension for glTF addresses a fundamental bottleneck in real-time 3D delivery: the trade-off between file size and decompression latency. While alternative compression algorithms often focus purely on minimizing asset size over" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="why-meshopt-gltf-compression-is-fast-and-gpu-friendly">Why
+Meshopt glTF Compression Is Fast and GPU-Friendly</h1>
+<p>The <code>EXT_meshopt_compression</code> extension for glTF addresses
+a fundamental bottleneck in real-time 3D delivery: the trade-off between
+file size and decompression latency. While alternative compression
+algorithms often focus purely on minimizing asset size over the wire,
+meshopt prioritizes decompression speed and direct-to-GPU memory
+layouts. By decoding at several gigabytes per second per CPU core,
+meshopt allows WebGL, WebGPU, and native engines to process complex 3D
+scenes without causing main-thread stuttering, excessive memory
+allocations, or frame-rate drops.</p>
+<h3 id="the-trade-off-compression-ratio-vs-decoding-latency">The
+Trade-off: Compression Ratio vs. Decoding Latency</h3>
+<p>In network-constrained environments, standard geometry formats
+produce large files that consume bandwidth. Early compression schemes,
+such as Google’s Draco, addressed this by packing geometry into the
+smallest possible payload. However, this level of compression comes at
+the cost of complex entropy decoders and dynamic attribute
+reconstruction algorithms.</p>
+<p>Draco decompression requires significant CPU overhead and dynamic
+memory allocation, often taking tens to hundreds of milliseconds per
+asset on mobile or web threads. During this time, the device remains
+idle regarding GPU upload, leading to noticeable hitches. Meshopt
+rebalances this equation by trading a modest amount of compression
+efficiency to achieve decompression speeds that are an order of
+magnitude faster.</p>
+<h3 id="architecture-designed-for-simd-execution">Architecture Designed
+for SIMD Execution</h3>
+<p>Meshopt’s algorithms are structurally designed around SIMD (Single
+Instruction, Multiple Data) vectorization, supported natively across x86
+(SSE/AVX), ARM (NEON), and WebAssembly (WASM SIMD).</p>
+<p>Instead of treating geometry as an arbitrary bitstream, meshopt
+splits 3D data into distinct components:</p>
+<ul>
+<li><strong>Index buffers:</strong> Encoded using specialized
+topological models that track triangle connectivity with simple,
+fast-to-evaluate bit operations.</li>
+<li><strong>Vertex buffers:</strong> Reordered and processed with
+lightweight byte-level filtering, such as delta encoding and bit
+packing.</li>
+</ul>
+<p>Because the underlying arithmetic avoids deeply nested branching and
+dynamic lookups, the decoding loops can be heavily unrolled and
+vectorized. This allows the decoder to process data at
+multi-gigabyte-per-second throughput, often matching the read speed of
+system memory.</p>
+<h3 id="direct-to-gpu-memory-layouts">Direct-to-GPU Memory Layouts</h3>
+<p>Standard glTF assets store vertex attributes (positions, normals,
+UVs) in structured, interleaved buffers ready for immediate binding to
+the GPU. Complex compression algorithms disrupt this structure,
+requiring vertices to be unpacked into intermediate structures and
+re-interleaved into GPU-compliant layouts.</p>
+<p>Meshopt preserves the target memory layout during decoding:</p>
+<ol type="1">
+<li><strong>Target Allocation:</strong> The runtime allocates a single
+target buffer for the GPU vertex or index buffer.</li>
+<li><strong>In-Place Transformation:</strong> Meshopt decodes raw input
+bytes directly into this destination buffer using the precise stride,
+alignment, and ordering required by graphics APIs (DirectX, Vulkan,
+Metal, WebGL, WebGPU).</li>
+<li><strong>Instant Upload:</strong> Once decoding completes, the buffer
+is uploaded directly to VRAM without requiring intermediate staging
+arrays or garbage-collected objects.</li>
+</ol>
+<h3 id="synergy-with-universal-transport-compression">Synergy with
+Universal Transport Compression</h3>
+<p>Meshopt does not attempt to solve entropy encoding entirely on its
+own. Instead, it acts as a pre-filter that increases the compressibility
+of the raw data.</p>
+<p>By applying transpose filters, quantization, and delta coding,
+meshopt transforms irregular floating-point or integer distributions
+into repetitive byte patterns. These patterns can then be efficiently
+compressed using universal, standardized transport compression tools
+such as Brotli, gzip, or Zstandard (Zstd). When delivered over HTTP, the
+network layer handles the byte-level entropy reduction, and meshopt
+handles the rapid structural restoration once the payload arrives.</p>
+<h3 id="cache-optimized-vertex-topologies">Cache-Optimized Vertex
+Topologies</h3>
+<p>Beyond decompression speed, meshopt improves runtime GPU rendering
+efficiency. During the encoding process, the geometry is optimized for
+the GPU's hardware post-transform vertex cache (FIFO) and primitive
+assembly units.</p>
+<p>When a meshopt-compressed model is decoded, the vertex order and
+index sequences are already arranged to maximize vertex reuse and
+minimize overdraw. As a result, the model not only loads faster into
+memory, but it also renders with higher hardware utilization on the
+target device.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

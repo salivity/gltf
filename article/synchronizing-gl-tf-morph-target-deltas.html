@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synchronizing glTF Morph Target Deltas - gltf</title>
+    <meta name="description" content="In glTF 2.0, morph target animations synchronize delta positions, normals, and tangents by linking them under unified target indices governed by a shared array of scalar weights. Rather than animating spatial channels individually, glTF animation samplers">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/synchronizing-gl-tf-morph-target-deltas">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Synchronizing glTF Morph Target Deltas - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/synchronizing-gl-tf-morph-target-deltas" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In glTF 2.0, morph target animations synchronize delta positions, normals, and tangents by linking them under unified target indices governed by a shared array of scalar weights. Rather than animating spatial channels individually, glTF animation samplers" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="synchronizing-gltf-morph-target-deltas">Synchronizing glTF Morph
+Target Deltas</h1>
+<p>In glTF 2.0, morph target animations synchronize delta positions,
+normals, and tangents by linking them under unified target indices
+governed by a shared array of scalar weights. Rather than animating
+spatial channels individually, glTF animation samplers drive a single
+<code>weights</code> array on the target node. Each weight
+simultaneously scales the corresponding position, normal, and tangent
+deltas for a given morph target, ensuring that geometric displacement
+and surface orientation remain perfectly aligned during deformation.</p>
+<h3 id="structural-pairing-via-primitive-targets">Structural Pairing via
+Primitive Targets</h3>
+<p>In the glTF asset structure, a mesh primitive defines its base
+geometry in its <code>attributes</code> dictionary
+(<code>POSITION</code>, <code>NORMAL</code>, <code>TANGENT</code>).
+Morph targets are defined within the <code>targets</code> array of that
+primitive. Each element in the <code>targets</code> array represents a
+distinct morph target state and contains accessors for the respective
+deltas:</p>
+<ul>
+<li><code>POSITION</code>: Stores the <code>[x, y, z]</code>
+displacement vector relative to the base position.</li>
+<li><code>NORMAL</code>: Stores the <code>[x, y, z]</code> normal vector
+shift relative to the base normal.</li>
+<li><code>TANGENT</code>: Stores a 3D <code>[x, y, z]</code> tangent
+vector shift relative to the base tangent, leaving the 4th component
+(the sign/handedness) to be inherited directly from the base
+<code>TANGENT</code> attribute.</li>
+</ul>
+<p>Because the position, normal, and tangent deltas are bundled together
+inside the same index in the <code>targets</code> list, they represent a
+coupled set of modifications for that target index.</p>
+<h3 id="single-weight-modulation">Single-Weight Modulation</h3>
+<p>glTF synchronizes these components during playback through animation
+channels that target the <code>weights</code> path of a
+<code>node</code>. An animation sampler outputs an array of
+floating-point values at each keyframe, where the length of the array
+matches the number of targets defined in the mesh.</p>
+<p>For target index <code>i</code>, a single scalar value
+<code>w[i]</code> drives all associated delta accessors at the same
+time:</p>
+<ul>
+<li><span class="math inline">\(\Delta P_i =
+\text{Target}[i].\text{POSITION}\)</span></li>
+<li><span class="math inline">\(\Delta N_i =
+\text{Target}[i].\text{NORMAL}\)</span></li>
+<li><span class="math inline">\(\Delta T_i =
+\text{Target}[i].\text{TANGENT}\)</span></li>
+</ul>
+<p>Because the runtime evaluation uses identical timing and
+interpolation for the target weight, none of the individual attribute
+layers can drift out of temporal phase.</p>
+<h3 id="vertex-shader-blending-formulation">Vertex Shader Blending
+Formulation</h3>
+<p>During vertex processing, the base attributes and delta values are
+accumulated linearly using the active weight values. The standard
+formula applied across all synchronized attributes is:</p>
+<ul>
+<li><strong>Position</strong>: <span class="math inline">\(P =
+P_{\text{base}} + \sum_{i} (w_i \cdot \Delta P_i)\)</span></li>
+<li><strong>Normal</strong>: <span class="math inline">\(N =
+\text{normalize}\left(N_{\text{base}} + \sum_{i} (w_i \cdot \Delta
+N_i)\right)\)</span></li>
+<li><strong>Tangent</strong>: <span class="math inline">\(T_{xyz} =
+\text{normalize}\left(T_{\text{base}.xyz} + \sum_{i} (w_i \cdot \Delta
+T_i)\right)\)</span></li>
+</ul>
+<p>The accumulated normal and tangent vectors are re-normalized after
+blending to counteract any length distortion introduced by linear delta
+additions. The tangent's bitangent sign (<span
+class="math inline">\(T_{\text{base}.w}\)</span>) is preserved to
+construct the orthonormal tangent-bitangent-normal (TBN) matrix for
+normal mapping.</p>
+<h3 id="gpu-implementation-strategies">GPU Implementation
+Strategies</h3>
+<p>Runtimes typically execute this synchronization on the GPU through
+two methods:</p>
+<ol type="1">
+<li><strong>Vertex Attributes</strong>: Engines supply target deltas as
+additional vertex attributes and pass the weight array as a uniform
+buffer to the vertex shader. The vertex shader performs parallel
+multiply-add operations for positions, normals, and tangents within the
+same invocation.</li>
+<li><strong>Texture Buffers (Morph Textures)</strong>: When the target
+count exceeds GPU attribute limits, engines pack all position, normal,
+and tangent deltas into 2D floating-point texture arrays. The vertex
+shader samples the texture coordinate for vertex <code>ID</code> across
+all active target slices, scales the fetched deltas by
+<code>w[i]</code>, and aggregates the result in lockstep before
+transforming vertices into clip space.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

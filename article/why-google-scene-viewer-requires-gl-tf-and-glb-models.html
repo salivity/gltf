@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Google Scene Viewer Requires glTF and GLB Models - gltf</title>
+    <meta name="description" content="Google Scene Viewer requires glTF (GL Transmission Format) and its binary counterpart, GLB, because they provide the ideal balance of compact file size, rapid loading, and standardized 3D rendering for web-based augmented reality. Designed specifically fo">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/why-google-scene-viewer-requires-gl-tf-and-glb-models">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Why Google Scene Viewer Requires glTF and GLB Models - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/why-google-scene-viewer-requires-gl-tf-and-glb-models" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Google Scene Viewer requires glTF (GL Transmission Format) and its binary counterpart, GLB, because they provide the ideal balance of compact file size, rapid loading, and standardized 3D rendering for web-based augmented reality. Designed specifically fo" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="why-google-scene-viewer-requires-gltf-and-glb-models">Why Google
+Scene Viewer Requires glTF and GLB Models</h1>
+<p>Google Scene Viewer requires glTF (GL Transmission Format) and its
+binary counterpart, GLB, because they provide the ideal balance of
+compact file size, rapid loading, and standardized 3D rendering for
+web-based augmented reality. Designed specifically for efficient
+transmission over the internet, glTF/GLB streamlines how Android devices
+unpack, render, and anchor 3D assets in real-world environments without
+requiring dedicated apps or heavy processing overhead.</p>
+<h3 id="the-standard-for-web-based-3d-transmission">The Standard for
+Web-Based 3D Transmission</h3>
+<p>Developed by the Khronos Group, glTF was engineered from the ground
+up to be the "JPEG of 3D." Unlike authoring formats like FBX or
+OBJ—which are designed for editing software and contain redundant
+metadata—glTF is a runtime transmission format. It discards unnecessary
+production data and focuses strictly on what the rendering engine needs
+to display the model.</p>
+<h3 id="direct-to-gpu-architecture">Direct-to-GPU Architecture</h3>
+<p>Traditional 3D formats require extensive parsing and conversion
+before a mobile GPU can read them, leading to latency and high memory
+usage. glTF structures its data—including vertex buffers, indices, and
+animations—so that it can be loaded directly into the GPU's memory with
+minimal client-side decoding. For web-based AR via Scene Viewer, this
+direct pipeline ensures near-instantaneous transitions from a web
+browser to an augmented reality view.</p>
+<h3 id="all-in-one-packaging-with-glb">All-in-One Packaging with
+GLB</h3>
+<p>While standard glTF references external files for textures and binary
+buffers, GLB encapsulates the entire 3D asset—geometry, shaders,
+animation data, and image textures—into a single binary file. This
+single-container approach offers major benefits for web AR:</p>
+<ul>
+<li><strong>Fewer Network Requests:</strong> Consolidating assets into
+one file eliminates multiple HTTP requests, significantly decreasing
+load times on mobile networks.</li>
+<li><strong>Simplified Delivery:</strong> Web developers can host and
+serve a single asset without risking broken file paths for textures or
+materials.</li>
+</ul>
+<h3 id="standardized-physically-based-rendering-pbr">Standardized
+Physically Based Rendering (PBR)</h3>
+<p>Realism in augmented reality depends on how virtual objects interact
+with real-world lighting. Google Scene Viewer uses Physically Based
+Rendering (PBR) materials defined by the glTF 2.0 specification. This
+standard defines parameters like roughness, metallic properties, and
+normal maps uniformly. Because these material definitions are
+standardized, 3D models look consistent and react realistically to
+environmental lighting estimated by ARCore across various Android
+hardware.</p>
+<h3 id="native-arcore-and-android-integration">Native ARCore and Android
+Integration</h3>
+<p>Google built Scene Viewer on top of Android’s rendering pipelines,
+such as the Filament real-time PBR engine. Filament natively supports
+glTF/GLB, allowing Scene Viewer to execute AR experiences with
+predictable performance, stable frame rates, and low battery
+consumption. By enforcing a single, optimized format, Google avoids the
+fragmentation, rendering bugs, and performance bottlenecks associated
+with supporting legacy 3D file types.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exporting Maya Blendshapes and Skinning to glTF - gltf</title>
+    <meta name="description" content="This article provides an overview of how Maya glTF exporters translate proprietary rigging and deformation data into standard glTF 2.0 assets. It covers the conversion of Maya&#39;s skinCluster nodes into glTF skins, joint indices, and inverse bind matrices,">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/exporting-maya-blendshapes-and-skinning-to-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Exporting Maya Blendshapes and Skinning to glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/exporting-maya-blendshapes-and-skinning-to-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of how Maya glTF exporters translate proprietary rigging and deformation data into standard glTF 2.0 assets. It covers the conversion of Maya&#39;s skinCluster nodes into glTF skins, joint indices, and inverse bind matrices," />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="exporting-maya-blendshapes-and-skinning-to-gltf">Exporting Maya
+Blendshapes and Skinning to glTF</h1>
+<p>This article provides an overview of how Maya glTF exporters
+translate proprietary rigging and deformation data into standard glTF
+2.0 assets. It covers the conversion of Maya's <code>skinCluster</code>
+nodes into glTF skins, joint indices, and inverse bind matrices,
+explains how <code>blendShape</code> deformers are transformed into
+morph targets and animated weight tracks, and details how the export
+pipeline aligns evaluation order to maintain visual fidelity across
+real-time 3D runtimes.</p>
+<h3 id="skeletal-skinning-conversion">Skeletal Skinning Conversion</h3>
+<p>Maya handles skeletal deformation using the <code>skinCluster</code>
+node, which associates vertices on a mesh with joint influences and
+corresponding weights. During export, the glTF exporter translates this
+structure into the standard glTF <code>skin</code> element and
+per-vertex mesh attributes.</p>
+<ol type="1">
+<li><strong>Joint Hierarchy and References:</strong> The exporter
+traverses Maya's DAG (Directed Acyclic Graph) to identify joints bound
+to the skin cluster. These are mapped to an array of indices pointing to
+specific nodes within the glTF scene hierarchy.</li>
+<li><strong>Inverse Bind Matrices:</strong> In Maya, the bind pose of
+each joint is recorded to calculate vertex offsets relative to joint
+movement. The exporter retrieves the joint's world-space inverse bind
+transformation matrix, flattens it, and serializes it into a dedicated
+buffer accessor referenced by the <code>inverseBindMatrices</code>
+property of the skin.</li>
+<li><strong>Vertex Attributes (<code>JOINTS_0</code> and
+<code>WEIGHTS_0</code>):</strong> For every vertex, the exporter
+extracts the joint indices and corresponding influence values from the
+skin cluster. glTF requires that weights per set sum to 1.0. Typically,
+glTF uses up to four influences per vertex stored in
+<code>JOINTS_0</code> and <code>WEIGHTS_0</code>. If a vertex has more
+than four influences, the exporter either prunes the smallest weights
+and renormalizes the top four, or writes secondary attribute sets
+(<code>JOINTS_1</code> and <code>WEIGHTS_1</code>) if the export
+configuration allows extended influences.</li>
+</ol>
+<h3 id="blendshape-weights-and-morph-targets">Blendshape Weights and
+Morph Targets</h3>
+<p>Maya defines shape modifications through <code>blendShape</code>
+deformers, which store target shapes as delta offsets relative to a base
+mesh. The glTF format handles these deformations using morph
+targets.</p>
+<ol type="1">
+<li><strong>Delta Calculations:</strong> Rather than exporting complete
+duplicate meshes, the glTF exporter calculates the difference (delta)
+between the neutral base geometry and each target geometry. These deltas
+are stored as arrays of morph targets under the mesh's
+<code>primitives</code> definition, containing delta positions
+(<code>POSITION</code>), delta normals (<code>NORMAL</code>), and delta
+tangents (<code>TANGENT</code>).</li>
+<li><strong>Mesh Default Weights:</strong> The initial weight values
+defined in the Maya <code>blendShape</code> node are assigned to the
+root <code>weights</code> array of the glTF <code>mesh</code>
+object.</li>
+<li><strong>Weight Animations:</strong> When blendshape weights are
+animated via keyframes in Maya, the exporter maps the anim curves to
+glTF animation samplers. These animations target the
+<code>weights</code> property of the node referencing the mesh, rather
+than the mesh data itself, using linear or cubic spline interpolation
+matching Maya's tangent settings.</li>
+</ol>
+<h3 id="deformation-pipeline-and-order-of-operations">Deformation
+Pipeline and Order of Operations</h3>
+<p>A critical challenge during export is preserving the correct order of
+evaluation. In Maya, deformation order is determined by the construction
+history upstream of the mesh shape.</p>
+<p>The glTF 2.0 specification strictly dictates that morph targets must
+be calculated first, followed by skeletal skinning:</p>
+<p><span class="math display">\[\text{Final Position} = \sum
+(\text{Joint Matrix} \times \text{Joint Weight}) \times (\text{Base
+Position} + \sum (\text{Target Delta} \times \text{Target
+Weight}))\]</span></p>
+<p>Because of this fixed standard, the Maya glTF exporter expects the
+Maya scene's deformation order to feature the <code>blendShape</code>
+node before the <code>skinCluster</code> node. If a Maya asset has the
+skin cluster evaluated before the blendshape in its node history, the
+exporter may either reorder the data or warn the user, as failing to
+adhere to the morph-then-skin pipeline results in broken silhouettes and
+inaccurate deformations in target real-time engines.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

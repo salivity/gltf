@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Byte Alignment for Accessors and BufferViews - gltf</title>
+    <meta name="description" content="In glTF 2.0, precise byte alignment constraints govern how binary data is organized within bufferView and accessor structures to ensure efficient GPU memory mapping and prevent CPU memory alignment faults. This article details the specific alignment rules">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-byte-alignment-for-accessors-and-buffer-views">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Byte Alignment for Accessors and BufferViews - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-byte-alignment-for-accessors-and-buffer-views" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In glTF 2.0, precise byte alignment constraints govern how binary data is organized within bufferView and accessor structures to ensure efficient GPU memory mapping and prevent CPU memory alignment faults. This article details the specific alignment rules" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-byte-alignment-for-accessors-and-bufferviews">glTF Byte
+Alignment for Accessors and BufferViews</h1>
+<p>In glTF 2.0, precise byte alignment constraints govern how binary
+data is organized within <code>bufferView</code> and
+<code>accessor</code> structures to ensure efficient GPU memory mapping
+and prevent CPU memory alignment faults. This article details the
+specific alignment rules required for
+<code>bufferView.byteOffset</code>, <code>bufferView.byteStride</code>,
+and <code>accessor.byteOffset</code>, explaining how these offsets
+correlate with the underlying component data types.</p>
+<h2 id="bufferview-alignment-constraints">BufferView Alignment
+Constraints</h2>
+<p>A <code>bufferView</code> represents a contiguous segment of a raw
+binary <code>buffer</code>. glTF enforces two primary alignment
+restrictions on <code>bufferView</code> properties:</p>
+<ul>
+<li><strong>byteOffset:</strong> The starting point of a
+<code>bufferView</code> within its parent <code>buffer</code> must be
+aligned to a multiple of 4 bytes. This requirement guarantees that all
+nested accessors begin at a memory address that satisfies the basic
+4-byte boundaries standard across 32-bit and 64-bit hardware
+architectures.</li>
+<li><strong>byteStride:</strong> When interleaving vertex attributes
+within a single <code>bufferView</code>, the <code>byteStride</code>
+defines the distance in bytes between consecutive vertex elements. The
+<code>byteStride</code> must be a multiple of 4 and must fall within the
+range of 4 to 252 bytes inclusive. If defined, it can only be applied to
+bufferViews referencing vertex attributes, never to index buffers or
+animation samplers.</li>
+</ul>
+<h2 id="accessor-alignment-constraints">Accessor Alignment
+Constraints</h2>
+<p>An <code>accessor</code> defines the typed view (data type, component
+type, count) into a <code>bufferView</code>. The alignment of an
+accessor is strictly tied to its <code>componentType</code>:</p>
+<ul>
+<li><strong>byteOffset:</strong> The <code>byteOffset</code> of an
+<code>accessor</code> specifies the offset relative to the start of the
+<code>bufferView</code>. This value must be an exact multiple of the
+component type's size in bytes:
+<ul>
+<li><strong>1-byte alignment:</strong> <code>BYTE</code> (5120) and
+<code>UNSIGNED_BYTE</code> (5121).</li>
+<li><strong>2-byte alignment:</strong> <code>SHORT</code> (5122) and
+<code>UNSIGNED_SHORT</code> (5123).</li>
+<li><strong>4-byte alignment:</strong> <code>UNSIGNED_INT</code> (5125)
+and <code>FLOAT</code> (5126).</li>
+</ul></li>
+</ul>
+<p>Because <code>bufferView.byteOffset</code> is guaranteed to be a
+multiple of 4, aligning <code>accessor.byteOffset</code> to its
+component type's size ensures that the absolute offset within the binary
+buffer (<code>bufferView.byteOffset + accessor.byteOffset</code>) is
+always aligned to the component type's natural boundary.</p>
+<h2 id="glb-container-alignment">GLB Container Alignment</h2>
+<p>When distributing models in the binary container format (.glb),
+additional padding constraints apply to support overall alignment:</p>
+<ul>
+<li>The binary chunk (<code>BIN</code>) must be padded with trailing
+zeroes (<code>0x00</code>) so that its total length is a multiple of
+4.</li>
+<li>The JSON chunk must be padded with trailing space characters
+(<code>0x20</code>) so that its total length is also a multiple of
+4.</li>
+</ul>
+<p>These global 4-byte boundaries ensure that the binary data chunk
+always begins at a 4-byte aligned position relative to the start of the
+file, allowing direct pointer casting and zero-copy loading in client
+applications.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

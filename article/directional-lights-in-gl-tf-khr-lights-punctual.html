@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Directional Lights in glTF KHR_lights_punctual - gltf</title>
+    <meta name="description" content="This article explains the behavior, properties, and implementation details of directional lights defined using the KHRlightspunctual glTF 2.0 extension. Directional lights act as distant light sources with parallel rays, and understanding their default or">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/directional-lights-in-gl-tf-khr-lights-punctual">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Directional Lights in glTF KHR_lights_punctual - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/directional-lights-in-gl-tf-khr-lights-punctual" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains the behavior, properties, and implementation details of directional lights defined using the KHRlightspunctual glTF 2.0 extension. Directional lights act as distant light sources with parallel rays, and understanding their default or" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="directional-lights-in-gltf-khr_lights_punctual">Directional
+Lights in glTF KHR_lights_punctual</h1>
+<p>This article explains the behavior, properties, and implementation
+details of directional lights defined using the
+<code>KHR_lights_punctual</code> glTF 2.0 extension. Directional lights
+act as distant light sources with parallel rays, and understanding their
+default orientation, radiometric units, node hierarchy interactions, and
+lack of distance attenuation is essential for accurately rendering glTF
+assets in 3D engines.</p>
+<h2 id="fundamental-concept-and-definition">Fundamental Concept and
+Definition</h2>
+<p>In the <code>KHR_lights_punctual</code> extension, a directional
+light represents an analytical light source located at an infinitely
+distant point. All light rays emitted by a directional light travel
+parallel to one another across the entire scene. Consequently, unlike
+point or spot lights, the position of the node hosting the directional
+light has no effect on illumination—only the node’s orientation dictates
+how light strikes objects.</p>
+<p>In the JSON structure, the light is declared in the root
+<code>extensions.KHR_lights_punctual.lights</code> array with its
+<code>type</code> set to <code>"directional"</code>, and then referenced
+by index inside a node's <code>extensions.KHR_lights_punctual</code>
+property:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;extensions&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;KHR_lights_punctual&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;lights&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">{</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;directional&quot;</span><span class="fu">,</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;color&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="fl">1.0</span><span class="ot">,</span> <span class="fl">1.0</span><span class="ot">,</span> <span class="fl">1.0</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;intensity&quot;</span><span class="fu">:</span> <span class="fl">100000.0</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        <span class="fu">}</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>      <span class="ot">]</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h2 id="orientation-and-direction-vector">Orientation and Direction
+Vector</h2>
+<p>By default in the glTF coordinate space, a directional light points
+along the local negative Z-axis (<code>[0.0, 0.0, -1.0]</code>).</p>
+<p>To determine the final direction of the light in world space:</p>
+<ol type="1">
+<li>Start with the local direction vector <span
+class="math inline">\(d_{\text{local}} = [0, 0, -1]^T\)</span>.</li>
+<li>Multiply by the upper-left <span class="math inline">\(3 \times
+3\)</span> portion of the world transformation matrix of the node to
+which the light is attached.</li>
+<li>Normalize the resulting vector.</li>
+</ol>
+<p>Translation values in the node transform have no impact on the
+light's direction or intensity. If a node is rotated, the direction
+vector rotates accordingly.</p>
+<h2 id="units-and-photometric-intensity">Units and Photometric
+Intensity</h2>
+<p>The <code>intensity</code> property of a directional light is defined
+in units of illuminance, measured in lux (lumens per square meter, or
+<span class="math inline">\(lm/m^2\)</span>). This differs from point
+and spot lights, which define intensity in luminous intensity (candela,
+or <span class="math inline">\(lm/sr\)</span>).</p>
+<ul>
+<li><strong>Default Intensity:</strong> If omitted, the default
+<code>intensity</code> is <code>1.0</code> lux.</li>
+<li><strong>Color Multiplication:</strong> The <code>color</code>
+property defines the linear RGB color of the light (defaulting to
+<code>[1.0, 1.0, 1.0]</code>).</li>
+<li><strong>Irradiance Calculation:</strong> When computing surface
+lighting, the illuminance <span class="math inline">\(E\)</span>
+received by a surface perpendicular to the light rays is:</li>
+</ul>
+<p><span class="math display">\[E = \text{intensity} \times
+\text{color}\]</span></p>
+<p>When accounting for the surface normal <span
+class="math inline">\(N\)</span> and the unit vector pointing toward the
+light source <span class="math inline">\(L\)</span> (where <span
+class="math inline">\(L = -d_{\text{world}}\)</span>), the incident
+illuminance is attenuated by the cosine factor:</p>
+<p><span class="math display">\[E_{\text{surface}} = E \max(N \cdot L,
+0)\]</span></p>
+<h2 id="attenuation-and-range-behavior">Attenuation and Range
+Behavior</h2>
+<p>Directional lights do not attenuate over distance. The inverse-square
+decay law used for point and spot lights does not apply here.</p>
+<p>The <code>range</code> property defined in the
+<code>KHR_lights_punctual</code> specification is not applicable to
+directional lights. If a <code>range</code> value is defined on a light
+entry whose <code>type</code> is <code>"directional"</code>, conforming
+runtime engines must ignore it and treat the light's reach as
+infinite.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

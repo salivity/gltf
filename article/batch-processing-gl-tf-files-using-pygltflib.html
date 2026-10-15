@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Processing glTF Files Using pygltflib - gltf</title>
+    <meta name="description" content="Batch processing 3D assets is essential for scalable 3D pipelines, game development asset validation, and preparing datasets for machine learning or web presentation. The Python library pygltflib simplifies this process by providing a lightweight, pure-Py">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/batch-processing-gl-tf-files-using-pygltflib">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Batch Processing glTF Files Using pygltflib - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/batch-processing-gl-tf-files-using-pygltflib" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Batch processing 3D assets is essential for scalable 3D pipelines, game development asset validation, and preparing datasets for machine learning or web presentation. The Python library pygltflib simplifies this process by providing a lightweight, pure-Py" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="batch-processing-gltf-files-using-pygltflib">Batch Processing
+glTF Files Using pygltflib</h1>
+<p>Batch processing 3D assets is essential for scalable 3D pipelines,
+game development asset validation, and preparing datasets for machine
+learning or web presentation. The Python library <code>pygltflib</code>
+simplifies this process by providing a lightweight, pure-Python toolset
+to parse, inspect, modify, and export glTF (GL Transmission Format) and
+GLB files at scale. This article explores how <code>pygltflib</code>
+enables automated batch processing, its key functional capabilities, and
+how to integrate it into high-throughput 3D asset pipelines.</p>
+<h2 id="understanding-pygltflib">Understanding pygltflib</h2>
+<p><code>pygltflib</code> is a Python library built specifically to work
+with the glTF 2.0 specification. Rather than relying on heavy rendering
+engines or complex digital content creation (DCC) software suites like
+Blender or Maya, <code>pygltflib</code> operates primarily at the data
+structure level. It deserializes glTF JSON structures into native Python
+dataclasses and vice versa.</p>
+<p>Because it operates directly on the underlying schema without loading
+a graphics context, <code>pygltflib</code> executes rapidly with minimal
+CPU and memory overhead, making it ideal for processing thousands of
+files in automated workflows.</p>
+<h2 id="key-capabilities-for-batch-processing">Key Capabilities for
+Batch Processing</h2>
+<h3 id="1-programmatic-parsing-and-serialization">1. Programmatic
+Parsing and Serialization</h3>
+<p><code>pygltflib</code> handles both human-readable glTF
+(<code>.gltf</code>) files with external resources and packed binary GLB
+(<code>.glb</code>) files. With simple <code>GLTF2().load()</code> and
+<code>GLTF2().save()</code> commands, scripts can easily ingest
+heterogeneous asset folders, extract embedded data buffers, and
+reserialize the assets back into the desired format without manual
+intervention.</p>
+<h3 id="2-high-speed-asset-validation-and-auditing">2. High-Speed Asset
+Validation and Auditing</h3>
+<p>In production pipelines, ensuring consistency across hundreds or
+thousands of models is critical. With <code>pygltflib</code>, developers
+can traverse an entire dataset to check for:</p>
+<ul>
+<li>Missing textures, invalid URIs, or broken buffer views.</li>
+<li>Triangle count limits and node hierarchy depths.</li>
+<li>Naming conventions across nodes, meshes, and materials.</li>
+<li>Specification compliance (e.g., ensuring standard PBR material
+configurations).</li>
+</ul>
+<p>Scripts can generate consolidated logs or CSV reports flagging
+non-compliant models, enabling targeted fixes across vast asset
+libraries.</p>
+<h3 id="3-automated-material-and-texture-modification">3. Automated
+Material and Texture Modification</h3>
+<p>When assets come from disparate sources, textures and materials often
+need normalization. <code>pygltflib</code> enables developers to
+batch-update:</p>
+<ul>
+<li>Texture paths (e.g., re-pointing textures to a central CDN or
+updating local relative paths).</li>
+<li>Material parameters (e.g., standardizing
+<code>roughnessFactor</code>, <code>metallicFactor</code>, or
+<code>alphaMode</code>).</li>
+<li>glTF extensions, such as stripping unsupported extensions or
+inserting modern ones like <code>KHR_materials_unlit</code> or
+<code>KHR_texture_transform</code>.</li>
+</ul>
+<h3 id="4-glb-and-gltf-format-conversion">4. GLB and glTF Format
+Conversion</h3>
+<p>Switching between separate glTF files (with external
+<code>.bin</code> and image files) and self-contained binary GLB
+containers is frequently required when preparing models for web
+distribution. <code>pygltflib</code> allows for instant format switching
+across whole directories, embedding external resources into binary
+buffers or extracting internal buffers into separate files.</p>
+<h2 id="implementing-a-batch-processing-workflow">Implementing a Batch
+Processing Workflow</h2>
+<p>A typical batch workflow using <code>pygltflib</code> pairs the
+library with Python's standard filesystem and multiprocessing
+utilities.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pygltflib <span class="im">import</span> GLTF2</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> process_gltf_file(file_path: Path):</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Load the asset</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        gltf <span class="op">=</span> GLTF2().load(<span class="bu">str</span>(file_path))</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Perform modifications (e.g., enforce standard roughness on all materials)</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> material <span class="kw">in</span> gltf.materials:</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> material.pbrMetallicRoughness:</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>                material.pbrMetallicRoughness.roughnessFactor <span class="op">=</span> <span class="fl">0.5</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        <span class="co"># Save the updated model (or save as .glb)</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        output_path <span class="op">=</span> file_path.with_suffix(<span class="st">&quot;.processed.glb&quot;</span>)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        gltf.save(<span class="bu">str</span>(output_path))</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">True</span>, file_path.name</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> <span class="pp">Exception</span> <span class="im">as</span> e:</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">False</span>, <span class="ss">f&quot;</span><span class="sc">{</span>file_path<span class="sc">.</span>name<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span><span class="bu">str</span>(e)<span class="sc">}</span><span class="ss">&quot;</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Iterate through a dataset directory</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>dataset_dir <span class="op">=</span> Path(<span class="st">&quot;./assets&quot;</span>)</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> model_path <span class="kw">in</span> dataset_dir.glob(<span class="st">&quot;**/*.glb&quot;</span>):</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    success, message <span class="op">=</span> process_gltf_file(model_path)</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> success:</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f&quot;Failed: </span><span class="sc">{</span>message<span class="sc">}</span><span class="ss">&quot;</span>)</span></code></pre></div>
+<h2 id="scaling-with-parallel-execution">Scaling with Parallel
+Execution</h2>
+<p>Because <code>pygltflib</code> is decoupled from graphical rendering
+APIs, it is thread-safe and process-safe. Developers can use Python’s
+built-in <code>concurrent.futures</code> or <code>multiprocessing</code>
+modules to distribute model parsing and saving across multiple CPU
+cores. This architecture transforms long, sequential asset conversion
+runs into rapid parallel batch jobs that can handle tens of gigabytes of
+3D data in minutes.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

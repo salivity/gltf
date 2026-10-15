@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Override Default F0 with glTF KHR_materials_specular - gltf</title>
+    <meta name="description" content="This article explains how the glTF extension KHRmaterialsspecular enables 3D artists to override the fixed baseline specular reflectance ($F0$) used in standard glTF PBR workflows. In standard glTF 2.0, non-metallic (dielectric) surfaces are hardcoded to">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/override-default-f-0-with-gl-tf-khr-materials-specular">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Override Default F0 with glTF KHR_materials_specular - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/override-default-f-0-with-gl-tf-khr-materials-specular" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how the glTF extension KHRmaterialsspecular enables 3D artists to override the fixed baseline specular reflectance ($F0$) used in standard glTF PBR workflows. In standard glTF 2.0, non-metallic (dielectric) surfaces are hardcoded to" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="override-default-f0-with-gltf-khr_materials_specular">Override
+Default F0 with glTF KHR_materials_specular</h1>
+<p>This article explains how the glTF extension
+<code>KHR_materials_specular</code> enables 3D artists to override the
+fixed baseline specular reflectance (<span
+class="math inline">\(F_0\)</span>) used in standard glTF PBR workflows.
+In standard glTF 2.0, non-metallic (dielectric) surfaces are hardcoded
+to a default 4% reflectance value, limiting material fidelity. By
+introducing configurable color and intensity parameters, alongside
+texture maps, <code>KHR_materials_specular</code> allows fine-grained
+control to scale, tint, or completely mask specular highlights on
+dielectric surfaces.</p>
+<h3 id="the-default-gltf-specular-limitation">The Default glTF Specular
+Limitation</h3>
+<p>In the standard glTF 2.0 metallic-roughness model, dielectric
+materials lack direct specular configuration. Their specular reflectance
+at normal incidence (<span class="math inline">\(F_0\)</span>) is
+hardcoded to 0.04 (4% linear reflectance), which approximates an index
+of refraction (IOR) of 1.5. While this represents many everyday
+materials like plastics, wood, and stone accurately, it fails for
+materials with noticeably lower reflectance (such as water at ~2%) or
+significantly higher reflectance (such as gemstones, which can exceed
+15%).</p>
+<h3 id="parameters-introduced-by-khr_materials_specular">Parameters
+Introduced by KHR_materials_specular</h3>
+<p>The <code>KHR_materials_specular</code> extension solves this
+limitation by introducing four key properties that modulate the
+dielectric <span class="math inline">\(F_0\)</span>:</p>
+<ul>
+<li><strong><code>specularFactor</code></strong>: A floating-point
+scalar (default <code>1.0</code>) that scales the overall strength of
+the specular reflection.</li>
+<li><strong><code>specularTexture</code></strong>: A texture where the
+alpha channel (<code>A</code>) acts as a per-pixel multiplier for the
+specular intensity.</li>
+<li><strong><code>specularColorFactor</code></strong>: A 3D vector (RGB,
+default <code>[1.0, 1.0, 1.0]</code>) that tints the specular
+reflection.</li>
+<li><strong><code>specularColorTexture</code></strong>: An sRGB texture
+whose color components tint the specular highlight across the
+surface.</li>
+</ul>
+<h3 id="how-the-extension-overrides-f0">How the Extension Overrides
+F0</h3>
+<p>Rather than replacing the core metallic-roughness model,
+<code>KHR_materials_specular</code> acts as a scaling and tinting layer
+on top of dielectric reflectance calculations.</p>
+<p>Under standard PBR, dielectric normal-incidence reflectance is
+derived from the material's index of refraction (which defaults to 1.5
+unless modified by the <code>KHR_materials_ior</code> extension):</p>
+<p><span class="math display">\[F_0^{\text{dielectric}} =
+\left(\frac{\text{IOR} - 1}{\text{IOR} + 1}\right)^2\]</span></p>
+<p>When <code>KHR_materials_specular</code> is active, the engine
+recalculates the dielectric <span class="math inline">\(F_0\)</span>
+using the following formula:</p>
+<p><span class="math display">\[F_0 =
+\text{min}\left(F_0^{\text{dielectric}} \times
+\text{specularColorFactor} \times \text{specularColorTexture.rgb}, \,
+1.0\right) \times \text{specularFactor} \times
+\text{specularTexture.a}\]</span></p>
+<p>By altering these values, artists can modify the final <span
+class="math inline">\(F_0\)</span> in several ways:</p>
+<ol type="1">
+<li><strong>Reducing or Removing Specular Highlights</strong>: Setting
+<code>specularFactor</code> below <code>1.0</code> (or driving it toward
+<code>0.0</code> via <code>specularTexture</code>) reduces the
+dielectric <span class="math inline">\(F_0\)</span> below 0.04. This
+enables realistic rendering of low-IOR surfaces like water, ice, or deep
+cavities where micro-occlusion eliminates specular highlights.</li>
+<li><strong>Amplifying Reflectance</strong>: In conjunction with
+<code>KHR_materials_ior</code>, setting a higher IOR shifts the baseline
+<span class="math inline">\(F_0\)</span> upward, which the specular
+parameters can then selectively modulate.</li>
+<li><strong>Colored Dielectric Specular</strong>: Standard dielectrics
+produce white specular reflections. <code>specularColorFactor</code> and
+<code>specularColorTexture</code> allow custom RGB values to be
+multiplied into <span class="math inline">\(F_0\)</span>, enabling
+complex optical phenomena such as iridescent films, custom coated
+materials, and stylized art directions without falsely flagging the
+material as metallic.</li>
+</ol>
+<p>Through these controls, <code>KHR_materials_specular</code> gives
+artists the ability to author physically accurate surface variations
+that break free from glTF's default 4% dielectric reflectance
+constraint.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

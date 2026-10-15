@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Meshopt Optimizes glTF Vertex Compression - gltf</title>
+    <meta name="description" content="The meshoptimizer library optimizes glTF vertex buffers for compression by rearranging geometry data to maximize spatial coherence and predictive patterns. By sorting vertices into the strict sequence in which they are first accessed by the index buffer,">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-meshopt-optimizes-gl-tf-vertex-compression">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Meshopt Optimizes glTF Vertex Compression - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-meshopt-optimizes-gl-tf-vertex-compression" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The meshoptimizer library optimizes glTF vertex buffers for compression by rearranging geometry data to maximize spatial coherence and predictive patterns. By sorting vertices into the strict sequence in which they are first accessed by the index buffer," />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-meshopt-optimizes-gltf-vertex-compression">How Meshopt
+Optimizes glTF Vertex Compression</h1>
+<p>The <code>meshoptimizer</code> library optimizes glTF vertex buffers
+for compression by rearranging geometry data to maximize spatial
+coherence and predictive patterns. By sorting vertices into the strict
+sequence in which they are first accessed by the index buffer, the
+library minimizes differences between adjacent values. This structural
+reorganization allows delta filters and entropy encoders—such as those
+defined in the <code>EXT_meshopt_compression</code> glTF extension—to
+store attributes as tightly clustered, small integers, yielding
+substantially higher compression ratios.</p>
+<h3 id="cache-aware-index-optimization">Cache-Aware Index
+Optimization</h3>
+<p>Before reordering vertex data directly, meshopt first optimizes the
+triangle index buffer using a vertex cache optimization algorithm. This
+step reorders the indices so that triangles sharing vertices are grouped
+closely together in memory. By prioritizing cache locality, the
+algorithm generates an index stream that accesses the mesh's surface
+topology smoothly and continuously, eliminating erratic jumping across
+different regions of the model.</p>
+<h3 id="first-referenced-vertex-reordering">First-Referenced Vertex
+Reordering</h3>
+<p>Once the index sequence is stabilized, meshopt applies vertex fetch
+optimization via functions like
+<code>meshopt_optimizeVertexFetch</code>. In this phase, the library
+scans the index buffer from start to finish and reorders the entire
+vertex buffer into a "first-seen" layout:</p>
+<ol type="1">
+<li>The first unique index encountered in the index stream becomes
+vertex index <code>0</code> in the newly ordered vertex buffer.</li>
+<li>Each subsequent unique index is placed into the next contiguous slot
+(<code>1, 2, 3...</code>).</li>
+<li>The index buffer is then updated to point to these newly assigned
+vertex locations.</li>
+</ol>
+<p>Duplicate or unreferenced vertices are removed during this process.
+Because triangles on a 3D surface usually connect adjacent points,
+ordering vertices chronologically by when they are drawn guarantees that
+adjacent elements in the vertex array are almost always geometrically
+adjacent in 3D space.</p>
+<h3 id="maximizing-delta-encoding-efficiency">Maximizing Delta Encoding
+Efficiency</h3>
+<p>Raw vertex buffers typically store interleaved attributes—such as
+positions, normals, tangents, and texture coordinates—that can vary
+drastically if adjacent array indices represent opposite sides of an
+object. After meshopt's reordering:</p>
+<ul>
+<li><strong>Positional Continuity:</strong> The position coordinates of
+vertex <code>i</code> and vertex <code>i+1</code> are physically close
+to one another, making the difference vector (<span
+class="math inline">\(V_{i} - V_{i-1}\)</span>) very small.</li>
+<li><strong>Attribute Continuity:</strong> Normals, tangents, and UV
+coordinates also change smoothly across adjacent indices rather than
+exhibiting abrupt discontinuities.</li>
+</ul>
+<p>This smooth progression is the foundation of meshopt's compression
+pipeline. Instead of storing absolute values, attributes are split into
+separate contiguous streams (de-interleaved) and processed with
+predictive delta filters. Because consecutive values are closely
+correlated, their differences concentrate tightly around zero.</p>
+<h3 id="enhancing-downstream-entropy-coding">Enhancing Downstream
+Entropy Coding</h3>
+<p>The ultimate compression gains come from how entropy coders handle
+the post-delta data:</p>
+<ul>
+<li><strong>Bitwise Redundancy:</strong> Small numerical differences
+contain redundant leading zeros or identical sign bits. Meshopt's
+byte-grouping and variable-length integer encoding schemes pack these
+near-zero values into fewer bytes.</li>
+<li><strong>Zip and Zstandard Friendliness:</strong> General-purpose
+byte compressors, such as Zstandard or Deflate, rely on finding repeated
+byte sequences and low-entropy probability distributions. By
+transforming noisy floating-point or quantized coordinates into
+recurring, small-magnitude deltas, meshopt gives these codecs
+predictable symbol frequencies that compress far more efficiently than
+unordered raw buffers.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

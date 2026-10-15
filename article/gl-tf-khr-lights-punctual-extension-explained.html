@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF KHR_lights_punctual Extension Explained - gltf</title>
+    <meta name="description" content="This article provides an overview of the KHRlightspunctual extension for glTF 2.0, detailing the analytical lighting setups it introduces to 3D scenes. While the core glTF specification primarily relies on image-based lighting (IBL) for ambient illuminati">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-khr-lights-punctual-extension-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF KHR_lights_punctual Extension Explained - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-khr-lights-punctual-extension-explained" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of the KHRlightspunctual extension for glTF 2.0, detailing the analytical lighting setups it introduces to 3D scenes. While the core glTF specification primarily relies on image-based lighting (IBL) for ambient illuminati" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-khr_lights_punctual-extension-explained">glTF
+KHR_lights_punctual Extension Explained</h1>
+<p>This article provides an overview of the
+<code>KHR_lights_punctual</code> extension for glTF 2.0, detailing the
+analytical lighting setups it introduces to 3D scenes. While the core
+glTF specification primarily relies on image-based lighting (IBL) for
+ambient illumination, this standard extension enables engines to
+incorporate direct, localized light sources. Below is a breakdown of the
+three punctual light types defined by the extension—directional, point,
+and spot lights—and the specific properties that govern their
+behavior.</p>
+<h3 id="the-purpose-of-khr_lights_punctual">The Purpose of
+KHR_lights_punctual</h3>
+<p>In 3D graphics, punctual lights are parameterized light sources that
+emit light from a single point or from an infinitely distant source,
+rather than from an area or environment map. The
+<code>KHR_lights_punctual</code> extension provides a standardized way
+to define these light sources directly inside a glTF file, ensuring
+consistent lighting behavior across different rendering engines and
+real-time platforms.</p>
+<h3 id="directional-lights">Directional Lights</h3>
+<p>Directional lights simulate light sources that are infinitely far
+away, such as the sun. Because the light source has no distinct position
+in space, all emitted light rays travel parallel to each other along a
+specified direction vector.</p>
+<ul>
+<li><strong>Behavior:</strong> Illuminates all objects in the scene
+equally along its path, regardless of their distance from the
+source.</li>
+<li><strong>Orientation:</strong> Controlled by the node hierarchy
+transformation within the glTF scene, pointing down the local negative
+Z-axis by default.</li>
+<li><strong>Measurement Unit:</strong> Intensity is measured in lux
+(lumens per square meter).</li>
+</ul>
+<h3 id="point-lights">Point Lights</h3>
+<p>Point lights emit light uniformly in all directions from an exact
+point in 3D space, similar to an omnidirectional bare lightbulb.</p>
+<ul>
+<li><strong>Behavior:</strong> Light radiates outward spherically. The
+light intensity naturally attenuates over distance following an
+inverse-square falloff curve.</li>
+<li><strong>Range Property:</strong> Artists can define an optional
+<code>range</code> value. When defined, it acts as a cutoff distance
+where the light’s influence smooths to zero, allowing rendering engines
+to optimize performance by culling objects outside this radius.</li>
+<li><strong>Measurement Unit:</strong> Intensity is measured in candela
+(lumens per steradian).</li>
+</ul>
+<h3 id="spot-lights">Spot Lights</h3>
+<p>Spot lights emit light in a defined cone shape from a specific point
+in space, mimicking real-world flashlights, spotlights, or recessed
+ceiling fixtures.</p>
+<ul>
+<li><strong>Behavior:</strong> Inherits the spatial position and
+inverse-square falloff characteristics of a point light, but restricts
+light emission to a directional cone.</li>
+<li><strong>Angular Falloff:</strong> Defined using two angles:
+<ul>
+<li><strong>Inner Cone Angle (<code>innerConeAngle</code>):</strong> The
+angle from the center of the cone where the light shines at full
+intensity.</li>
+<li><strong>Outer Cone Angle (<code>outerConeAngle</code>):</strong> The
+outer boundary angle where light intensity drops completely to zero. The
+area between the inner and outer angles produces a smooth penumbra
+falloff.</li>
+</ul></li>
+<li><strong>Measurement Unit:</strong> Like point lights, spot light
+intensity is measured in candela.</li>
+</ul>
+<h3 id="shared-light-properties">Shared Light Properties</h3>
+<p>All three light types share a set of common attributes defined by the
+extension:</p>
+<ul>
+<li><strong>Color:</strong> Defined as a linear RGB triplet, determining
+the hue of the emitted light (defaults to white:
+<code>[1.0, 1.0, 1.0]</code>).</li>
+<li><strong>Intensity:</strong> A scalar value representing the
+brightness of the light, interpreted according to the light type (lux
+for directional, candela for point and spot).</li>
+<li><strong>Node Attachment:</strong> Lights are defined in a top-level
+array within the glTF document and then referenced by individual scene
+nodes, allowing them to inherit position, rotation, and animation data
+from the scene graph.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

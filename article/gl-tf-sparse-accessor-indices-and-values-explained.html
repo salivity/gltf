@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Sparse Accessor Indices and Values Explained - gltf</title>
+    <meta name="description" content="In glTF (GL Transmission Format), sparse accessors provide an efficient method to store modifications or sparse data—such as morph targets or blend shapes—without duplicating an entire base buffer. This article explains how the indices and values arrays w">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-sparse-accessor-indices-and-values-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Sparse Accessor Indices and Values Explained - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-sparse-accessor-indices-and-values-explained" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In glTF (GL Transmission Format), sparse accessors provide an efficient method to store modifications or sparse data—such as morph targets or blend shapes—without duplicating an entire base buffer. This article explains how the indices and values arrays w" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-sparse-accessor-indices-and-values-explained">glTF Sparse
+Accessor Indices and Values Explained</h1>
+<p>In glTF (GL Transmission Format), sparse accessors provide an
+efficient method to store modifications or sparse data—such as morph
+targets or blend shapes—without duplicating an entire base buffer. This
+article explains how the <code>indices</code> and <code>values</code>
+arrays within a <code>sparse</code> accessor property interact,
+detailing the one-to-one mapping mechanism used to locate, extract, and
+substitute data points within a base buffer array.</p>
+<h2 id="the-structure-of-a-gltf-sparse-accessor">The Structure of a glTF
+Sparse Accessor</h2>
+<p>A standard glTF <code>accessor</code> defines a contiguous array of
+elements (such as <code>VEC3</code> positions or <code>SCALAR</code>
+weights). When an accessor contains a <code>sparse</code> object, it
+signals that most elements remain default (or zeroed, if no base
+<code>bufferView</code> is supplied), while a subset of specific
+elements are overwritten.</p>
+<p>The <code>sparse</code> object contains three primary properties:</p>
+<ul>
+<li><code>count</code>: An integer defining the total number of elements
+that will be modified.</li>
+<li><code>indices</code>: An object pointing to the buffer segment
+containing the target positions to be overwritten.</li>
+<li><code>values</code>: An object pointing to the buffer segment
+containing the new payload data.</li>
+</ul>
+<h2 id="the-indices-array">The <code>indices</code> Array</h2>
+<p>The <code>indices</code> object points to an array of integers using
+a specified <code>componentType</code> (such as
+<code>UNSIGNED_BYTE</code>, <code>UNSIGNED_SHORT</code>, or
+<code>UNSIGNED_INT</code>).</p>
+<p>Key characteristics include:</p>
+<ul>
+<li><strong>Array Size:</strong> Contains exactly
+<code>sparse.count</code> elements.</li>
+<li><strong>Reference Target:</strong> Each entry represents an element
+index within the main accessor's logical array, not a byte offset.</li>
+<li><strong>Ordering Requirement:</strong> The glTF specification
+requires that the values within the <code>indices</code> array must be
+strictly increasing (<span class="math inline">\(index_0 &lt; index_1
+&lt; index_2 \dots\)</span>). This prevents conflicting assignments and
+allows decoders to process updates in a single linear pass.</li>
+</ul>
+<h2 id="the-values-array">The <code>values</code> Array</h2>
+<p>The <code>values</code> object specifies the raw substitution
+data.</p>
+<p>Key characteristics include:</p>
+<ul>
+<li><strong>Data Type Matching:</strong> The data type, element type,
+and component layout of the <code>values</code> buffer must strictly
+match the parent accessor's <code>type</code> and
+<code>componentType</code> (for instance, a <code>VEC3</code> of
+<code>FLOAT</code> components).</li>
+<li><strong>Array Size:</strong> Contains exactly
+<code>sparse.count</code> items, matching the number of target indices
+element-for-element.</li>
+</ul>
+<h2 id="interaction-and-reconstruction-mechanism">Interaction and
+Reconstruction Mechanism</h2>
+<p>The interaction between <code>indices</code> and <code>values</code>
+operates as a synchronized, 1-to-1 parallel lookup:</p>
+<ol type="1">
+<li><strong>Initialization:</strong> A virtual array is initialized
+using the parent accessor's configuration (<code>count</code>,
+<code>type</code>, <code>componentType</code>). If the parent accessor
+specifies a <code>bufferView</code>, the array is populated with base
+data. If no <code>bufferView</code> is present, the array is initialized
+to all zeros.</li>
+<li><strong>Iterative Mapping:</strong> The runtime iterates through a
+loop from index <span class="math inline">\(k = 0\)</span> to <span
+class="math inline">\(k = \text{count} - 1\)</span>:
+<ul>
+<li>It reads the target destination index: <span class="math inline">\(D
+= \text{indices}[k]\)</span>.</li>
+<li>It reads the corresponding source value: <span
+class="math inline">\(V = \text{values}[k]\)</span>.</li>
+<li>It assigns the value to the destination: <span
+class="math inline">\(\text{TargetArray}[D] = V\)</span>.</li>
+</ul></li>
+</ol>
+<p>Because both arrays share identical element counts and correspond
+index-by-index, the <span class="math inline">\(k\)</span>-th index in
+the <code>indices</code> array determines precisely where the <span
+class="math inline">\(k\)</span>-th element from the <code>values</code>
+array is placed. This decoupling allows 3D applications to store massive
+datasets with sparse differences using only a fraction of the memory
+that dense vertex buffers would otherwise require.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

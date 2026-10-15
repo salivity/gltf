@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calibrating Spectrophotometer Data for glTF PBR - gltf</title>
+    <meta name="description" content="This guide details the calibration pipeline required to convert raw laboratory spectrophotometer measurements into compliant glTF Physically Based Rendering (PBR) metallic-roughness maps. Achieving scientific color and material accuracy in digital 3D mode">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/calibrating-spectrophotometer-data-for-gl-tf-pbr">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Calibrating Spectrophotometer Data for glTF PBR - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/calibrating-spectrophotometer-data-for-gl-tf-pbr" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This guide details the calibration pipeline required to convert raw laboratory spectrophotometer measurements into compliant glTF Physically Based Rendering (PBR) metallic-roughness maps. Achieving scientific color and material accuracy in digital 3D mode" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="calibrating-spectrophotometer-data-for-gltf-pbr">Calibrating
+Spectrophotometer Data for glTF PBR</h1>
+<p>This guide details the calibration pipeline required to convert raw
+laboratory spectrophotometer measurements into compliant glTF Physically
+Based Rendering (PBR) metallic-roughness maps. Achieving scientific
+color and material accuracy in digital 3D models requires converting
+spectral reflectance curves to tristimulus color coordinates, separating
+diffuse and specular components, deriving microfacet roughness from
+scatter data, and encoding the output into glTF-compliant color spaces
+and packed texture channels.</p>
+<h3 id="1-spectral-data-to-tristimulus-cie-xyz-integration">1. Spectral
+Data to Tristimulus (CIE XYZ) Integration</h3>
+<p>Spectrophotometers output continuous spectral reflectance
+distributions, typically sampled from 380 nm to 780 nm at 10 nm or 5 nm
+intervals. glTF shaders evaluate color in the sRGB/Linear space,
+requiring integration into CIE XYZ tristimulus values.</p>
+<ol type="1">
+<li>Select a reference illuminant: Use CIE Standard Illuminant D65,
+matching the standard neutral daylight baseline for PBR assets.</li>
+<li>Select a standard observer: Use the CIE 1931 2° Standard Observer
+functions (<span class="math inline">\(\bar{x}(\lambda)\)</span>, <span
+class="math inline">\(\bar{y}(\lambda)\)</span>, <span
+class="math inline">\(\bar{z}(\lambda)\)</span>).</li>
+<li>Calculate CIE XYZ values by integrating the spectral reflectance
+<span class="math inline">\(R(\lambda)\)</span> against the illuminant
+spectral power distribution <span
+class="math inline">\(S(\lambda)\)</span> and the observer functions:
+<span class="math display">\[X = \frac{1}{k} \int R(\lambda) S(\lambda)
+\bar{x}(\lambda) d\lambda\]</span> <span class="math display">\[Y =
+\frac{1}{k} \int R(\lambda) S(\lambda) \bar{y}(\lambda)
+d\lambda\]</span> <span class="math display">\[Z = \frac{1}{k} \int
+R(\lambda) S(\lambda) \bar{z}(\lambda) d\lambda\]</span> where <span
+class="math inline">\(k = \int S(\lambda) \bar{y}(\lambda)
+d\lambda\)</span>.</li>
+</ol>
+<h3 id="2-chromatic-adaptation-and-srgb-conversion">2. Chromatic
+Adaptation and sRGB Conversion</h3>
+<p>Once CIE XYZ coordinates are computed, convert them into the color
+space required by the glTF specification.</p>
+<ol type="1">
+<li><strong>Gamut Transformation</strong>: Multiply the XYZ vector by
+the standard inverse matrix for sRGB (ITU-R BT.709 primaries, D65 white
+point) to yield linear RGB values: <span
+class="math display">\[\begin{bmatrix} R_{linear} \\ G_{linear} \\
+B_{linear} \end{bmatrix} = M_{XYZ \to sRGB} \begin{bmatrix} X \\ Y \\ Z
+\end{bmatrix}\]</span></li>
+<li><strong>Gamut Clamping</strong>: Inspect values for out-of-gamut
+negative values or components exceeding 1.0. Apply chromatic adaptation
+transforms (such as Bradford) if mapping from a non-D65 laboratory
+measurement.</li>
+<li><strong>Nonlinear Transfer Application</strong>: glTF stores
+<code>baseColorTexture</code> in sRGB color space. Apply the sRGB
+transfer function (gamma curve) to the linear RGB values before saving
+the final color map: <span class="math display">\[C_{sRGB} =
+\begin{cases} 12.92 \times C_{linear}, &amp; C_{linear} \leq 0.0031308
+\\ 1.055 \times C_{linear}^{1/2.4} - 0.055, &amp; C_{linear} &gt;
+0.0031308 \end{cases}\]</span></li>
+</ol>
+<h3 id="3-diffuse-and-specular-separation-sci-vs-sce">3. Diffuse and
+Specular Separation (SCI vs. SCE)</h3>
+<p>Laboratory spectrophotometers utilizing an integrating sphere measure
+color in two modes: Specular Component Included (SCI) and Specular
+Component Excluded (SCE). Comparing these states classifies the
+material's interaction with light.</p>
+<ul>
+<li><strong>Diffuse Base Color (Dielectrics)</strong>: The SCE
+measurement removes directional surface reflections, isolating diffuse
+subsurface scattering. Convert SCE data into the RGB base color map for
+non-metallic surfaces.</li>
+<li><strong>Normal Reflectance (<span
+class="math inline">\(F_0\)</span>) Isolation</strong>: Subtract SCE
+from SCI (<span class="math inline">\(SCI - SCE\)</span>). The residual
+indicates the Fresnel reflectance at normal incidence (<span
+class="math inline">\(F_0\)</span>). Standard dielectrics produce an
+<span class="math inline">\(F_0\)</span> of approximately 0.04 (4%
+reflectance). If <span class="math inline">\(F_0\)</span> deviates
+significantly from 4%, use the <code>KHR_materials_specular</code> glTF
+extension to define custom specular reflectance.</li>
+</ul>
+<h3 id="4-metalness-classification">4. Metalness Classification</h3>
+<p>glTF uses a binary metalness parameterization where:</p>
+<ul>
+<li><strong>Dielectrics (Non-metals)</strong>: Dielectric materials have
+an extinction coefficient near zero (<span class="math inline">\(k
+\approx 0\)</span>). Set the metalness channel to <code>0.0</code>. The
+<code>baseColor</code> texture represents diffuse reflectance derived
+from the SCE measurement.</li>
+<li><strong>Conductors (Metals)</strong>: Conductors reflect light
+exclusively through surface interaction (<span class="math inline">\(F_0
+\gg 0.04\)</span>) and have no diffuse component. Set the metalness
+channel to <code>1.0</code>. The <code>baseColor</code> texture stores
+the full chromatic specular reflectance obtained from the SCI
+measurement.</li>
+</ul>
+<p>For composite surfaces, apply thresholding based on the material's
+refractive index (<span class="math inline">\(n\)</span>) and extinction
+coefficient (<span class="math inline">\(k\)</span>) derived from
+spectral ellipsometry or multi-angle spectral data.</p>
+<h3 id="5-deriving-roughness-from-angular-scatter">5. Deriving Roughness
+from Angular Scatter</h3>
+<p>glTF implements the Trowbridge-Reitz (GGX) microfacet distribution
+function. Spectrophotometer-derived scatter or coupled glossmeter
+measurements (ASTM D523 standard) must be mapped to GGX roughness (<span
+class="math inline">\(\alpha\)</span>).</p>
+<ol type="1">
+<li>Collect specular gloss units (<span
+class="math inline">\(GU\)</span>) at 20°, 60°, or 85° geometries.</li>
+<li>Relate the optical gloss value to root-mean-square (RMS) surface
+slope or microfacet distribution parameter <span
+class="math inline">\(\alpha\)</span>.</li>
+<li>Apply the standard analytical approximation to map 60° Gloss Units
+to glTF perceptual roughness (<span class="math inline">\(r\)</span>):
+<span class="math display">\[r = \sqrt{1.0 - \frac{GU}{100}}\]</span>
+where glTF shader roughness <span class="math inline">\(\alpha =
+r^2\)</span>.</li>
+<li>Ensure linear storage: Unlike base color, the roughness map must be
+stored linearly with no gamma transfer applied.</li>
+</ol>
+<h3 id="6-gltf-texture-channel-packing">6. glTF Texture Channel
+Packing</h3>
+<p>Pack the processed linear properties into the glTF standard
+metallic-roughness layout:</p>
+<ul>
+<li><strong>Base Color (<code>baseColorTexture</code>)</strong>: 8-bit
+or 16-bit RGB(A) encoded with the sRGB transfer function.</li>
+<li><strong>Roughness-Metallic
+(<code>metallicRoughnessTexture</code>)</strong>: 8-bit linear RGB image
+where:
+<ul>
+<li><strong>Green Channel</strong>: Stores the derived GGX Roughness
+parameter (<span class="math inline">\(r\)</span>).</li>
+<li><strong>Blue Channel</strong>: Stores the Metalness value (<span
+class="math inline">\(0.0\)</span> to <span
+class="math inline">\(1.0\)</span>).</li>
+<li><strong>Red Channel</strong>: Unused by the glTF specification for
+this texture (typically reserved for ambient occlusion).</li>
+</ul></li>
+</ul>
+<h3 id="7-viewport-metric-verification">7. Viewport Metric
+Verification</h3>
+<p>Validate the pipeline by placing the generated glTF asset into a
+rendering engine calibrated with a neutral D65 Image-Based Lighting
+(IBL) environment.</p>
+<ol type="1">
+<li>Render the digital asset flat to the camera with a normal incidence
+angle.</li>
+<li>Capture the un-tone-mapped linear frame-buffer values.</li>
+<li>Convert the rendered output back into CIE XYZ space.</li>
+<li>Calculate the CIE <span class="math inline">\(\Delta E_{00}\)</span>
+(CIEDE2000) difference between the digital render and the physical
+target's original laboratory spectral measurement.</li>
+<li>Calibrate roughness and base color offsets iteratively until <span
+class="math inline">\(\Delta E_{00} &lt; 1.0\)</span>, achieving visual
+and colorimetric parity.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Khronos Ensures Cross-Vendor glTF Hardware Support - gltf</title>
+    <meta name="description" content="The Khronos Group guarantees cross-vendor hardware compatibility for glTF features through a structured, consensus-driven ratification process. By requiring collaborative specification design, independent reference implementations, rigorous conformance te">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-khronos-ensures-cross-vendor-gl-tf-hardware-support">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Khronos Ensures Cross-Vendor glTF Hardware Support - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-khronos-ensures-cross-vendor-gl-tf-hardware-support" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Khronos Group guarantees cross-vendor hardware compatibility for glTF features through a structured, consensus-driven ratification process. By requiring collaborative specification design, independent reference implementations, rigorous conformance te" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-khronos-ensures-cross-vendor-gltf-hardware-support">How
+Khronos Ensures Cross-Vendor glTF Hardware Support</h1>
+<p>The Khronos Group guarantees cross-vendor hardware compatibility for
+glTF features through a structured, consensus-driven ratification
+process. By requiring collaborative specification design, independent
+reference implementations, rigorous conformance testing, and alignment
+with modern graphics APIs, the consortium ensures that 3D assets render
+consistently across diverse GPUs, mobile chipsets, and operating systems
+without proprietary fragmentation.</p>
+<h3 id="multi-stakeholder-working-group-consensus">Multi-Stakeholder
+Working Group Consensus</h3>
+<p>The foundation of cross-vendor support begins within the Khronos 3D
+Formats Working Group. This group includes competing hardware
+manufacturers (such as NVIDIA, AMD, Intel, Arm, and Qualcomm), platform
+providers, and engine developers.</p>
+<p>Because ratification requires consensus among these competing
+members, no single hardware vendor can steer a glTF specification toward
+an architecture-specific or proprietary design. Proposed features must
+accommodate the baseline silicon constraints, memory architectures, and
+shader processing pipelines shared across desktop, mobile, and web
+runtimes.</p>
+<h3 id="mandatory-multi-implementation-validation">Mandatory
+Multi-Implementation Validation</h3>
+<p>Before any core feature or official <code>KHR_</code> extension
+achieves formal ratification, the Khronos Group requires demonstrable
+proof that the specification functions in the real world. Proponents
+must provide at least two independent, production-quality
+implementations—spanning different engines, tools, or target
+runtimes.</p>
+<p>This requirement validates that the written specification is clear,
+unambiguous, and practical to implement on different platforms. If an
+architectural feature proves difficult or inefficient to implement on a
+specific vendor's silicon during this phase, the working group must
+refine or redesign the specification before it can proceed to a
+vote.</p>
+<h3 id="conformance-testing-suites-cts">Conformance Testing Suites
+(CTS)</h3>
+<p>Ratification is tied directly to the development of automated
+Conformance Test Suites. These test frameworks provide canonical sample
+assets, mathematical boundary tests, and visual regression benchmarks
+for every feature, such as physically based rendering (PBR) materials,
+transmission, and morph targets.</p>
+<p>To claim official compliance, software engines and runtime viewers
+must pass these tests. This mechanism holds hardware vendors and runtime
+developers accountable to a single source of truth, ensuring that glTF
+models look and behave identically across platforms regardless of the
+underlying driver implementation.</p>
+<h3 id="structured-extension-lifecycle">Structured Extension
+Lifecycle</h3>
+<p>Khronos governs feature adoption using a tiered extension model:</p>
+<ul>
+<li><strong>Vendor Extensions (<code>VENDOR_</code>):</strong> Authored
+by a single hardware or software vendor for rapid experimentation.</li>
+<li><strong>Multi-Vendor Extensions (<code>EXT_</code>):</strong>
+Adopted when multiple industry stakeholders collaborate on a shared
+capability.</li>
+<li><strong>Ratified Extensions (<code>KHR_</code>):</strong> The
+highest tier, having passed formal working group consensus, CTS
+integration, and a full Khronos Board of Promoters vote.</li>
+</ul>
+<p>This staging system acts as an industry filter. Features only achieve
+ratified <code>KHR_</code> status once broad hardware consensus is
+established, preventing unvetted or non-portable features from
+fracturing the glTF standard.</p>
+<h3 id="direct-alignment-with-underlying-graphics-apis">Direct Alignment
+with Underlying Graphics APIs</h3>
+<p>glTF is designed specifically to map directly to GPU hardware
+pipelines. The working group aligns glTF data structures—such as vertex
+buffer layouts, indices, texture compression formats (such as KTX 2.0
+with Basis Universal), and shading models—directly with modern low-level
+graphics APIs like Vulkan, WebGPU, DirectX 12, and Metal.</p>
+<p>By standardizing representations that GPUs can consume with zero or
+minimal CPU-side transformation, the ratification process ensures that
+features run natively and performantly across all standards-compliant
+hardware.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

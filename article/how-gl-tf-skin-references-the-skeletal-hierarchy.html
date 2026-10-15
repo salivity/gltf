@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How glTF Skin References the Skeletal Hierarchy - gltf</title>
+    <meta name="description" content="In glTF (GL Transmission Format), skeletal animation relies on the skin object to bridge renderable mesh geometry with hierarchical transformation trees. Rather than introducing a specialized data type for bones, glTF repurposes standard scene graph nodes">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-gl-tf-skin-references-the-skeletal-hierarchy">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How glTF Skin References the Skeletal Hierarchy - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-gl-tf-skin-references-the-skeletal-hierarchy" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In glTF (GL Transmission Format), skeletal animation relies on the skin object to bridge renderable mesh geometry with hierarchical transformation trees. Rather than introducing a specialized data type for bones, glTF repurposes standard scene graph nodes" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-gltf-skin-references-the-skeletal-hierarchy">How glTF Skin
+References the Skeletal Hierarchy</h1>
+<p>In glTF (GL Transmission Format), skeletal animation relies on the
+<code>skin</code> object to bridge renderable mesh geometry with
+hierarchical transformation trees. Rather than introducing a specialized
+data type for bones, glTF repurposes standard scene graph nodes to act
+as joints. The <code>skin</code> property references these nodes through
+indexed arrays, maps initial rest poses using inverse bind matrices, and
+establishes the relationship between vertex weighting data and dynamic
+skeletal transforms.</p>
+<h3 id="joints-as-standard-nodes">Joints as Standard Nodes</h3>
+<p>In glTF, joints do not exist as distinct structural entities; they
+are ordinary elements in the top-level <code>nodes</code> array. The
+hierarchical relationship—where parent bones control child bones—is
+created strictly using the <code>children</code> arrays of those nodes.
+A joint's position, rotation, and scale in the scene graph define its
+local transform relative to its parent joint.</p>
+<h3 id="the-skinjoints-array">The <code>skin.joints</code> Array</h3>
+<p>The core mechanism linking a skeleton to a skin is the
+<code>joints</code> array within the <code>skin</code> object. This
+array contains integer indices that point directly to entries in the
+root-level <code>nodes</code> array:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;skins&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;ArmatureSkin&quot;</span><span class="fu">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;inverseBindMatrices&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;joints&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="dv">10</span><span class="ot">,</span> <span class="dv">11</span><span class="ot">,</span> <span class="dv">12</span><span class="ot">,</span> <span class="dv">13</span><span class="ot">]</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>In this example, nodes 10, 11, 12, and 13 function as joints for this
+specific skin. The position of a node index within the
+<code>joints</code> array dictates its local "joint index" (e.g., node
+10 is joint <code>0</code>, node 11 is joint <code>1</code>).</p>
+<p>This local joint index is critical because mesh vertex attributes
+(<code>JOINTS_0</code>, <code>JOINTS_1</code>) do not reference global
+node indices; instead, they reference the index within this
+<code>skin.joints</code> list.</p>
+<h3 id="the-inversebindmatrices-property">The
+<code>inverseBindMatrices</code> Property</h3>
+<p>To correctly deform a mesh, the engine must know the mesh's position
+relative to each joint in the neutral "bind pose." The
+<code>skin.inverseBindMatrices</code> property points to an accessor
+containing an array of 4x4 floating-point matrices.</p>
+<ul>
+<li>There is a strict 1:1 mapping: the number of matrices matches the
+length of the <code>joints</code> array.</li>
+<li>Matrix <code>i</code> transforms vertex coordinates from the mesh's
+local space into the local coordinate space of joint <code>i</code> at
+the time of binding.</li>
+<li>During runtime animation, each vertex is transformed by its inverse
+bind matrix, followed by the joint node's current global transform,
+scaled by the vertex weight.</li>
+</ul>
+<h3 id="the-skeleton-property">The <code>skeleton</code> Property</h3>
+<p>The <code>skin</code> object includes an optional
+<code>skeleton</code> property, which contains a single integer
+referencing the root node of the joint hierarchy:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;skins&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;skeleton&quot;</span><span class="fu">:</span> <span class="dv">9</span><span class="fu">,</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;joints&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="dv">10</span><span class="ot">,</span> <span class="dv">11</span><span class="ot">,</span> <span class="dv">12</span><span class="ot">,</span> <span class="dv">13</span><span class="ot">]</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>The node specified by <code>skeleton</code> is often the direct
+parent of the root joint (or the root joint itself). While not required
+for mathematically calculating the joint transforms, it serves as a hint
+to runtime engines about where the skeletal hierarchy starts, optimizing
+scene graph traversals and bounding box calculations.</p>
+<h3 id="connecting-the-mesh-to-the-skin">Connecting the Mesh to the
+Skin</h3>
+<p>A visual node connects geometry to the skeletal system by defining
+both a <code>mesh</code> index and a <code>skin</code> index
+simultaneously:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;nodes&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;SkinnedCharacter&quot;</span><span class="fu">,</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;mesh&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;skin&quot;</span><span class="fu">:</span> <span class="dv">0</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>When this node is evaluated, the renderer takes the geometry from
+<code>mesh: 0</code>, reads the skinning attributes
+(<code>JOINTS_0</code> and <code>WEIGHTS_0</code>) from each vertex
+primitive, and evaluates them against the runtime transforms of the
+nodes declared in <code>skin: 0</code>.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

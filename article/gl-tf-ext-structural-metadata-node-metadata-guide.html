@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF EXT_structural_metadata: Node Metadata Guide - gltf</title>
+    <meta name="description" content="The EXTstructuralmetadata extension provides a standardized way to embed rich, strongly typed, and schema-driven metadata into glTF assets. When applied to nodes, it allows developers to associate non-visual properties—such as BIM parameters, GIS attribut">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-ext-structural-metadata-node-metadata-guide">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF EXT_structural_metadata: Node Metadata Guide - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-ext-structural-metadata-node-metadata-guide" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The EXTstructuralmetadata extension provides a standardized way to embed rich, strongly typed, and schema-driven metadata into glTF assets. When applied to nodes, it allows developers to associate non-visual properties—such as BIM parameters, GIS attribut" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-ext_structural_metadata-node-metadata-guide">glTF
+EXT_structural_metadata: Node Metadata Guide</h1>
+<p>The <code>EXT_structural_metadata</code> extension provides a
+standardized way to embed rich, strongly typed, and schema-driven
+metadata into glTF assets. When applied to nodes, it allows developers
+to associate non-visual properties—such as BIM parameters, GIS
+attributes, identifiers, and physical characteristics—directly with
+individual elements or instances in a 3D scene hierarchy. This article
+outlines the schemas, data types, and property structures that can be
+assigned to nodes using this extension.</p>
+<h3 id="metadata-schema-and-class-definitions">Metadata Schema and Class
+Definitions</h3>
+<p>Metadata in <code>EXT_structural_metadata</code> is defined through a
+formal schema containing one or more classes. When structuring node
+metadata, the schema establishes the data blueprint:</p>
+<ul>
+<li><strong>Classes</strong>: Represent the conceptual category of the
+node (e.g., <code>BuildingElement</code>, <code>SensorNode</code>, or
+<code>MechanicalPart</code>).</li>
+<li><strong>Properties</strong>: Named fields within a class that define
+what metadata values can be stored (e.g., <code>height</code>,
+<code>serialNumber</code>, <code>isOperational</code>).</li>
+<li><strong>Semantic Annotations</strong>: Standardized tags that
+clarify the meaning of a property across different platforms and
+engines.</li>
+</ul>
+<h3 id="supported-data-types-for-node-properties">Supported Data Types
+for Node Properties</h3>
+<p>Properties attached to nodes can store a wide range of structured
+data types:</p>
+<ul>
+<li><strong>Scalars and Numeric Data</strong>: Integer (signed/unsigned
+8-bit, 16-bit, 32-bit, 64-bit) and floating-point types (single- and
+double-precision) for measurements, coordinates, and quantities.</li>
+<li><strong>Booleans</strong>: Binary flags indicating states (e.g.,
+visibility, load-bearing status).</li>
+<li><strong>Strings</strong>: UTF-8 encoded text for names,
+descriptions, or unique identifiers.</li>
+<li><strong>Enumerations (Enums)</strong>: Predefined sets of named
+values for fixed classifications (e.g., material types or operational
+statuses).</li>
+<li><strong>Arrays</strong>: Fixed-length or variable-length sequences
+of any supported primitive, enum, or string, allowing lists of values
+like transformation vectors or tag sets.</li>
+</ul>
+<h3 id="how-node-metadata-is-structured">How Node Metadata is
+Structured</h3>
+<p>Node-level metadata is primarily organized using <strong>Property
+Tables</strong>:</p>
+<ol type="1">
+<li><strong>Tabular Storage</strong>: Metadata is stored in columnar
+binary buffers (property tables) rather than loose JSON objects. This
+format optimizes memory layout and allows efficient access by runtime
+engines.</li>
+<li><strong>Node-to-Row Association</strong>: A glTF node references the
+extension by declaring an index pointing to a specific property table
+and specifying the row index (or feature ID) corresponding to that
+node.</li>
+<li><strong>Instance Metadata</strong>: When used in conjunction with
+GPU instancing (<code>EXT_mesh_gpu_instancing</code>), metadata can be
+mapped to individual mesh instances, assigning unique properties to each
+instance spawned from a single node.</li>
+</ol>
+<h3 id="common-metadata-categories-structured-on-nodes">Common Metadata
+Categories Structured on Nodes</h3>
+<ul>
+<li><strong>Identification &amp; Tracking</strong>: Global unique
+identifiers (GUIDs), serial numbers, and asset codes.</li>
+<li><strong>Physical &amp; Environmental Metrics</strong>: Mass, volume,
+thermal coefficients, and structural load ratings.</li>
+<li><strong>Lifecycle &amp; Maintenance Information</strong>:
+Installation dates, manufacturer names, maintenance schedules, and
+warranty details.</li>
+<li><strong>Functional States</strong>: Operational status codes,
+simulation variables, and interaction triggers.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

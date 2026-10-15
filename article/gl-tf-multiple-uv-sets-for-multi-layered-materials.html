@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Multiple UV Sets for Multi-Layered Materials - gltf</title>
+    <meta name="description" content="The glTF (GL Transmission Format) specification handles complex, multi-layered materials by separating texture coordinates at the vertex level and mapping them individually at the material level. By defining indexed UV channels in mesh primitives and refe">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-multiple-uv-sets-for-multi-layered-materials">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Multiple UV Sets for Multi-Layered Materials - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-multiple-uv-sets-for-multi-layered-materials" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The glTF (GL Transmission Format) specification handles complex, multi-layered materials by separating texture coordinates at the vertex level and mapping them individually at the material level. By defining indexed UV channels in mesh primitives and refe" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-multiple-uv-sets-for-multi-layered-materials">glTF Multiple
+UV Sets for Multi-Layered Materials</h1>
+<p>The glTF (GL Transmission Format) specification handles complex,
+multi-layered materials by separating texture coordinates at the vertex
+level and mapping them individually at the material level. By defining
+indexed UV channels in mesh primitives and referencing them through
+specific material property objects, glTF allows different texture
+layers—such as base color, ambient occlusion, lightmaps, and
+extension-driven coatings—to utilize independent UV channels and
+transformations. This decoupled architecture enables detailed,
+multi-layered surface rendering without duplicating underlying mesh
+geometry.</p>
+<h3 id="mesh-primitive-uv-definitions">Mesh Primitive UV
+Definitions</h3>
+<p>In glTF, texture coordinates are stored as vertex attributes within
+the <code>primitives</code> array of a mesh. They follow a strict naming
+convention formatted as <code>TEXCOORD_n</code>, where <code>n</code> is
+an integer index starting from 0:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;attributes&quot;</span><span class="er">:</span> <span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;POSITION&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;NORMAL&quot;</span><span class="fu">:</span> <span class="dv">1</span><span class="fu">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;TEXCOORD_0&quot;</span><span class="fu">:</span> <span class="dv">2</span><span class="fu">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;TEXCOORD_1&quot;</span><span class="fu">:</span> <span class="dv">3</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<ul>
+<li><strong><code>TEXCOORD_0</code></strong>: Typically assigned to the
+primary UV unwrap, used for the main surface maps (base color, normal,
+metallic-roughness).</li>
+<li><strong><code>TEXCOORD_1</code> and beyond</strong>: Assigned to
+secondary layouts, often utilized for tiled detail textures, baking
+ambient occlusion, or decoupled lightmapping.</li>
+</ul>
+<p>The glTF specification requires client implementations to support at
+least two UV sets (<code>TEXCOORD_0</code> and <code>TEXCOORD_1</code>),
+though modern engines often support more depending on GPU hardware
+limits.</p>
+<h3 id="material-property-mapping-via-texcoord">Material Property
+Mapping via <code>texCoord</code></h3>
+<p>glTF links a texture to a specific UV set via the
+<code>textureInfo</code> object. Every texture slot in a glTF
+material—including base color, metallic-roughness, normal maps,
+occlusion maps, and emissive maps—contains an optional
+<code>texCoord</code> integer property.</p>
+<p>If omitted, <code>texCoord</code> defaults to <code>0</code>.
+Specifying an explicit integer tells the renderer which
+<code>TEXCOORD_n</code> attribute to read for that specific texture:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;materials&quot;</span><span class="er">:</span> <span class="ot">[</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">{</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;MultiUV_Material&quot;</span><span class="fu">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;pbrMetallicRoughness&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;baseColorTexture&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;index&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;texCoord&quot;</span><span class="fu">:</span> <span class="dv">0</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>      <span class="fu">}</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">},</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;occlusionTexture&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;index&quot;</span><span class="fu">:</span> <span class="dv">1</span><span class="fu">,</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;texCoord&quot;</span><span class="fu">:</span> <span class="dv">1</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="ot">]</span></span></code></pre></div>
+<p>In this setup, the base color evaluates using the unique layout in
+<code>TEXCOORD_0</code>, while the baked ambient occlusion evaluates
+using the non-overlapping lightmap unwrap in
+<code>TEXCOORD_1</code>.</p>
+<h3 id="multi-layered-materials-and-gltf-extensions">Multi-Layered
+Materials and glTF Extensions</h3>
+<p>Standard PBR in glTF core is often enhanced by extensions to
+represent multi-layered materials like car paint, textiles, or lacquered
+wood. Extensions such as <code>KHR_materials_clearcoat</code>,
+<code>KHR_materials_sheen</code>, and
+<code>KHR_materials_transmission</code> follow the exact same
+<code>textureInfo</code> pattern.</p>
+<p>For example, a clearcoat layer can use a secondary UV coordinate to
+drive scratches or dust independently of the underlying base paint:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;extensions&quot;</span><span class="er">:</span> <span class="fu">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;KHR_materials_clearcoat&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;clearcoatFactor&quot;</span><span class="fu">:</span> <span class="fl">1.0</span><span class="fu">,</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;clearcoatRoughnessTexture&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;index&quot;</span><span class="fu">:</span> <span class="dv">2</span><span class="fu">,</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;texCoord&quot;</span><span class="fu">:</span> <span class="dv">1</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>Each material layer can sample whichever UV set best preserves its
+resolution and mapping needs.</p>
+<h3 id="independent-tiling-via-khr_texture_transform">Independent Tiling
+via <code>KHR_texture_transform</code></h3>
+<p>To further enhance UV management without adding additional geometry
+data, glTF utilizes the <code>KHR_texture_transform</code> extension.
+This extension allows per-texture scaling, offset, and rotation.</p>
+<p>When applied, it can also override the target UV channel using its
+own <code>texCoord</code> property. This allows two different texture
+layers to share <code>TEXCOORD_0</code> at the vertex level, while
+sampling at completely different scales and orientations in the
+shader:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;baseColorTexture&quot;</span><span class="er">:</span> <span class="fu">{</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;index&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;texCoord&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;extensions&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;KHR_texture_transform&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;scale&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="fl">10.0</span><span class="ot">,</span> <span class="fl">10.0</span><span class="ot">]</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="technical-considerations-and-best-practices">Technical
+Considerations and Best Practices</h3>
+<ul>
+<li><strong>Attribute Overhead</strong>: Each additional
+<code>TEXCOORD_n</code> adds a <code>VEC2</code> (typically 8 bytes per
+vertex using 32-bit floats, or 4 bytes using normalized 16-bit
+integers). Keep UV sets to the minimum necessary for runtime
+performance.</li>
+<li><strong>Fallback Behavior</strong>: If a material requests a
+<code>texCoord</code> index that does not exist in the mesh's
+<code>attributes</code> map, glTF conforming engines must default to
+<code>TEXCOORD_0</code>.</li>
+<li><strong>Shader Variants</strong>: Varying the <code>texCoord</code>
+indices across different textures can increase the number of shader
+permutations in some game engines, as shaders must compile dynamically
+to route inputs to specific UV channels.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

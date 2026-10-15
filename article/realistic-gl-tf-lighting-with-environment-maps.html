@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realistic glTF Lighting with Environment Maps - gltf</title>
+    <meta name="description" content="Environment map lighting, commonly known as Image-Based Lighting (IBL), is the cornerstone of achieving photorealism when rendering glTF 3D assets. By utilizing High Dynamic Range Images (HDRIs) to capture real-world lighting conditions, IBL provides rich">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/realistic-gl-tf-lighting-with-environment-maps">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Realistic glTF Lighting with Environment Maps - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/realistic-gl-tf-lighting-with-environment-maps" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Environment map lighting, commonly known as Image-Based Lighting (IBL), is the cornerstone of achieving photorealism when rendering glTF 3D assets. By utilizing High Dynamic Range Images (HDRIs) to capture real-world lighting conditions, IBL provides rich" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="realistic-gltf-lighting-with-environment-maps">Realistic glTF
+Lighting with Environment Maps</h1>
+<p>Environment map lighting, commonly known as Image-Based Lighting
+(IBL), is the cornerstone of achieving photorealism when rendering glTF
+3D assets. By utilizing High Dynamic Range Images (HDRIs) to capture
+real-world lighting conditions, IBL provides rich, omnidirectional
+ambient illumination and high-fidelity reflections. This lighting
+technique enables the Physically Based Rendering (PBR) materials defined
+in glTF files to accurately simulate light interaction, bridging the gap
+between flat virtual models and realistic, context-aware objects.</p>
+<h3 id="powering-the-gltf-pbr-workflow">Powering the glTF PBR
+Workflow</h3>
+<p>The glTF standard relies primarily on a metallic-roughness PBR
+workflow, which requires physically plausible inputs to calculate how
+light scatters across and penetrates surfaces. Traditional analytical
+lights (such as point, spot, or directional lights) only provide direct
+illumination, leaving shaded areas unnaturally dark unless supplemented
+by complex baking or costly ray tracing.</p>
+<p>IBL acts as an infinitely distant sphere that projects light inward
+from every direction. It supplies the two essential lighting components
+required by the glTF PBR material model: diffuse irradiance and specular
+reflection.</p>
+<h3 id="diffuse-irradiance-natural-ambient-light">Diffuse Irradiance:
+Natural Ambient Light</h3>
+<p>Diffuse irradiance represents the low-frequency light scattered in
+all directions by non-metallic or rough surfaces. Rather than computing
+individual light bounces, real-time engines pre-filter the environment
+map into an irradiance map.</p>
+<p>When a glTF asset is rendered, its surface normals query this
+irradiance map to receive natural, ambient illumination that mirrors the
+surrounding environment. This eliminates harsh, pitch-black ambient
+shadows and ensures that ambient occlusion details mapped in the glTF
+asset read convincingly.</p>
+<h3 id="specular-pre-filtering-roughness-and-reflections">Specular
+Pre-filtering: Roughness and Reflections</h3>
+<p>Specular reflections define how shiny or metallic an asset appears.
+Because glTF defines microfacet roughness from 0.0 (mirror-smooth) to
+1.0 (completely matte), the renderer needs a way to reflect the
+environment at varying blur levels.</p>
+<p>Through the Split-Sum Approximation technique, environment maps are
+pre-filtered into multiple mipmap levels—often called a Pre-filtered
+Mipmapped Radiance Environment Map (PMREM). Highly polished surfaces
+sample sharp, high-resolution mipmaps, while rough surfaces sample
+heavily blurred mipmaps. This allows glTF metals (like chrome, gold, or
+brushed steel) to pick up true-to-life reflections without generating
+costly runtime rays.</p>
+<h3 id="contextual-color-harmonization">Contextual Color
+Harmonization</h3>
+<p>Beyond technical accuracy, IBL is vital for grounding a glTF asset in
+its intended scene. Because an HDRI captures full 360-degree color
+temperatures, shadows, and highlights, the asset inherently adopts the
+color profile of its virtual world. A glTF car placed in a sunset
+environment will naturally display warm orange highlights on its top
+surfaces and cool ground bounces beneath, creating a cohesive visual
+experience that makes 3D assets appear physically present in real
+time.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

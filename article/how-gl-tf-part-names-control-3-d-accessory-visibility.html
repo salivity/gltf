@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How glTF Part Names Control 3D Accessory Visibility - gltf</title>
+    <meta name="description" content="Web-based 3D product configurators manage customizable products by linking graphical user interface (GUI) inputs directly to distinct nodes inside a 3D model. By utilizing standardized node and mesh names exported within glTF (GL Transmission Format) file">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-gl-tf-part-names-control-3-d-accessory-visibility">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How glTF Part Names Control 3D Accessory Visibility - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-gl-tf-part-names-control-3-d-accessory-visibility" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Web-based 3D product configurators manage customizable products by linking graphical user interface (GUI) inputs directly to distinct nodes inside a 3D model. By utilizing standardized node and mesh names exported within glTF (GL Transmission Format) file" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-gltf-part-names-control-3d-accessory-visibility">How glTF
+Part Names Control 3D Accessory Visibility</h1>
+<p>Web-based 3D product configurators manage customizable products by
+linking graphical user interface (GUI) inputs directly to distinct nodes
+inside a 3D model. By utilizing standardized node and mesh names
+exported within glTF (GL Transmission Format) files, WebGL rendering
+engines like Three.js or Babylon.js can programmatically identify
+specific accessories, traverse the scene hierarchy, and switch their
+visibility states on demand.</p>
+<h3 id="establishing-the-naming-convention-in-3d-software">Establishing
+the Naming Convention in 3D Software</h3>
+<p>The process begins during the 3D modeling stage in software such as
+Blender, Maya, or 3ds Max. 3D artists structure the model's outliner
+using a strict, semantic naming convention. Rather than using generic
+names like <code>Cube.001</code>, accessories and optional components
+receive distinct identifiers, often using prefixes or categorizations
+(e.g., <code>Accessory_RoofRack_VariantA</code> or
+<code>Opt_Wheel_Sport</code>).</p>
+<p>When exported to <code>.gltf</code> or <code>.glb</code>, this
+hierarchical structure is serialized into the glTF <code>nodes</code>
+array. Each node preserves its assigned string identifier under the
+<code>name</code> property.</p>
+<h3 id="parsing-the-gltf-scene-graph">Parsing the glTF Scene Graph</h3>
+<p>When a user opens a web configurator, the application downloads the
+glTF file using an engine-specific loader, such as
+<code>GLTFLoader</code> in Three.js. Once parsed, the loader converts
+the glTF JSON data and binary buffers into an active scene graph
+composed of objects, groups, and meshes.</p>
+<p>The application registers these objects into an internal registry or
+maps them by parsing node names. Common methods include:</p>
+<ul>
+<li><strong>Direct Lookup:</strong> Finding a node immediately via
+built-in methods like
+<code>scene.getObjectByName('Accessory_RoofRack_VariantA')</code>.</li>
+<li><strong>Pattern Matching:</strong> Traversing the scene graph using
+a recursive function (such as <code>scene.traverse()</code>) and
+evaluating node names against regular expressions to automatically group
+variants under categories like <code>Accessory_RoofRack_*</code>.</li>
+</ul>
+<h3 id="toggling-visibility-at-runtime">Toggling Visibility at
+Runtime</h3>
+<p>Once the relevant 3D nodes are identified, their display state is
+directly mapped to the configurator's UI controls, such as radio
+buttons, dropdowns, or swatches.</p>
+<p>Every renderable node in a WebGL engine contains a boolean visibility
+flag (e.g., <code>node.visible</code> in Three.js, or
+<code>node.isVisible</code> in Babylon.js). When a user selects or
+deselects an accessory:</p>
+<ol type="1">
+<li><strong>State Evaluation:</strong> The configurator's state
+management system determines which accessory node needs to be displayed
+and which mutually exclusive variants must be hidden.</li>
+<li><strong>Property Update:</strong> The engine sets the target node's
+visibility property to <code>true</code> and turns conflicting variants
+to <code>false</code>.</li>
+<li><strong>Render Loop Execution:</strong> On the subsequent frame of
+the engine's render loop, hidden meshes are skipped during the draw-call
+phase, immediately updating the product view without requiring a model
+reload.</li>
+</ol>
+<h3 id="performance-and-hierarchy-considerations">Performance and
+Hierarchy Considerations</h3>
+<p>Targeting parent group nodes rather than individual child meshes
+streamlines performance. If an accessory consists of multiple
+elements—such as bolts, frames, and glass—grouping them under a single
+parent node (e.g., <code>Group_Sunroof</code>) allows the configurator
+to toggle visibility for the entire sub-tree with a single operation.
+This approach keeps runtime lookups fast, reduces code complexity, and
+ensures reliable transitions across complex product variants.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

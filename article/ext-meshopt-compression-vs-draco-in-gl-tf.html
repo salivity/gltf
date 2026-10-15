@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EXT_meshopt_compression vs Draco in glTF - gltf</title>
+    <meta name="description" content="When optimizing 3D assets for the web and real-time engines, choosing the right compression method is crucial for balancing delivery bandwidth with runtime performance. While Google&#39;s Draco compression produces slightly smaller raw file sizes, the EXTmesh">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/ext-meshopt-compression-vs-draco-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="EXT_meshopt_compression vs Draco in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/ext-meshopt-compression-vs-draco-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When optimizing 3D assets for the web and real-time engines, choosing the right compression method is crucial for balancing delivery bandwidth with runtime performance. While Google&#39;s Draco compression produces slightly smaller raw file sizes, the EXTmesh" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1
+id="ext_meshopt_compression-vs-draco-in-gltf">EXT_meshopt_compression vs
+Draco in glTF</h1>
+<p>When optimizing 3D assets for the web and real-time engines, choosing
+the right compression method is crucial for balancing delivery bandwidth
+with runtime performance. While Google's Draco compression produces
+slightly smaller raw file sizes, the
+<code>EXT_meshopt_compression</code> glTF extension provides critical
+runtime benefits, including orders-of-magnitude faster decompression,
+dramatically smaller decoder footprints, and hardware-friendly memory
+streaming.</p>
+<h3 id="1-superior-decompression-speed">1. Superior Decompression
+Speed</h3>
+<p>Draco prioritizes maximum file size reduction at the cost of high
+computational overhead. Decoding complex Draco meshes on the web often
+requires hundreds of milliseconds of CPU time, frequently causing frame
+drops, hitching, or battery drain on mobile devices. In contrast,
+<code>EXT_meshopt_compression</code> is explicitly engineered for
+ultra-fast, multi-threaded SIMD decompression. It typically decodes 5 to
+10 times faster than Draco, ensuring smoother frame rates and
+near-instant asset initialization.</p>
+<h3 id="2-extremely-lightweight-decoder-footprint">2. Extremely
+Lightweight Decoder Footprint</h3>
+<p>To unpack Draco assets in a browser, the client must download and
+instantiate the Draco WebAssembly and JavaScript wrapper, which totals
+around 100 KB to 150 KB. The decoder library for <code>meshopt</code> is
+exceptionally small, weighing approximately 15 KB to 30 KB. This minimal
+overhead leads to faster initial application startup times, which is
+vital for lightweight web experiences, e-commerce viewers, and
+interactive ads.</p>
+<h3 id="3-gpu-friendly-layout-and-lower-memory-overhead">3. GPU-Friendly
+Layout and Lower Memory Overhead</h3>
+<p>Draco completely restructures mesh data into an abstracted format,
+requiring temporary client-side memory buffers to decompress and
+reassemble the attributes back into a standard vertex layout.
+<code>EXT_meshopt_compression</code> preserves vertex and index layouts
+that align directly with standard GPU memory requirements. This reduces
+peak memory usage on the client and eliminates the need for expensive
+post-decompression formatting steps.</p>
+<h3 id="4-synergy-with-standard-http-compression">4. Synergy with
+Standard HTTP Compression</h3>
+<p><code>meshopt</code> utilizes bit-packing and delta-encoding
+techniques that transform vertex data into byte streams that generic
+algorithms like Deflate, gzip, or Brotli can compress exceptionally
+well. When served over modern web servers running Brotli, the
+over-the-network transfer size difference between <code>meshopt</code>
+and Draco becomes negligible, while maintaining all of
+<code>meshopt</code>'s runtime decoding advantages.</p>
+<h3 id="5-seamless-progressive-streaming">5. Seamless Progressive
+Streaming</h3>
+<p>Because <code>meshopt</code> maintains a standard buffer layout,
+assets can be progressively streamed, decoded, and rendered chunk by
+chunk. Draco generally requires the full buffer of a mesh primitive to
+be downloaded before decoding can begin, delaying the
+time-to-first-render for large 3D scenes.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

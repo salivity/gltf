@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Convex Hull Libraries for glTF Geometry - gltf</title>
+    <meta name="description" content="Computing three-dimensional convex hulls from glTF (GL Transmission Format) assets is a common task in game development, physics simulation, robotics, and 3D web applications. Because glTF files store geometry as indexed vertex buffers, processing them re">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/3-d-convex-hull-libraries-for-gl-tf-geometry">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="3D Convex Hull Libraries for glTF Geometry - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/3-d-convex-hull-libraries-for-gl-tf-geometry" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Computing three-dimensional convex hulls from glTF (GL Transmission Format) assets is a common task in game development, physics simulation, robotics, and 3D web applications. Because glTF files store geometry as indexed vertex buffers, processing them re" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="3d-convex-hull-libraries-for-gltf-geometry">3D Convex Hull
+Libraries for glTF Geometry</h1>
+<p>Computing three-dimensional convex hulls from glTF (GL Transmission
+Format) assets is a common task in game development, physics simulation,
+robotics, and 3D web applications. Because glTF files store geometry as
+indexed vertex buffers, processing them requires either an integrated 3D
+library capable of both parsing glTF and generating hulls, or a
+combination of a dedicated glTF parser and a computational geometry
+library. This guide covers the leading open-source libraries across
+Python, JavaScript, and C++ that can compute 3D convex hulls from glTF
+geometry.</p>
+<h3 id="1-trimesh-python">1. Trimesh (Python)</h3>
+<p>Trimesh is a comprehensive Python library for loading, manipulating,
+and analyzing triangular meshes. It features native, out-of-the-box
+support for both <code>.gltf</code> and <code>.glb</code> files.</p>
+<ul>
+<li><strong>How it works:</strong> When you load a glTF file using
+<code>trimesh.load()</code>, it parses the scene graph and extracts the
+mesh nodes. Calling the <code>.convex_hull</code> property on any loaded
+mesh or scene automatically computes a watertight 3D convex hull using
+Qhull under the hood.</li>
+<li><strong>Best for:</strong> Rapid prototyping, offline asset
+preprocessing, robotics simulation pipelines, and data analysis.</li>
+</ul>
+<h3 id="2-threejs-javascript--webgl">2. Three.js (JavaScript /
+WebGL)</h3>
+<p>Three.js is the standard 3D library for the web and provides complete
+tooling for loading glTF models and generating convex hulls directly in
+the browser or in Node.js.</p>
+<ul>
+<li><strong>How it works:</strong> Geometry is imported using
+<code>GLTFLoader</code>. Once the target <code>Mesh</code> or
+<code>BufferGeometry</code> is retrieved, its vertex attributes are
+passed to <code>ConvexGeometry</code> (found in the Three.js addon
+modules). Internally, <code>ConvexGeometry</code> executes an
+implementation of the Quickhull algorithm to build a new mesh
+representing the hull.</li>
+<li><strong>Best for:</strong> Web applications, browser-based games,
+and client-side bounding geometry generation.</li>
+</ul>
+<h3 id="3-open3d-c-and-python">3. Open3D (C++ and Python)</h3>
+<p>Open3D is a modern library geared toward 3D data processing, computer
+vision, and geometry computation.</p>
+<ul>
+<li><strong>How it works:</strong> Open3D natively imports glTF and GLB
+files into its <code>TriangleMesh</code> data structure via
+<code>open3d.io.read_triangle_mesh</code>. Once imported, you can invoke
+the <code>compute_convex_hull()</code> method, which calculates the 3D
+convex hull along with a vertex-to-original-mesh mapping.</li>
+<li><strong>Best for:</strong> High-performance desktop software, point
+cloud processing, and research applications where performance in both
+C++ and Python is required.</li>
+</ul>
+<h3 id="4-modular-c-pipelines-tinygltf--cgltf--qhull--bullet">4. Modular
+C++ Pipelines: tinygltf / cgltf + Qhull / Bullet</h3>
+<p>In high-performance game engines or custom C++ renderers, developers
+typically decouple file parsing from geometric computation:</p>
+<ul>
+<li><strong>glTF Parsers:</strong>
+<ul>
+<li><strong>tinygltf:</strong> A single-header C++ library that parses
+glTF 2.0 files and decodes vertex buffers into standard arrays.</li>
+<li><strong>cgltf:</strong> A lightweight, single-file C library for
+glTF 2.0 parsing.</li>
+</ul></li>
+<li><strong>Convex Hull Solvers:</strong>
+<ul>
+<li><strong>Qhull:</strong> The industry-standard C library that
+implements the Quickhull algorithm for computing convex hulls in
+arbitrary dimensions.</li>
+<li><strong>Bullet Physics (<code>btShapeHull</code>):</strong> If the
+glTF geometry is intended for collision detection, Bullet's collision
+engine extracts raw vertex arrays and uses <code>btShapeHull</code> to
+produce a simplified, watertight convex collision shape.</li>
+</ul></li>
+<li><strong>Best for:</strong> Custom game engines, embedded systems,
+and AAA simulation systems that require strict memory and performance
+controls.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

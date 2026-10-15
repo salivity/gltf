@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How VRM Extends glTF 2.0 for Humanoid Avatars - gltf</title>
+    <meta name="description" content="The VRM format builds directly on top of the glTF 2.0 3D asset standard, transforming a general-purpose graphics format into a specialized, cross-platform standard for interactive humanoid avatars. While glTF 2.0 provides an efficient way to transmit 3D m">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-vrm-extends-gl-tf-2-0-for-humanoid-avatars">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How VRM Extends glTF 2.0 for Humanoid Avatars - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-vrm-extends-gl-tf-2-0-for-humanoid-avatars" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The VRM format builds directly on top of the glTF 2.0 3D asset standard, transforming a general-purpose graphics format into a specialized, cross-platform standard for interactive humanoid avatars. While glTF 2.0 provides an efficient way to transmit 3D m" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-vrm-extends-gltf-20-for-humanoid-avatars">How VRM Extends
+glTF 2.0 for Humanoid Avatars</h1>
+<p>The VRM format builds directly on top of the glTF 2.0 3D asset
+standard, transforming a general-purpose graphics format into a
+specialized, cross-platform standard for interactive humanoid avatars.
+While glTF 2.0 provides an efficient way to transmit 3D meshes,
+textures, materials, and generic node hierarchies, it lacks
+humanoid-specific semantics required for real-time applications like
+VRChat, VTubing, and the broader metaverse. VRM bridges this gap by
+embedding JSON-based extensions that standardize humanoid bone mappings,
+facial blend shapes, dynamic physics, camera viewpoints, and digital
+persona licensing directly into a single, portable <code>.vrm</code>
+file.</p>
+<h3 id="standardized-humanoid-skeletal-rigging">Standardized Humanoid
+Skeletal Rigging</h3>
+<p>Standard glTF files define skeletons as arbitrary hierarchies of
+nodes and bones, leaving the interpretation of which bone corresponds to
+an arm, spine, or finger entirely up to the receiving engine. VRM solves
+this by enforcing a normalized humanoid bone structure based on Unity's
+Humanoid standard.</p>
+<p>The <code>VRMC_vrm</code> extension maps the internal node hierarchy
+of the glTF model to a standardized set of required and optional
+humanoid bones.</p>
+<ul>
+<li><strong>Required bones:</strong> Hips, Spine, Head, Upper Arm, Lower
+Arm, Hand, Upper Leg, Lower Leg, and Foot.</li>
+<li><strong>Optional bones:</strong> Fingers, Toes, Neck, Chest, and
+Shoulder bones.</li>
+</ul>
+<p>This mapping ensures that any animation clip authored for a standard
+humanoid rig can be retargeted to any VRM model automatically,
+regardless of the model's original scale, mesh structure, or naming
+convention.</p>
+<h3 id="facial-expressions-and-morph-target-standardization">Facial
+Expressions and Morph Target Standardization</h3>
+<p>While glTF 2.0 natively supports morph targets (blend shapes), it
+provides no universal semantics for what those targets represent. A
+shape key could be named "smile" in one model and "mouth_happy" in
+another.</p>
+<p>VRM standardizes these morph targets into defined expression presets,
+including:</p>
+<ul>
+<li><strong>Emotional presets:</strong> Neutral, Happy, Angry, Sad,
+Relaxed, and Surprised.</li>
+<li><strong>Lip-sync visemes:</strong> Standard Japanese phonetic vowels
+(A, I, U, E, O) easily mapped to real-time speech audio.</li>
+<li><strong>Eye controls:</strong> Blink, Blink Left, and Blink
+Right.</li>
+</ul>
+<p>By unifying these definitions, software applications can trigger
+universal facial expressions and dynamic lip-syncing without needing
+custom keyframe mapping for each individual model.</p>
+<h3 id="physics-via-spring-bones">Physics via Spring Bones</h3>
+<p>Real-time humanoid characters require secondary motion for elements
+such as hair, loose clothing, ribbons, and accessories. Normally, this
+dynamic movement requires engine-specific cloth or ragdoll physics (such
+as PhysX in Unity or Chaos in Unreal Engine), breaking portability.</p>
+<p>VRM introduces the <strong>Spring Bone</strong> specification
+(<code>VRMC_springBone</code>). This system defines lightweight
+mass-spring-damper physics directly in the model data:</p>
+<ul>
+<li><strong>Spring joints:</strong> Nodes designated to react to avatar
+movement with configurable stiffness, drag, and gravity parameters.</li>
+<li><strong>Collision spheres and capsules:</strong> Defined collision
+shapes attached to bones (such as the head, shoulders, or chest) to
+prevent dynamic hair or cloth from clipping through the character's
+body.</li>
+</ul>
+<p>Because the physics calculations are standardized, the character's
+hair and clothing sway consistently across any platform or engine
+supporting the VRM runtime.</p>
+<h3 id="first-person-view-and-gaze-control">First-Person View and Gaze
+Control</h3>
+<p>Generic glTF files have no concept of where an avatar's eyes are or
+how a user interacts with the model in virtual reality. VRM adds
+specific view-related metadata:</p>
+<ul>
+<li><strong>First-Person Viewpoint:</strong> An explicit vector offset
+designating the exact center point between the avatar's eyes, allowing
+VR camera rigs to spawn at the correct height and position.</li>
+<li><strong>Mesh Annotation:</strong> Tags that allow certain meshes
+(like the character’s head or hair) to be automatically hidden from the
+first-person camera while remaining visible to third-person observers
+and mirrors, preventing visual obstruction.</li>
+<li><strong>LookAt and Gaze Management:</strong> Logic determining how
+the eyes track targets, supporting both bone-based rotation and
+morph-target-based eye movements.</li>
+</ul>
+<h3 id="embedded-persona-licensing-and-metadata">Embedded Persona
+Licensing and Metadata</h3>
+<p>A unique extension of VRM beyond graphics is the integration of
+digital rights and usage metadata. The format embeds specific licensing
+terms within the file itself, answering critical questions regarding
+avatar usage:</p>
+<ul>
+<li><strong>Persona authorization:</strong> Specifies who is permitted
+to perform as the avatar (only the author, specific individuals, or
+anyone).</li>
+<li><strong>Commercial permissions:</strong> Explicit flags for
+commercial vs. non-commercial use.</li>
+<li><strong>Content boundaries:</strong> Permissions regarding the
+depiction of violence, sexual content, and political or religious
+expression.</li>
+<li><strong>Attribution:</strong> Standardized author names, contact
+details, and redistribution licenses (such as Creative Commons).</li>
+</ul>
+<h3 id="technical-integration-with-gltf-20">Technical Integration with
+glTF 2.0</h3>
+<p>Architecturally, a <code>.vrm</code> file is a binary glTF file
+(<code>.glb</code>). It preserves all standard glTF 2.0
+features—including Physically Based Rendering (PBR) materials, Draco
+mesh compression, and embedded buffer data. VRM simply embeds its
+humanoid data inside the glTF <code>extensions</code> dictionary under
+the <code>VRMC_vrm</code> and related namespaces.</p>
+<p>Because VRM respects the underlying glTF specification, applications
+that do not support VRM extensions can still parse the asset as a
+standard static or rigged 3D model, while VRM-compliant engines unlock
+its full humanoid and interactive toolset.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

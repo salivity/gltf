@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Cubic Spline Interpolation and Tangents - gltf</title>
+    <meta name="description" content="In glTF 2.0, the CUBICSPLINE interpolation mode uses cubic Hermite splines to produce smooth transitions between animation keyframes. Unlike standard linear interpolation, cubic spline interpolation relies on explicit incoming and outgoing tangent vectors">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-cubic-spline-interpolation-and-tangents">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Cubic Spline Interpolation and Tangents - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-cubic-spline-interpolation-and-tangents" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In glTF 2.0, the CUBICSPLINE interpolation mode uses cubic Hermite splines to produce smooth transitions between animation keyframes. Unlike standard linear interpolation, cubic spline interpolation relies on explicit incoming and outgoing tangent vectors" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-cubic-spline-interpolation-and-tangents">glTF Cubic Spline
+Interpolation and Tangents</h1>
+<p>In glTF 2.0, the <code>CUBICSPLINE</code> interpolation mode uses
+cubic Hermite splines to produce smooth transitions between animation
+keyframes. Unlike standard linear interpolation, cubic spline
+interpolation relies on explicit incoming and outgoing tangent vectors
+provided alongside each keyframe value in the animation data. This
+article explains how glTF structures this keyframe data, how incoming
+and outgoing tangents are computed from DCC source handles or curves,
+and how the runtime animation engine evaluates these tangents across
+normalized time intervals.</p>
+<h3 id="the-gltf-keyframe-data-layout">The glTF Keyframe Data
+Layout</h3>
+<p>For cubic spline tracks, the glTF binary buffer stores three distinct
+components for every keyframe timestamp <span
+class="math inline">\(k\)</span>:</p>
+<ol type="1">
+<li><strong>In-Tangent (<span
+class="math inline">\(a_k\)</span>):</strong> The incoming tangent
+defining the slope of the curve as it arrives at the current
+keyframe.</li>
+<li><strong>Value (<span class="math inline">\(v_k\)</span>):</strong>
+The actual property value (e.g., translation, scale, or rotation) at the
+keyframe time <span class="math inline">\(t_k\)</span>.</li>
+<li><strong>Out-Tangent (<span
+class="math inline">\(b_k\)</span>):</strong> The outgoing tangent
+defining the slope of the curve as it leaves the current keyframe.</li>
+</ol>
+<p>Because of this arrangement, the animation sampler's output accessor
+contains three times as many elements as the input time accessor. The
+first keyframe's in-tangent and the final keyframe's out-tangent are
+typically unused during standard playback, though they remain present in
+the data stream.</p>
+<h3 id="converting-tangents-from-authoring-tools">Converting Tangents
+from Authoring Tools</h3>
+<p>glTF does not calculate tangents at runtime; it expects precomputed
+tangents stored in the asset. Authoring tools (like Blender, Maya, or
+3ds Max) often construct animation curves using cubic Bézier splines
+rather than Hermite splines. Exporters convert Bézier control points
+into glTF-compatible Hermite tangents using the relationship between
+Bézier handles and derivative vectors:</p>
+<p>For a Bézier segment with start point <span
+class="math inline">\(P_0\)</span>, end point <span
+class="math inline">\(P_3\)</span>, and control handles <span
+class="math inline">\(P_1\)</span> and <span
+class="math inline">\(P_2\)</span> over a time interval <span
+class="math inline">\(\Delta t = t_{k+1} - t_k\)</span>:</p>
+<ul>
+<li><strong>Out-Tangent (<span
+class="math inline">\(b_k\)</span>):</strong> Derived from the right
+handle of the starting point: <span class="math display">\[b_k = \frac{3
+\cdot (P_1 - P_0)}{\Delta t}\]</span></li>
+<li><strong>In-Tangent (<span
+class="math inline">\(a_{k+1}\)</span>):</strong> Derived from the left
+handle of the ending point: <span class="math display">\[a_{k+1} =
+\frac{3 \cdot (P_3 - P_2)}{\Delta t}\]</span></li>
+</ul>
+<p>When tangents are generated mathematically without existing Bézier
+handles (such as in automated Catmull-Rom splines), the tangents can be
+approximated using central differences across neighboring keyframes:</p>
+<p><span class="math display">\[m_k = \frac{v_{k+1} - v_{k-1}}{t_{k+1} -
+t_{k-1}}\]</span></p>
+<p>Here, <span class="math inline">\(a_k = b_k = m_k\)</span>, enforcing
+<span class="math inline">\(C^1\)</span> continuity across the
+keyframe.</p>
+<h3 id="evaluating-the-cubic-hermite-spline-at-runtime">Evaluating the
+Cubic Hermite Spline at Runtime</h3>
+<p>To calculate the interpolated value <span
+class="math inline">\(p(t)\)</span> at a given time <span
+class="math inline">\(t\)</span> between keyframes <span
+class="math inline">\(k\)</span> and <span
+class="math inline">\(k+1\)</span>, runtime engines apply the cubic
+Hermite basis functions:</p>
+<ol type="1">
+<li><p><strong>Calculate Interval Duration and Normalized
+Factor:</strong> <span class="math display">\[\Delta t = t_{k+1} -
+t_k\]</span> <span class="math display">\[s = \frac{t - t_k}{\Delta t}
+\quad \text{where } s \in [0, 1]\]</span></p></li>
+<li><p><strong>Calculate the Hermite Basis Functions:</strong> <span
+class="math display">\[h_{00}(s) = 2s^3 - 3s^2 + 1\]</span> <span
+class="math display">\[h_{10}(s) = s^3 - 2s^2 + s\]</span> <span
+class="math display">\[h_{01}(s) = -2s^3 + 3s^2\]</span> <span
+class="math display">\[h_{11}(s) = s^3 - s^2\]</span></p></li>
+<li><p><strong>Compute the Interpolated Point:</strong> glTF stores
+tangents in units of <code>[value] / [second]</code>. Because the basis
+functions operate on normalized time <span class="math inline">\(s \in
+[0, 1]\)</span>, the engine scales the tangents by the segment's total
+duration <span class="math inline">\(\Delta t\)</span>: <span
+class="math display">\[p(s) = h_{00}(s)v_k + \Delta t \cdot h_{10}(s)b_k
++ h_{01}(s)v_{k+1} + \Delta t \cdot h_{11}(s)a_{k+1}\]</span></p></li>
+</ol>
+<h3 id="special-considerations-for-quaternions">Special Considerations
+for Quaternions</h3>
+<p>When interpolating rotation channels represented by quaternions, the
+cubic Hermite formulation is applied component-wise across the <span
+class="math inline">\(x, y, z,\)</span> and <span
+class="math inline">\(w\)</span> elements using the standard vector
+equation. Because cubic blending does not inherently preserve unit
+length, the engine must normalize the resulting quaternion after
+evaluation to ensure a valid 3D orientation:</p>
+<p><span class="math display">\[q_{\text{final}} =
+\frac{p(s)}{\|p(s)\|}\]</span></p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

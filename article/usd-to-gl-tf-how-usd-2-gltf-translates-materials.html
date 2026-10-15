@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>USD to glTF: How usd2gltf Translates Materials - gltf</title>
+    <meta name="description" content="Converting 3D assets from Universal Scene Description (USD) to glTF requires translating complex shading networks into a standard, runtime-efficient format. The open-source usd2gltf tool achieves this by parsing USD&#39;s shading primitives—primarily based on">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/usd-to-gl-tf-how-usd-2-gltf-translates-materials">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="USD to glTF: How usd2gltf Translates Materials - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/usd-to-gl-tf-how-usd-2-gltf-translates-materials" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Converting 3D assets from Universal Scene Description (USD) to glTF requires translating complex shading networks into a standard, runtime-efficient format. The open-source usd2gltf tool achieves this by parsing USD&#39;s shading primitives—primarily based on" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="usd-to-gltf-how-usd2gltf-translates-materials">USD to glTF: How
+usd2gltf Translates Materials</h1>
+<p>Converting 3D assets from Universal Scene Description (USD) to glTF
+requires translating complex shading networks into a standard,
+runtime-efficient format. The open-source <code>usd2gltf</code> tool
+achieves this by parsing USD's shading primitives—primarily based on the
+<code>UsdPreviewSurface</code> specification—and mapping their
+parameters, channel configurations, and texture transformations directly
+into glTF 2.0 PBR (Physically Based Rendering) materials and relevant
+Khronos extensions.</p>
+<h3 id="parsing-the-usd-shading-network">Parsing the USD Shading
+Network</h3>
+<p>In USD, materials are represented as directed acyclic graphs managed
+by the <code>UsdShade</code> API. A <code>UsdShadeMaterial</code> serves
+as a container that exposes terminal outputs for surfaces, displacement,
+and volumes.</p>
+<p>The <code>usd2gltf</code> converter traverses this graph by locating
+the primary surface output and identifying the connected shading node.
+In standard pipelines, this node is an instance of
+<code>UsdPreviewSurface</code>, USD’s baseline standard for interchange.
+The tool reads the input attributes defined on the shader, resolving
+both constant values and upstream connections to nodes like
+<code>UsdUVTexture</code> and <code>UsdTransform2d</code>.</p>
+<h3 id="mapping-pbr-parameters">Mapping PBR Parameters</h3>
+<p>Once the graph is parsed, <code>usd2gltf</code> maps the properties
+of <code>UsdPreviewSurface</code> directly to glTF’s core
+<code>pbrMetallicRoughness</code> model:</p>
+<ul>
+<li><strong>Base Color:</strong> The USD <code>diffuseColor</code> input
+maps to glTF's <code>baseColorFactor</code> (if constant) or
+<code>baseColorTexture</code>.</li>
+<li><strong>Metallic and Roughness:</strong> The scalar values
+<code>metallic</code> and <code>roughness</code> are assigned to
+<code>metallicFactor</code> and <code>roughnessFactor</code>.</li>
+<li><strong>Emissive:</strong> The USD <code>emissiveColor</code> maps
+directly to glTF’s <code>emissiveFactor</code> and
+<code>emissiveTexture</code>.</li>
+<li><strong>Normals:</strong> Normal map inputs connected to the
+<code>normal</code> input are converted to the glTF
+<code>normalTexture</code>.</li>
+</ul>
+<p>If an input has both a texture and an authored scale factor,
+<code>usd2gltf</code> multiplies the factors accordingly to match glTF’s
+standard evaluation rules.</p>
+<h3 id="texture-channel-repacking">Texture Channel Repacking</h3>
+<p>One of the primary technical challenges in translating material
+graphs between USD and glTF is texture layout. glTF strictly defines
+packed texture layouts to minimize GPU texture lookups:</p>
+<ul>
+<li><strong>Metallic-Roughness:</strong> glTF requires roughness in the
+green channel and metalness in the blue channel of a single texture
+(<code>metallicRoughnessTexture</code>).</li>
+<li><strong>Occlusion:</strong> Ambient occlusion typically resides in
+the red channel of an <code>occlusionTexture</code> (frequently shared
+with metallic-roughness as an ORM texture).</li>
+</ul>
+<p>USD, conversely, often routes individual monochrome textures or
+separate color channels via <code>UsdUVTexture</code> outputs (e.g.,
+extracting the <code>r</code> component). To resolve this,
+<code>usd2gltf</code> samples the upstream image data, extracts the
+relevant channels for ambient occlusion, roughness, and metalness, and
+repacks them into a unified image file adhering to glTF’s channel
+conventions.</p>
+<h3 id="texture-transforms-and-uv-sets">Texture Transforms and UV
+Sets</h3>
+<p>When texture coordinates in USD are modified using a
+<code>UsdTransform2d</code> node (such as tiling, offset, or rotation),
+<code>usd2gltf</code> translates these operations into the
+<code>KHR_texture_transform</code> glTF extension. The scale,
+translation, and rotation attributes from USD are mapped directly into
+the extension's <code>scale</code>, <code>offset</code>, and
+<code>rotation</code> fields. Additionally, the tool verifies UV index
+assignments, mapping USD’s <code>st</code> or custom UV primvars to
+glTF's <code>TEXCOORD_0</code> or <code>TEXCOORD_1</code>
+attributes.</p>
+<h3 id="handling-alpha-opacity-and-advanced-features">Handling Alpha,
+Opacity, and Advanced Features</h3>
+<p>The converter evaluates the USD <code>opacity</code> input alongside
+<code>opacityThreshold</code> to determine the glTF
+<code>alphaMode</code>:</p>
+<ul>
+<li>If <code>opacityThreshold</code> is greater than zero, the material
+is configured as <code>MASK</code> using the threshold value as
+<code>alphaCutoff</code>.</li>
+<li>If opacity is variable or less than 1.0 without a threshold, it maps
+to <code>BLEND</code>.</li>
+<li>If opacity is fully opaque, it defaults to <code>OPAQUE</code>.</li>
+</ul>
+<p>For advanced material properties supported by USD—such as clearcoat
+or index of refraction (IOR)—the tool translates the inputs into the
+corresponding Khronos extensions, such as
+<code>KHR_materials_clearcoat</code> and <code>KHR_materials_ior</code>,
+ensuring high-fidelity visual parity between the original USD asset and
+the exported glTF output.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

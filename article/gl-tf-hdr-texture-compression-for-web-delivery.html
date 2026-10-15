@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF HDR Texture Compression for Web Delivery - gltf</title>
+    <meta name="description" content="This article explains how the glTF (GL Transmission Format) ecosystem optimizes high-dynamic-range (HDR) environment maps for web delivery. Delivering high-fidelity image-based lighting (IBL) over the internet requires balancing visual fidelity against ba">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-hdr-texture-compression-for-web-delivery">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF HDR Texture Compression for Web Delivery - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-hdr-texture-compression-for-web-delivery" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how the glTF (GL Transmission Format) ecosystem optimizes high-dynamic-range (HDR) environment maps for web delivery. Delivering high-fidelity image-based lighting (IBL) over the internet requires balancing visual fidelity against ba" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-hdr-texture-compression-for-web-delivery">glTF HDR Texture
+Compression for Web Delivery</h1>
+<p>This article explains how the glTF (GL Transmission Format) ecosystem
+optimizes high-dynamic-range (HDR) environment maps for web delivery.
+Delivering high-fidelity image-based lighting (IBL) over the internet
+requires balancing visual fidelity against bandwidth and GPU memory
+constraints. By utilizing data-packing algorithms like RGBM or RGB9_E5,
+spherical-to-planar projections, and universal GPU texture compression
+extensions like KHR_texture_basisu, glTF enables web runtimes to load
+rich HDR lighting data with minimal latency and high frame rates.</p>
+<h3 id="the-challenge-of-hdr-on-the-web">The Challenge of HDR on the
+Web</h3>
+<p>Standard <code>.hdr</code> (Radiance) and <code>.exr</code> files
+contain 16-bit or 32-bit floating-point data per channel. While ideal
+for desktop production, raw floating-point textures are impractical for
+web distribution. An uncompressed HDR cubemap can easily exceed 50
+megabytes, consuming excessive network bandwidth, inflating download
+times, and exhausting VRAM on mobile devices. Standard web image
+compression formats like JPEG or WebP discard this high-dynamic range,
+clipping color values to an 8-bit [0, 1] range.</p>
+<h3 id="ldr-packing-techniques-rgbm-rgbd-and-shared-exponent">LDR
+Packing Techniques (RGBM, RGBD, and Shared Exponent)</h3>
+<p>To make HDR data compatible with standard compression pipelines, the
+continuous floating-point range is mathematically packed into 8-bit RGBA
+containers:</p>
+<ul>
+<li><strong>RGBM:</strong> Color data is stored in the RGB channels,
+while a scalar multiplier is stored in the Alpha channel. The final
+color is reconstructed on the GPU using the formula
+<code>Color = RGB * Alpha * MaxRange</code>.</li>
+<li><strong>RGBD:</strong> Similar to RGBM, but divides RGB values by a
+dynamic range scalar stored in the Alpha channel.</li>
+<li><strong>RGB9_E5 (Shared Exponent):</strong> Allocates 9 bits each
+for Red, Green, and Blue, with 5 bits dedicated to a shared exponent.
+This provides high precision without allocating dedicated floating-point
+channels.</li>
+</ul>
+<p>By converting 32-bit floats into standard 8-bit RGBA channels, HDR
+environment maps can be processed by standard 2D compression algorithms
+without losing lighting intensity data.</p>
+<h3 id="octahedral-mapping-for-environment-projection">Octahedral
+Mapping for Environment Projection</h3>
+<p>Traditional HDR environment textures rely on heavy cubemaps or
+equirectangular projections. Modern glTF pipelines often convert
+cubemaps into octahedral environment maps.</p>
+<p>Octahedral mapping folds a spherical projection onto a single square
+2D texture. This geometric flattening provides two advantages for web
+delivery: it eliminates the seam artifacts common in equirectangular
+poles, and it allows all six faces of an environment map to be stored in
+a single, continuous 2D image file compatible with 2D texture
+compressors.</p>
+<h3 id="gpu-compression-via-khr_texture_basisu">GPU Compression via
+KHR_texture_basisu</h3>
+<p>The primary method for compressing textures in glTF is the
+<code>KHR_texture_basisu</code> extension, which uses the KTX 2.0
+container and Basis Universal technology.</p>
+<ol type="1">
+<li><strong>UASTC Compression:</strong> Packed HDR textures (such as
+RGBM encoded in an octahedral layout) are compressed using Basis
+Universal’s UASTC (Universal ASTC) mode. UASTC preserves high-frequency
+details and smooth gradients critical for lighting data, avoiding the
+severe blocky artifacts caused by aggressive color quantization.</li>
+<li><strong>Supercompression:</strong> The KTX 2.0 container applies
+secondary lossless compression (such as Zstandard) to the UASTC data,
+cutting the payload size over the network by up to 50–70% compared to
+standard PNG-packed textures.</li>
+<li><strong>Runtime Transcoding:</strong> Once downloaded by the
+browser, a lightweight WebAssembly transcoder converts the KTX 2.0
+payload directly into the target device's native GPU format (such as
+ASTC, BC7, or ETC2) without intermediate CPU decompression.</li>
+</ol>
+<h3 id="pre-filtering-and-irradiance-optimization">Pre-filtering and
+Irradiance Optimization</h3>
+<p>glTF workflows reduce bandwidth further by pre-computing image-based
+lighting data before export:</p>
+<ul>
+<li><strong>Diffuse Irradiance:</strong> Instead of sending
+high-resolution textures for ambient light, the diffuse lighting is
+typically extracted as nine Spherical Harmonic (SH) coefficients. This
+reduces the diffuse environment map from megabytes to a few dozen bytes
+of mathematical data.</li>
+<li><strong>Specular Radiance:</strong> Specular reflections are stored
+as split-sum radiance maps at progressively smaller mipmap levels,
+allowing rough surfaces to read blurred reflections from smaller texture
+dimensions, optimizing sample counts and caching performance during PBR
+(Physically Based Rendering) evaluation.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

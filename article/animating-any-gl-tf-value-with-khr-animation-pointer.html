@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animating Any glTF Value With KHR_animation_pointer - gltf</title>
+    <meta name="description" content="This article explains how the KHRanimationpointer extension expands glTF 2.0 animation capabilities beyond rigid transform targets. By leveraging the RFC 6901 JSON Pointer specification, this extension enables creators and developers to drive nearly any n">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/animating-any-gl-tf-value-with-khr-animation-pointer">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Animating Any glTF Value With KHR_animation_pointer - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/animating-any-gl-tf-value-with-khr-animation-pointer" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how the KHRanimationpointer extension expands glTF 2.0 animation capabilities beyond rigid transform targets. By leveraging the RFC 6901 JSON Pointer specification, this extension enables creators and developers to drive nearly any n" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="animating-any-gltf-value-with-khr_animation_pointer">Animating
+Any glTF Value With KHR_animation_pointer</h1>
+<p>This article explains how the <code>KHR_animation_pointer</code>
+extension expands glTF 2.0 animation capabilities beyond rigid transform
+targets. By leveraging the RFC 6901 JSON Pointer specification, this
+extension enables creators and developers to drive nearly any numerical
+or vector property across a glTF file—including material colors, camera
+settings, and light parameters—using the existing, highly optimized glTF
+animation timeline system.</p>
+<h2 id="the-limitation-of-standard-gltf-animations">The Limitation of
+Standard glTF Animations</h2>
+<p>Core glTF 2.0 defines animations through channels, where each channel
+specifies a target node and a restricted <code>path</code> property. By
+default, this <code>path</code> is limited to four fixed strings:
+<code>translation</code>, <code>rotation</code>, <code>scale</code>, and
+<code>weights</code> (for morph targets).</p>
+<p>While this architecture handles standard skeletal meshes and object
+movement efficiently, it cannot animate materials, cameras, light
+intensities, or custom extension properties without introducing
+non-standard hacks or entirely custom animation frameworks.</p>
+<h2 id="the-json-pointer-mechanism">The JSON Pointer Mechanism</h2>
+<p>The <code>KHR_animation_pointer</code> extension resolves this
+restriction by introducing a dynamic pathing system. Instead of relying
+solely on the predefined <code>channel.target.path</code> enum, the
+extension adds a <code>pointer</code> string inside the target's
+extension object:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;channels&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;sampler&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;target&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;extensions&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;KHR_animation_pointer&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>            <span class="dt">&quot;pointer&quot;</span><span class="fu">:</span> <span class="st">&quot;/materials/0/pbrMetallicRoughness/baseColorFactor&quot;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>          <span class="fu">}</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        <span class="fu">}</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">}</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>The <code>pointer</code> property follows the RFC 6901 standard, a
+formal syntax for identifying specific values inside a JSON document.
+Because glTF uses JSON as its structural backbone, a pointer string can
+uniquely locate any array element or object field throughout the
+asset.</p>
+<h2 id="how-data-binding-and-playback-work">How Data Binding and
+Playback Work</h2>
+<p><code>KHR_animation_pointer</code> does not change how animation
+keyframes, timestamps, or interpolation curves are stored. It reuses
+glTF's existing sampler-and-accessor pipeline:</p>
+<ol type="1">
+<li><strong>Input and Output Samplers:</strong> The animation sampler
+still references an accessor for time inputs and an accessor for
+keyframe output values (e.g., <code>SCALAR</code>, <code>VEC3</code>, or
+<code>VEC4</code> types).</li>
+<li><strong>Path Resolution:</strong> When the runtime loads the glTF
+document, it parses the JSON Pointer path once to locate the target
+field in memory.</li>
+<li><strong>Type Matching:</strong> The runtime verifies that the output
+accessor's data type matches the schema of the targeted JSON value. For
+example, animating <code>/cameras/0/perspective/yfov</code> requires a
+<code>SCALAR</code>, while animating
+<code>/materials/0/emissiveFactor</code> requires a
+<code>VEC3</code>.</li>
+<li><strong>Value Application:</strong> During playback, the runtime
+evaluates the interpolated value at the current timestamp and writes it
+directly to the resolved target in the engine's internal scene
+graph.</li>
+</ol>
+<h2 id="broadening-target-scope-across-extensions">Broadening Target
+Scope Across Extensions</h2>
+<p>Because the pointer is an absolute JSON path, it functions uniformly
+across both core glTF specifications and other Khronos extensions.
+Common animation targets include:</p>
+<ul>
+<li><strong>Materials:</strong> Altering opacity, roughness, metallic
+factor, emissive intensity, or texture coordinates over time.</li>
+<li><strong>Cameras:</strong> Animating field of view
+(<code>yfov</code>), focal length, or depth-of-field boundaries.</li>
+<li><strong>Punctual Lights (<code>KHR_lights_punctual</code>):</strong>
+Changing light color, range, inner/outer cone angles, and intensity to
+create flicker effects or day-night transitions.</li>
+<li><strong>Texture Transforms
+(<code>KHR_texture_transform</code>):</strong> Driving texture offsets
+and rotations for scrolling water, procedural noise, or conveyor belt
+animations.</li>
+</ul>
+<h2 id="runtime-performance-considerations">Runtime Performance
+Considerations</h2>
+<p>Although JSON Pointer parsing relies on string traversal, real-time
+engines do not parse the path on every frame. During asset loading,
+engines resolve the pointer string to an internal pointer or property
+offset. Once mapped, the runtime updates the property at memory-speed
+identical to traditional translation, rotation, and scale updates,
+maintaining high performance in real-time graphics pipelines.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

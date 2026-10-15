@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rendering GIS Terrain via glTF Heightmap Displacement - gltf</title>
+    <meta name="description" content="Geographic Information System (GIS) platforms render 3D terrain elevation models by leveraging heightmap displacement within the glTF (GL Transmission Format) standard. This process transforms raw Digital Elevation Models (DEMs) into lightweight, high-per">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/rendering-gis-terrain-via-gl-tf-heightmap-displacement">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Rendering GIS Terrain via glTF Heightmap Displacement - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/rendering-gis-terrain-via-gl-tf-heightmap-displacement" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Geographic Information System (GIS) platforms render 3D terrain elevation models by leveraging heightmap displacement within the glTF (GL Transmission Format) standard. This process transforms raw Digital Elevation Models (DEMs) into lightweight, high-per" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="rendering-gis-terrain-via-gltf-heightmap-displacement">Rendering
+GIS Terrain via glTF Heightmap Displacement</h1>
+<p>Geographic Information System (GIS) platforms render 3D terrain
+elevation models by leveraging heightmap displacement within the glTF
+(GL Transmission Format) standard. This process transforms raw Digital
+Elevation Models (DEMs) into lightweight, high-performance 3D meshes by
+pairing standardized 2D elevation textures with dynamic geometry. By
+encoding elevation into texture maps and displacing vertices directly on
+the Graphics Processing Unit (GPU), web and desktop GIS engines achieve
+real-time, interactive landscape visualization across vast geographic
+scales.</p>
+<h3 id="1-data-encoding-and-preparation">1. Data Encoding and
+Preparation</h3>
+<p>Before terrain can be rendered in a glTF-compatible pipeline, raw
+elevation data (such as GeoTIFF or LAS point clouds) is processed into a
+rasterized heightmap. Because standard 8-bit grayscale images only offer
+256 elevation steps—insufficient for geographic accuracy—GIS pipelines
+utilize high-precision encoding formats:</p>
+<ul>
+<li><strong>RGB-Encoded Elevation:</strong> Formats like Terrain-RGB
+compress elevation values across red, green, and blue channels using an
+equation such as
+<code>height = -10000 + ((R * 256 * 256 + G * 256 + B) * 0.1)</code>.
+This allows for sub-meter vertical precision within standard image
+formats like PNG.</li>
+<li><strong>16-bit or 32-bit Single-Channel Floats:</strong> When
+supported by the graphics runtime, single-channel textures (such as
+<code>R16UI</code> or <code>R32F</code>) are embedded directly into glTF
+buffers or referenced as external textures.</li>
+</ul>
+<h3 id="2-base-geometry-and-the-gltf-architecture">2. Base Geometry and
+the glTF Architecture</h3>
+<p>A glTF terrain node typically contains a planar, tessellated grid
+mesh (a tile) defined by vertex attributes (positions, normals, and UV
+coordinates). Instead of storing billions of pre-displaced 3D
+vertices—which drastically inflates file size and bandwidth
+consumption—the glTF primitive is stored as a flat plane with uniform
+vertex spacing.</p>
+<p>The heightmap is linked within the glTF material definition,
+frequently utilizing the <code>displacementGeometry</code> extension (or
+custom vendor extensions), or assigned to standard texture slots read by
+custom shader pipelines in renderers such as CesiumJS, Three.js, or
+Babylon.js.</p>
+<h3 id="3-gpu-vertex-displacement">3. GPU Vertex Displacement</h3>
+<p>The displacement itself occurs in the GPU’s vertex shader during the
+rendering pass:</p>
+<ol type="1">
+<li><strong>Texture Sampling:</strong> The vertex shader reads the UV
+coordinates of each vertex on the planar mesh and samples the
+corresponding pixel from the elevation heightmap.</li>
+<li><strong>Value Decoding:</strong> If using RGB-encoded elevation, the
+shader unpacks the color channels into a single floating-point elevation
+value based on the predefined scaling factor and vertical datum
+offset.</li>
+<li><strong>Position Offset:</strong> The vertex’s position is
+translated along its normal vector (typically the Z-axis in standard GIS
+coordinate spaces, or the Y-axis in glTF's default coordinate space) by
+the decoded elevation value, multiplied by any global vertical
+exaggeration factor applied by the user.</li>
+</ol>
+<h3 id="4-normal-reconstruction-and-hillshading">4. Normal
+Reconstruction and Hillshading</h3>
+<p>Shifting vertices modifies the topography, rendering the original
+planar normal vectors obsolete. To achieve realistic lighting and
+hillshading, the rendering pipeline recalculates surface normals using
+one of two methods:</p>
+<ul>
+<li><strong>Precomputed Normal Maps:</strong> A companion normal map is
+generated alongside the heightmap and packed into the glTF material,
+providing high-fidelity lighting with minimal runtime computation.</li>
+<li><strong>Dynamic Derivative Calculation:</strong> In the fragment
+shader, normal vectors are dynamically derived from adjacent height
+values or screen-space derivatives using functions such as
+<code>dFdx</code> and <code>dFdy</code>. This creates accurate shadows
+and slopes without requiring additional texture downloads.</li>
+</ul>
+<h3 id="5-level-of-detail-lod-and-3d-tiles">5. Level of Detail (LOD) and
+3D Tiles</h3>
+<p>Rendering continental or global terrain requires streaming
+strategies. GIS platforms encapsulate glTF payloads inside spatial
+hierarchical data structures, such as OGC 3D Tiles. As the camera moves
+closer to the ground, the engine loads higher-resolution glTF planar
+tiles paired with finer-resolution heightmaps. When combined with
+techniques like Continuous Level of Detail (CLOD) or hardware
+tessellation, this architecture ensures smooth frame rates while
+rendering real-world topography accurately.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

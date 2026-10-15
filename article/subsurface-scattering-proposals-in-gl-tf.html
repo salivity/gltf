@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subsurface Scattering Proposals in glTF - gltf</title>
+    <meta name="description" content="The Khronos 3D Formats Working Group is expanding the glTF physical-based rendering (PBR) ecosystem through its &quot;PBR Next&quot; initiative to natively support subsurface scattering (SSS). While current glTF extensions handle surface-level light interactions an">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/subsurface-scattering-proposals-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Subsurface Scattering Proposals in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/subsurface-scattering-proposals-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Khronos 3D Formats Working Group is expanding the glTF physical-based rendering (PBR) ecosystem through its &quot;PBR Next&quot; initiative to natively support subsurface scattering (SSS). While current glTF extensions handle surface-level light interactions an" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="subsurface-scattering-proposals-in-gltf">Subsurface Scattering
+Proposals in glTF</h1>
+<p>The Khronos 3D Formats Working Group is expanding the glTF
+physical-based rendering (PBR) ecosystem through its "PBR Next"
+initiative to natively support subsurface scattering (SSS). While
+current glTF extensions handle surface-level light interactions and
+basic volumetric absorption, true SSS addresses materials where light
+penetrates the surface, scatters internally, and exits at a different
+point—such as skin, wax, jade, and marble. This article outlines the
+existing proposals, draft extensions, technical parameters, and
+integration pathways currently under discussion to bring subsurface
+scattering to glTF.</p>
+<h3 id="the-foundation-transitioning-from-volume-to-subsurface">The
+Foundation: Transitioning from Volume to Subsurface</h3>
+<p>Before addressing subsurface scattering directly, Khronos established
+baseline extensions for light passing through objects:</p>
+<ul>
+<li><strong><code>KHR_materials_transmission</code></strong>: Controls
+optical transparency and refraction without internal scattering.</li>
+<li><strong><code>KHR_materials_volume</code></strong>: Introduces an
+internal medium to meshes, enabling absorption based on the Beer-Lambert
+law via thickness and attenuation distance parameters.</li>
+</ul>
+<p>While <code>KHR_materials_volume</code> simulates how light loses
+energy inside a colored, clear medium (such as tinted glass or liquid),
+it lacks multi-scattering calculations. Light inside a volume model
+travels in straight lines rather than diffusing outward, necessitating a
+dedicated subsurface scattering model.</p>
+<h3 id="the-khr_materials_subsurface-draft-proposal">The
+<code>KHR_materials_subsurface</code> Draft Proposal</h3>
+<p>The primary mechanism being developed within the Khronos 3D Formats
+Working Group is the <code>KHR_materials_subsurface</code> extension.
+This proposal introduces parameters to control the diffusion of light
+within the volume of a mesh, bridging real-time approximations with
+offline path-tracing capabilities.</p>
+<p>The core parameters proposed for the extension include:</p>
+<ul>
+<li><strong>Subsurface Factor (<code>subsurfaceFactor</code>)</strong>:
+A scalar value (and optional texture) determining the degree to which
+diffuse reflection is replaced by subsurface scattering. A factor of 0
+maintains standard diffuse behavior, while 1 treats all diffuse lighting
+as scattered light.</li>
+<li><strong>Subsurface Color (<code>subsurfaceColor</code>)</strong>:
+Specifies the tint of the scattered light, which often differs from the
+surface base color due to multiple internal reflections and absorption
+(for example, the red tint seen when light passes through human
+ears).</li>
+<li><strong>Subsurface Radius / Scatter Distance
+(<code>subsurfaceRadius</code>)</strong>: A 3-component vector
+specifying the mean free path (MFP)—the average distance light travels
+per color channel (RGB) before a scattering event occurs. This parameter
+governs how deeply and broadly red, green, and blue wavelengths diffuse
+through the material.</li>
+<li><strong>Subsurface Radius Scale
+(<code>subsurfaceRadiusScale</code>)</strong>: A global multiplier used
+to scale the scatter distance uniformly across the asset, accommodating
+real-world scene scaling.</li>
+</ul>
+<h3
+id="thin-walled-translucency-vs-true-volumetric-diffusion">Thin-Walled
+Translucency vs. True Volumetric Diffusion</h3>
+<p>Khronos discussions separate subsurface phenomena into two distinct
+structural categories:</p>
+<ol type="1">
+<li><strong>Thin-Surface Translucency</strong>: Intended for geometry
+with no modeled interior thickness, such as foliage, paper, or fabric.
+In these cases, light is evaluated using a transmission model that
+transfers light directly from the back faces to the front faces without
+complex spatial diffusion.</li>
+<li><strong>Volumetric (Thick) Diffusion</strong>: Intended for solid,
+closed meshes where light diffuses through a three-dimensional volume.
+This requires either screen-space diffusion profiles in real-time
+rasterizers or Monte Carlo random-walk algorithms in path tracers.</li>
+</ol>
+<p>The working group has debated whether to address thin-walled
+scattering under a general subsurface extension or via a dedicated
+translucency extension. The prevailing consensus aligns toward handling
+thin surfaces using the <code>thickness</code> property from
+<code>KHR_materials_volume</code> set to zero, combined with subsurface
+parameters to dictate back-to-front scatter.</p>
+<h3 id="alignment-with-openpbr-and-industry-standards">Alignment with
+OpenPBR and Industry Standards</h3>
+<p>A significant driver of the glTF subsurface specification is
+convergence with broader industry initiatives, notably
+<strong>OpenPBR</strong> (developed jointly by Academy Software
+Foundation and Khronos members) and <strong>MaterialX</strong>.</p>
+<p>OpenPBR integrates subsurface scattering as a dedicated layer
+consisting of weight, color, radius, radius scale, and anisotropy. To
+prevent fragmentation across 3D interchange formats, the Khronos working
+group is aligning the glTF subsurface extension closely with the OpenPBR
+Subsurface model. This alignment ensures that assets authored in tools
+using MaterialX or Autodesk Standard Surface can translate directly into
+glTF runtimes without loss of intent.</p>
+<h3 id="implementation-challenges">Implementation Challenges</h3>
+<p>The proposal's progression balances computational cost against visual
+fidelity across different rendering targets:</p>
+<ul>
+<li><strong>Real-Time Engines</strong>: Rasterized game engines often
+rely on screen-space subsurface scattering (SSSS) or pre-integrated skin
+shading, which struggle with non-human materials, thin geometries, and
+extreme lighting angles.</li>
+<li><strong>Ray Tracers</strong>: Path-tracing engines favor physically
+based random-walk subsurface scattering, which requires complete 3D
+volumetric data and can lead to divergence in visual output compared to
+rasterized engines.</li>
+</ul>
+<p>The working group's primary objective remains standardizing a compact
+parameter set that provides enough physical grounding for path tracers
+while remaining simple enough to be approximated efficiently in WebGL
+and WebGPU real-time viewers.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

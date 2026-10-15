@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Understanding the glTF extras Field for Custom Data - gltf</title>
+    <meta name="description" content="The extras field in glTF (GL Transmission Format) is a reserved property that allows developers to store custom, application-specific metadata directly within a 3D asset without violating the format&#39;s core specification. This article explains what the ext">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/understanding-the-gl-tf-extras-field-for-custom-data">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Understanding the glTF extras Field for Custom Data - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/understanding-the-gl-tf-extras-field-for-custom-data" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The extras field in glTF (GL Transmission Format) is a reserved property that allows developers to store custom, application-specific metadata directly within a 3D asset without violating the format&#39;s core specification. This article explains what the ext" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1
+id="understanding-the-gltf-extras-field-for-custom-data">Understanding
+the glTF extras Field for Custom Data</h1>
+<p>The <code>extras</code> field in glTF (GL Transmission Format) is a
+reserved property that allows developers to store custom,
+application-specific metadata directly within a 3D asset without
+violating the format's core specification. This article explains what
+the <code>extras</code> property is, where it can be applied within a
+glTF file, how it enables flexible data exchange between DCC (Digital
+Content Creation) tools and runtime engines, and the best practices for
+implementing it effectively.</p>
+<h2 id="what-is-the-extras-field">What Is the <code>extras</code>
+Field?</h2>
+<p>In the glTF 2.0 specification, standard objects strictly define how
+3D data—such as geometry, materials, animations, and scene
+hierarchies—should be structured and rendered. However, real-time
+applications often require additional information that falls outside
+standard visual rendering, such as gameplay mechanics, physics
+properties, or sound triggers.</p>
+<p>To accommodate this, glTF specifies the <code>extras</code> property
+on virtually every core glTF object, including:</p>
+<ul>
+<li>Nodes (transforms and scene graph elements)</li>
+<li>Meshes and Primitives</li>
+<li>Materials</li>
+<li>Textures and Images</li>
+<li>Animations and Animation Channels</li>
+<li>Skins</li>
+<li>Cameras</li>
+<li>The root glTF asset object</li>
+</ul>
+<p>Any valid JSON data type can be assigned to an <code>extras</code>
+field, including objects, arrays, strings, numbers, booleans, and null
+values.</p>
+<h2 id="how-extras-provides-application-specific-data">How
+<code>extras</code> Provides Application-Specific Data</h2>
+<p>The primary function of <code>extras</code> is to act as a bridge
+between content creation tools (like Blender, Maya, or 3ds Max) and
+runtime environments (such as Three.js, Babylon.js, Unity, or Unreal
+Engine).</p>
+<h3 id="1-preserving-dcc-custom-properties">1. Preserving DCC Custom
+Properties</h3>
+<p>When artists define custom attributes in 3D modeling software,
+exporters can map those attributes directly into the <code>extras</code>
+field of the corresponding glTF element. For example, a custom property
+defined on an object in Blender can be automatically exported as:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;nodes&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;TreasureChest&quot;</span><span class="fu">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;mesh&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;translation&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="fl">0.0</span><span class="ot">,</span> <span class="fl">1.0</span><span class="ot">,</span> <span class="fl">0.0</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;extras&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;isInteractable&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;lootTier&quot;</span><span class="fu">:</span> <span class="st">&quot;rare&quot;</span><span class="fu">,</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;respawnTimeSeconds&quot;</span><span class="fu">:</span> <span class="dv">120</span><span class="fu">,</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;collisionType&quot;</span><span class="fu">:</span> <span class="st">&quot;box&quot;</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>      <span class="fu">}</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="2-runtime-retrieval-and-logic">2. Runtime Retrieval and
+Logic</h3>
+<p>Because standard glTF loaders parse the <code>extras</code> object
+alongside the asset's structural data, runtime engines can inspect these
+fields during or after loading. In a WebGL application using Three.js,
+for example, the loaded node preserves this object under
+<code>node.userData</code>, allowing developers to read gameplay
+parameters or setup custom colliders dynamically:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>loader<span class="op">.</span><span class="fu">load</span>(<span class="st">&#39;chest.gltf&#39;</span><span class="op">,</span> (gltf) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> chest <span class="op">=</span> gltf<span class="op">.</span><span class="at">scene</span><span class="op">.</span><span class="fu">getObjectByName</span>(<span class="st">&#39;TreasureChest&#39;</span>)<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (chest<span class="op">.</span><span class="at">userData</span><span class="op">.</span><span class="at">isInteractable</span>) {</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">registerInteractionTrigger</span>(chest<span class="op">,</span> chest<span class="op">.</span><span class="at">userData</span><span class="op">.</span><span class="at">lootTier</span>)<span class="op">;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h3 id="3-non-destructive-extension">3. Non-Destructive Extension</h3>
+<p>Unlike custom extensions (defined via <code>extensions</code> and
+<code>extensionsUsed</code>), the <code>extras</code> property does not
+require formal schema registration or extension handlers. Standard glTF
+parsers safely ignore <code>extras</code> data they do not recognize,
+ensuring the visual rendering of the model remains unaffected across
+different software pipelines.</p>
+<h2 id="best-practices-for-using-extras">Best Practices for Using
+<code>extras</code></h2>
+<ul>
+<li><strong>Use Namespacing:</strong> If multiple pipelines or plugins
+process the same file, use nested objects with dedicated vendor or
+application prefixes (e.g.,
+<code>"extras": { "myApp_physics": { ... } }</code>) to prevent key
+collisions.</li>
+<li><strong>Keep Payloads Lightweight:</strong> Storing excessively
+large data sets (such as embedded binary streams or massive arrays) in
+<code>extras</code> inflates the JSON file size and slows down text
+parsing. Large binary structures should instead use glTF buffers and
+custom extensions.</li>
+<li><strong>Do Not Override Core Behavior:</strong> Avoid using
+<code>extras</code> to convey data that alters standard PBR rendering or
+transform hierarchies. Standard features or official glTF extensions
+should always handle graphics-critical behavior to maintain visual
+consistency.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

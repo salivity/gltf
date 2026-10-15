@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Scan to glTF: Decimation and Retopology - gltf</title>
+    <meta name="description" content="Transforming dense, millions-of-polygons raw 3D scans into optimized glTF models requires a structured decimation and retopology pipeline to balance visual fidelity with real-time performance. This guide outlines industry-standard workflows for preparing">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/3-d-scan-to-gl-tf-decimation-and-retopology">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="3D Scan to glTF: Decimation and Retopology - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/3-d-scan-to-gl-tf-decimation-and-retopology" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Transforming dense, millions-of-polygons raw 3D scans into optimized glTF models requires a structured decimation and retopology pipeline to balance visual fidelity with real-time performance. This guide outlines industry-standard workflows for preparing" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="3d-scan-to-gltf-decimation-and-retopology">3D Scan to glTF:
+Decimation and Retopology</h1>
+<p>Transforming dense, millions-of-polygons raw 3D scans into optimized
+glTF models requires a structured decimation and retopology pipeline to
+balance visual fidelity with real-time performance. This guide outlines
+industry-standard workflows for preparing photogrammetry and LiDAR data
+for WebGL and real-time engines, detailing automated and manual
+retopology paths, UV unwrapping, high-to-low poly texture baking, and
+final glTF export optimization.</p>
+<h3 id="1-pre-processing-and-initial-decimation">1. Pre-Processing and
+Initial Decimation</h3>
+<p>Raw scan data—whether from photogrammetry software like
+RealityCapture or laser scanners—often contains noise, non-manifold
+geometry, and tens of millions of micro-triangles.</p>
+<ul>
+<li><strong>Cleanup:</strong> Load the raw mesh into software such as
+MeshLab, Blender, or ZBrush. Remove disconnected floating vertices,
+non-manifold edges, and internal geometry.</li>
+<li><strong>First-Pass Decimation:</strong> Reduce the raw scan from
+20–50 million polygons down to a workable high-poly reference of 1 to 3
+million polygons. Algorithms like Quadric Edge Collapse Decimation
+(available in MeshLab and Blender) preserve silhouette and curvature
+while making the mesh responsive enough for downstream retopology
+tools.</li>
+</ul>
+<h3 id="2-choosing-a-retopology-approach">2. Choosing a Retopology
+Approach</h3>
+<p>Depending on the intended use case of the glTF asset, choose between
+an automated pipeline or a manual pipeline:</p>
+<h4
+id="pipeline-a-automated-retopology-static-props-and-rapid-production">Pipeline
+A: Automated Retopology (Static Props and Rapid Production)</h4>
+<p>Best for static environmental props, e-commerce products, and
+background assets where edge flow is secondary to fast turnaround and
+clean geometry.</p>
+<ol type="1">
+<li><strong>Auto-Remeshing:</strong> Use tools like <strong>QuadRemesher
+(Exoside)</strong>, <strong>ZBrush (ZRemesher)</strong>, or
+<strong>Instant Meshes</strong>. Set your target polygon count based on
+platform constraints (typically 5,000 to 50,000 triangles for real-time
+glTF).</li>
+<li><strong>Feature Preservation:</strong> Use vertex painting,
+polygroups, or guide curves to instruct the algorithm to respect hard
+mechanical edges, holes, and sharp silhouettes.</li>
+<li><strong>Triangulation Check:</strong> glTF natively uses triangular
+meshes. Ensure the resulting quads can be triangulated cleanly without
+creating planar artifacts or non-planar polygons.</li>
+</ol>
+<h4
+id="pipeline-b-manual-retopology-hero-assets-and-deformable-meshes">Pipeline
+B: Manual Retopology (Hero Assets and Deformable Meshes)</h4>
+<p>Essential for characters, rigged models, or assets requiring precise
+silhouette control and maximum polygon efficiency.</p>
+<ol type="1">
+<li><strong>Snap-to-Surface Topology:</strong> Import the decimated
+high-poly reference into <strong>Blender (Poly
+Build/Shrinkwrap)</strong>, <strong>Maya (Quad Draw)</strong>, or
+<strong>Topogun</strong>.</li>
+<li><strong>Edge Flow:</strong> Draw topology manually along deformation
+zones (such as joints) and high-curvature areas.</li>
+<li><strong>Budget Allocation:</strong> Allocate the highest density of
+polygons to the outer silhouettes and interactive focal points,
+drastically reducing geometry on flat surfaces.</li>
+</ol>
+<h3 id="3-uv-unwrapping-and-packing">3. UV Unwrapping and Packing</h3>
+<p>A clean UV layout is critical to prevent texture seam artifacts and
+wasted texture space in real-time viewers:</p>
+<ul>
+<li><strong>Seam Placement:</strong> Place seams in natural crevices or
+non-visible areas to minimize visible texture borders.</li>
+<li><strong>Unwrap:</strong> Use distortion-minimizing unwrapping
+algorithms (such as ABF++ or LSCM).</li>
+<li><strong>UV Packing:</strong> Pack islands tightly to achieve high UV
+space utilization (aim for &gt;75% coverage). Maintain uniform texel
+density across the asset unless certain zones require higher visual
+priority.</li>
+</ul>
+<h3 id="4-high-to-low-poly-baking">4. High-to-Low Poly Baking</h3>
+<p>The low-poly retopologized mesh relies on texture maps to simulate
+the high-frequency detail of the raw scan.</p>
+<ul>
+<li><strong>Baking Tool:</strong> Bake maps using dedicated bakers such
+as <strong>Marmoset Toolbag</strong>, <strong>Substance 3D
+Painter</strong>, or <strong>xNormal</strong>.</li>
+<li><strong>Cage Setup:</strong> Use an expanded ray-projection cage to
+prevent missed rays and projection skewing around overlapping
+surfaces.</li>
+<li><strong>Essential Maps:</strong>
+<ul>
+<li><strong>Normal Map:</strong> Captures micro-surface details and edge
+bevels.</li>
+<li><strong>Ambient Occlusion (AO):</strong> Captures contact
+shadows.</li>
+<li><strong>Base Color / Albedo:</strong> Transferred from the original
+photogrammetry vertex color or high-poly texture atlas.</li>
+<li><strong>Roughness / Metalness:</strong> Generated or hand-authored
+to establish PBR material properties.</li>
+</ul></li>
+</ul>
+<h3 id="5-packing-and-exporting-to-gltf">5. Packing and Exporting to
+glTF</h3>
+<p>glTF 2.0 uses specific texture channel packing to reduce draw calls
+and memory overhead:</p>
+<ul>
+<li><strong>ORM Texture Packing:</strong> Pack Ambient Occlusion into
+the <strong>Red</strong> channel, Roughness into the
+<strong>Green</strong> channel, and Metalness into the
+<strong>Blue</strong> channel into a single texture file.</li>
+<li><strong>Normal Format:</strong> glTF strictly requires
+<strong>OpenGL format</strong> (Y+ / Green Up) normal maps. Invert the
+green channel if your bake tool outputs DirectX (Y-).</li>
+<li><strong>Compression:</strong>
+<ul>
+<li>Apply <strong>Draco geometry compression</strong> during export if
+low file size for web delivery is prioritized over load-time
+decompression performance.</li>
+<li>Use <strong>KTX2 / Basis Universal</strong> texture compression for
+optimal GPU VRAM management on mobile and web platforms.</li>
+</ul></li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

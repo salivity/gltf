@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimizing glTF Memory for Massive CAD Assemblies - gltf</title>
+    <meta name="description" content="Rendering massive Computer-Aided Design (CAD) assemblies in real-time WebGL and WebGPU engines requires aggressive memory management to avoid browser crashes and performance bottlenecks. This guide outlines the essential technical strategies for reducing">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/optimizing-gl-tf-memory-for-massive-cad-assemblies">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Optimizing glTF Memory for Massive CAD Assemblies - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/optimizing-gl-tf-memory-for-massive-cad-assemblies" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Rendering massive Computer-Aided Design (CAD) assemblies in real-time WebGL and WebGPU engines requires aggressive memory management to avoid browser crashes and performance bottlenecks. This guide outlines the essential technical strategies for reducing" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="optimizing-gltf-memory-for-massive-cad-assemblies">Optimizing
+glTF Memory for Massive CAD Assemblies</h1>
+<p>Rendering massive Computer-Aided Design (CAD) assemblies in real-time
+WebGL and WebGPU engines requires aggressive memory management to avoid
+browser crashes and performance bottlenecks. This guide outlines the
+essential technical strategies for reducing the memory footprint of CAD
+data exported to glTF, focusing on hardware instancing, geometry
+compression, data quantization, draw call reduction, and hierarchical
+visibility.</p>
+<h3 id="1-leverage-hardware-instancing-ext_mesh_gpu_instancing">1.
+Leverage Hardware Instancing (<code>EXT_mesh_gpu_instancing</code>)</h3>
+<p>Industrial CAD assemblies contain thousands of repetitive components
+such as bolts, nuts, washers, and modular brackets. Exporting each
+component as an individual mesh leads to severe CPU and GPU memory
+exhaustion.</p>
+<p>By applying the <code>EXT_mesh_gpu_instancing</code> extension, the
+glTF file stores the base geometry of a repeated component only once.
+The engine then supplies an array of 4x4 transform matrices to the GPU.
+This eliminates redundant vertex buffers, reducing both VRAM allocation
+and CPU-to-GPU bandwidth.</p>
+<h3 id="2-apply-vertex-quantization-and-mesh-compression">2. Apply
+Vertex Quantization and Mesh Compression</h3>
+<p>Raw CAD tessellations often output 32-bit floating-point numbers for
+vertex positions, normals, and texture coordinates. This level of
+precision is rarely necessary for real-time visualization and consumes
+significant memory.</p>
+<ul>
+<li><strong>Quantization:</strong> Use
+<code>KHR_mesh_quantization</code> to downsample 32-bit floats to 16-bit
+or 8-bit normalized integers. This halves the memory footprint of vertex
+attribute buffers without noticeable visual degradation.</li>
+<li><strong>Buffer Compression:</strong> Implement
+<code>KHR_meshopt_compression</code>. While formats like Google Draco
+achieve high network compression, they require substantial CPU memory
+and decoding overhead on the client side. Meshopt provides fast,
+streamable decompression that translates directly into GPU-friendly
+buffers with minimal CPU memory overhead during extraction.</li>
+</ul>
+<h3 id="3-strip-unused-vertex-attributes-and-cad-metadata">3. Strip
+Unused Vertex Attributes and CAD Metadata</h3>
+<p>Native CAD formats carry extensive metadata, such as boundary
+representations (B-rep), edge loops, and manufacturing notes. When
+converting to glTF:</p>
+<ul>
+<li>Remove unnecessary vertex attributes. Keep only
+<code>POSITION</code> and compact oct-encoded <code>NORMAL</code>
+vectors if lighting requires it.</li>
+<li>Omit secondary UV sets, vertex colors, and tangents unless
+explicitly needed by target shaders. Tangents can often be derived
+procedurally in the pixel shader to save buffer space.</li>
+<li>Eliminate CAD-specific topological curves and hidden auxiliary
+geometry.</li>
+</ul>
+<h3 id="4-implement-hierarchical-level-of-detail-hlod-and-chunking">4.
+Implement Hierarchical Level of Detail (HLOD) and Chunking</h3>
+<p>Massive assemblies cannot reside in active GPU memory all at once.
+Structuring the glTF asset as a hierarchy of spatial chunks enables
+aggressive memory offloading:</p>
+<ul>
+<li><strong>Interior Culling:</strong> CAD assemblies often feature
+dense internal mechanisms enclosed within outer casings. Use offline
+ray-tracing or voxelization tools to discard completely occluded
+geometry before export.</li>
+<li><strong>HLOD Meshes:</strong> Group complex sub-assemblies into
+single, decimated proxy meshes at greater distances.</li>
+<li><strong>Dynamic Streaming:</strong> Split the assembly into multiple
+glTF files or combine them using modern open standards like 3D Tiles,
+loading and unloading detail nodes dynamically based on camera proximity
+and the current frustum.</li>
+</ul>
+<h3 id="5-consolidate-draw-calls-and-merge-geometries">5. Consolidate
+Draw Calls and Merge Geometries</h3>
+<p>CAD software treats every individual nut, plate, and washer as an
+independent solid body. In glTF, this frequently translates to thousands
+of separate nodes and primitives, each generating an independent draw
+call and state-change overhead in memory.</p>
+<p>For static, non-instanced elements:</p>
+<ul>
+<li>Merge adjacent small geometries that share the same material into a
+single unified mesh primitive.</li>
+<li>Combine distinct component materials using unified texture atlases
+or shared PBR (Physically Based Rendering) property sheets,
+significantly lowering runtime graphics state memory.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

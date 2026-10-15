@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Refraction Depth for Overlapping Objects - gltf</title>
+    <meta name="description" content="Evaluating refraction depth across overlapping transmissive models in glTF requires understanding how the core format, its official extensions, and modern real-time or offline renderers process light transmission. The glTF 2.0 specification manages refrac">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-refraction-depth-for-overlapping-objects">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Refraction Depth for Overlapping Objects - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-refraction-depth-for-overlapping-objects" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Evaluating refraction depth across overlapping transmissive models in glTF requires understanding how the core format, its official extensions, and modern real-time or offline renderers process light transmission. The glTF 2.0 specification manages refrac" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-refraction-depth-for-overlapping-objects">glTF Refraction
+Depth for Overlapping Objects</h1>
+<p>Evaluating refraction depth across overlapping transmissive models in
+glTF requires understanding how the core format, its official
+extensions, and modern real-time or offline renderers process light
+transmission. The glTF 2.0 specification manages refraction and light
+absorption through the <code>KHR_materials_transmission</code> and
+<code>KHR_materials_volume</code> extensions. While offline path tracers
+can accurately simulate complex multi-boundary refractive ray paths,
+standard real-time glTF rasterization engines rely on screen-space
+approximations and local thickness models that simplify how overlapping
+refractive depths are calculated.</p>
+<h3 id="gltf-transmission-and-volume-extensions">glTF Transmission and
+Volume Extensions</h3>
+<p>Standard glTF materials treat surfaces as infinitely thin. To
+introduce refraction and physical depth, two extensions are
+required:</p>
+<ul>
+<li><strong><code>KHR_materials_transmission</code></strong>: Enables
+light to pass through the mesh surface, simulating clear or rough glass
+based on the material's roughness and index of refraction (defined via
+<code>KHR_materials_ior</code>).</li>
+<li><strong><code>KHR_materials_volume</code></strong>: Defines the
+interior space of the object, introducing absorption via
+<code>attenuationColor</code> and <code>attenuationDistance</code>, as
+well as a physical depth dimension defined by
+<code>thicknessFactor</code> and an optional
+<code>thicknessTexture</code>.</li>
+</ul>
+<p>Within the glTF specification, thickness is inherently defined as a
+local attribute of an individual mesh rather than a global volumetric
+distance. The depth traversed by light through a single object is
+evaluated using the surface normal, the view or refraction ray
+direction, and the defined thickness values.</p>
+<h3 id="real-time-rasterization-and-screen-space-limitations">Real-Time
+Rasterization and Screen-Space Limitations</h3>
+<p>In real-time implementations (such as WebGL or WebGPU renderers like
+Three.js and Babylon.js), transparent and transmissive objects are
+rendered after all opaque objects have been drawn to the frame buffer.
+The pipeline generally captures this completed opaque rendering into a
+background color texture (often called a transmission or refraction
+texture).</p>
+<p>When multiple transmissive objects overlap in screen space:</p>
+<ol type="1">
+<li><strong>Single Background Capture</strong>: Standard rasterizers
+capture the opaque pass once. The nearest transmissive object refracts
+the pixels behind it, but it samples only the original opaque scene
+texture. It typically cannot sample another transmissive object located
+behind it unless the engine implements multi-pass depth peeling or
+iterative texture captures.</li>
+<li><strong>Lack of Dielectric Priority</strong>: glTF does not define a
+native dielectric priority system or nested volume tracking. In a
+standard rasterizer, the renderer cannot dynamically compute the shared
+intersection volume of two overlapping objects.</li>
+<li><strong>Local Depth Independent Evaluation</strong>: When two
+transmissive meshes overlap, each mesh evaluates its thickness and
+attenuation independently according to its own local thickness
+properties and render sort order (usually back-to-front). The depth of
+the front object does not subtract from or compound with the depth of
+the rear object in an optically physical manner. Instead, the final
+pixel color is a standard alpha-blend or screen-space texture sample
+applied sequentially.</li>
+</ol>
+<h3 id="offline-and-path-tracing-evaluation">Offline and Path-Tracing
+Evaluation</h3>
+<p>When a glTF scene containing overlapping transmissive objects is
+rendered using a path tracer, the depth evaluation changes from local
+approximations to explicit ray-geometry intersections:</p>
+<ol type="1">
+<li><strong>Ray-Mesh Intersections</strong>: The renderer calculates the
+exact distance between the entry ray hit point and the exit ray hit
+point along the refracted trajectory.</li>
+<li><strong>Overlapping Boundaries</strong>: If two separate closed
+meshes physically interpenetrate, a standard path tracer will register
+the entry into Object A, followed by the entry into Object B before
+exiting Object A. Because the glTF specification treats meshes as
+distinct closed manifolds, path tracers calculate absorption for each
+volume segment along the ray path based on which manifold boundary is
+currently enclosing the ray.</li>
+<li><strong>Index of Refraction Transitions</strong>: glTF does not
+define boundary interfaces between two adjacent transmission media (such
+as glass against water). When overlapping volumes occur, path tracers
+typically assume each volume interfaces with a vacuum or air boundary
+(IOR = 1.0) unless the engine features custom heuristic volume-stack
+tracking to transition directly from one IOR to another.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

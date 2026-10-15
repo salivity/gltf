@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How BVH Accelerates glTF Mesh Collision Detection - gltf</title>
+    <meta name="description" content="Modern 3D applications frequently rely on the glTF format to deliver complex, high-poly models, but performing naive collision detection against tens of thousands of individual triangles severely degrades performance. Spatial partitioning trees, most nota">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-bvh-accelerates-gl-tf-mesh-collision-detection">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How BVH Accelerates glTF Mesh Collision Detection - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-bvh-accelerates-gl-tf-mesh-collision-detection" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Modern 3D applications frequently rely on the glTF format to deliver complex, high-poly models, but performing naive collision detection against tens of thousands of individual triangles severely degrades performance. Spatial partitioning trees, most nota" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-bvh-accelerates-gltf-mesh-collision-detection">How BVH
+Accelerates glTF Mesh Collision Detection</h1>
+<p>Modern 3D applications frequently rely on the glTF format to deliver
+complex, high-poly models, but performing naive collision detection
+against tens of thousands of individual triangles severely degrades
+performance. Spatial partitioning trees, most notably Bounding Volume
+Hierarchies (BVH), eliminate this bottleneck by wrapping the mesh
+geometry into a tree of nested geometric bounds, typically Axis-Aligned
+Bounding Boxes (AABB). This article explains how parsing glTF buffer
+data into a BVH structure reduces collision query complexity from linear
+to logarithmic time, allowing real-time physics, raycasting, and
+intersection testing in interactive 3D environments.</p>
+<h2 id="the-bottleneck-of-raw-gltf-collision-testing">The Bottleneck of
+Raw glTF Collision Testing</h2>
+<p>A standard glTF (GL Transmission Format) file describes 3D models
+using efficient binary buffers containing vertex positions, indices, and
+transforms. While ideal for GPU rendering, these data structures are
+inherently unoptimized for CPU-side spatial queries.</p>
+<p>In a naive collision test, checking if a ray or another mesh
+intersects a glTF model requires iterating across every single triangle
+in the mesh. For a model with 50,000 triangles, a single raycast
+requires 50,000 ray-triangle intersection algorithms. When testing two
+complex meshes against each other, the complexity reaches <span
+class="math inline">\(O(N \times M)\)</span>, where <span
+class="math inline">\(N\)</span> and <span
+class="math inline">\(M\)</span> are the triangle counts of each mesh.
+In interactive applications running at 60 or 120 frames per second, this
+computational load causes immediate frame drops.</p>
+<h2 id="how-bounding-volume-hierarchies-work">How Bounding Volume
+Hierarchies Work</h2>
+<p>A Bounding Volume Hierarchy is a tree structure built on top of
+geometric primitives:</p>
+<ol type="1">
+<li><strong>Root Node:</strong> A single bounding volume (usually an
+AABB) that encompasses the entire glTF mesh.</li>
+<li><strong>Internal Nodes:</strong> Subdivided bounding volumes that
+enclose smaller subsets of the mesh's geometry.</li>
+<li><strong>Leaf Nodes:</strong> The lowest level of the tree,
+containing references to one or a small handful of actual triangles
+extracted from the glTF vertex buffer.</li>
+</ol>
+<p>Instead of testing geometry linearly, collision algorithms traverse
+the BVH from the root downward. If a ray or volume does not intersect a
+parent node's bounding box, the algorithm instantly discards the entire
+branch—including thousands of child triangles—without further testing.
+Only branches with intersecting bounding boxes are traversed deeper,
+eventually leading to a tiny fraction of candidate triangles at the leaf
+level for exact intersection tests.</p>
+<h2 id="the-acceleration-process-for-gltf-assets">The Acceleration
+Process for glTF Assets</h2>
+<p>The efficiency gains of a BVH on glTF models occur through a
+three-stage pipeline:</p>
+<h3 id="1-data-ingestion-from-gltf-buffers">1. Data Ingestion from glTF
+Buffers</h3>
+<p>During model loading, the collision system extracts the raw geometry
+by reading the <code>POSITION</code> attribute accessors and index
+buffers defined in the glTF JSON. Because glTF separates data into
+compact typed arrays, the BVH builder can efficiently access vertex
+coordinates sequentially in memory to compute bounding limits.</p>
+<h3 id="2-tree-construction-via-spatial-heuristics">2. Tree Construction
+via Spatial Heuristics</h3>
+<p>The BVH builder organizes the triangles into a binary tree. Most
+high-performance implementations use the Surface Area Heuristic (SAH).
+SAH evaluates the surface area of potential bounding box splits to
+minimize the probability that a random ray will hit a child box without
+hitting an actual triangle. This produces a balanced tree that
+guarantees the most efficient culling paths during runtime queries.</p>
+<h3 id="3-logarithmic-traversal">3. Logarithmic Traversal</h3>
+<p>With the tree constructed, collision complexity drops from <span
+class="math inline">\(O(N)\)</span> to <span
+class="math inline">\(O(\log N)\)</span>. For a mesh with 65,536
+triangles, a balanced BVH requires a maximum of roughly 16 bounding box
+checks along a single traversal path to isolate the target triangle.</p>
+<h2 id="advantages-in-real-time-applications">Advantages in Real-Time
+Applications</h2>
+<p>Integrating BVH acceleration with glTF pipelines provides substantial
+real-time advantages:</p>
+<ul>
+<li><strong>Instantaneous Raycasting:</strong> Mouse-picking,
+line-of-sight calculations, and weapon hitscan tests execute in
+fractions of a millisecond, even on dense meshes.</li>
+<li><strong>Efficient Mesh-to-Mesh Testing:</strong> When two glTF
+meshes collide, their BVH trees are tested against one another
+simultaneously. Branches that do not overlap in world space are
+discarded immediately, preventing unnecessary triangle
+calculations.</li>
+<li><strong>Transform Handling:</strong> glTF models frequently use node
+hierarchies with translation, rotation, and scale properties. Instead of
+rebuilding the BVH when an object moves, the query ray or collider can
+simply be transformed into the mesh's local coordinate space, preserving
+the precomputed BVH structure across frames.</li>
+</ul>
+<p>By structuring flat glTF primitive buffers into a hierarchical tree,
+BVHs transform brute-force arithmetic checks into efficient spatial
+searches, making complex 3D assets viable for real-time physics and
+interaction.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

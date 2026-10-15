@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Indexing Modes for Triangle Topologies - gltf</title>
+    <meta name="description" content="This article provides an overview of how the glTF (GL Transmission Format) specification defines topology types and index modes for rendering triangular meshes. In glTF, primitive geometry can be represented either with explicit index buffers or sequentia">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-indexing-modes-for-triangle-topologies">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Indexing Modes for Triangle Topologies - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-indexing-modes-for-triangle-topologies" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of how the glTF (GL Transmission Format) specification defines topology types and index modes for rendering triangular meshes. In glTF, primitive geometry can be represented either with explicit index buffers or sequentia" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-indexing-modes-for-triangle-topologies">glTF Indexing Modes
+for Triangle Topologies</h1>
+<p>This article provides an overview of how the glTF (GL Transmission
+Format) specification defines topology types and index modes for
+rendering triangular meshes. In glTF, primitive geometry can be
+represented either with explicit index buffers or sequentially through
+implicit vertex order, using specific enumeration values to designate
+triangle lists, triangle strips, and triangle fans. Below is a breakdown
+of how the specification structures these topologies and their
+corresponding indexing mechanisms.</p>
+<h2 id="the-mesh-primitive-structure">The Mesh Primitive Structure</h2>
+<p>In glTF, all geometric objects are defined inside the
+<code>primitives</code> array of a <code>mesh</code> object. Each
+primitive contains two key properties that govern its topology and
+indexing behavior:</p>
+<ul>
+<li><strong><code>mode</code></strong>: An integer defining the draw
+topology. The default value is <code>4</code>
+(<code>TRIANGLES</code>).</li>
+<li><strong><code>indices</code></strong>: An optional integer
+referencing an <code>accessor</code> that holds index data.</li>
+</ul>
+<p>If the <code>indices</code> property is defined, the primitive is
+<strong>indexed</strong>. If <code>indices</code> is omitted, the
+primitive is <strong>non-indexed</strong>, and vertices are read
+sequentially from the attribute buffers starting from index
+<code>0</code>.</p>
+<h2 id="index-accessor-requirements">Index Accessor Requirements</h2>
+<p>When <code>indices</code> is defined, the referenced
+<code>accessor</code> object must satisfy specific constraints:</p>
+<ul>
+<li><strong><code>type</code></strong>: Must be
+<code>"SCALAR"</code>.</li>
+<li><strong><code>componentType</code></strong>: Must be an unsigned
+integer format:
+<ul>
+<li><code>5121</code> (<code>UNSIGNED_BYTE</code>)</li>
+<li><code>5123</code> (<code>UNSIGNED_SHORT</code>)</li>
+<li><code>5125</code> (<code>UNSIGNED_INT</code>)</li>
+</ul></li>
+</ul>
+<p>Signed integer and floating-point component types are not permitted
+for indices.</p>
+<h2 id="triangle-topologies">Triangle Topologies</h2>
+<p>The glTF specification defines three primary triangular drawing modes
+via the <code>mode</code> attribute, corresponding directly to standard
+WebGL and OpenGL drawing modes.</p>
+<h3 id="1-triangle-lists-triangles-mode-4">1. Triangle Lists
+(<code>TRIANGLES</code>, Mode <code>4</code>)</h3>
+<p><code>TRIANGLES</code> is the standard and most common rendering mode
+in glTF. Every set of three consecutive indices forms an independent
+triangle.</p>
+<ul>
+<li><strong>Indexed Mode</strong>: The index buffer is read sequentially
+in groups of three. Triangle <span class="math inline">\(k\)</span> is
+formed by vertices referenced at index positions <span
+class="math inline">\(3k\)</span>, <span
+class="math inline">\(3k+1\)</span>, and <span
+class="math inline">\(3k+2\)</span>.</li>
+<li><strong>Non-Indexed Mode</strong>: Triangle <span
+class="math inline">\(k\)</span> is constructed directly using vertex
+buffer offsets <span class="math inline">\(3k\)</span>, <span
+class="math inline">\(3k+1\)</span>, and <span
+class="math inline">\(3k+2\)</span>.</li>
+<li><strong>Vertex Count</strong>: The total number of indices (or
+vertices, if non-indexed) must be a multiple of 3.</li>
+</ul>
+<h3 id="2-triangle-strips-triangle_strip-mode-5">2. Triangle Strips
+(<code>TRIANGLE_STRIP</code>, Mode <code>5</code>)</h3>
+<p>In a triangle strip, vertices are shared between adjacent triangles
+to minimize data redundancy. After the first triangle is established,
+each subsequent vertex forms a new triangle with the preceding two
+vertices.</p>
+<ul>
+<li><strong>Indexed Mode</strong>: Triangle <span
+class="math inline">\(k\)</span> is formed by reading three consecutive
+index entries: <span class="math inline">\((k, k+1, k+2)\)</span> from
+the index accessor.</li>
+<li><strong>Non-Indexed Mode</strong>: Triangle <span
+class="math inline">\(k\)</span> is formed by vertices <span
+class="math inline">\((k, k+1, k+2)\)</span> read directly from the
+vertex attributes.</li>
+<li><strong>Winding Order</strong>: To maintain consistent face
+orientation (counter-clockwise by default), the winding order implicitly
+alternates on odd-numbered triangles (<span class="math inline">\(k=1,
+3, 5, \dots\)</span>) as <span class="math inline">\((k+1, k,
+k+2)\)</span>.</li>
+<li><strong>Minimum Elements</strong>: Requires at least 3 indices or
+vertices. A strip with <span class="math inline">\(n\)</span> elements
+yields <span class="math inline">\(n - 2\)</span> triangles.</li>
+</ul>
+<h3 id="3-triangle-fans-triangle_fan-mode-6">3. Triangle Fans
+(<code>TRIANGLE_FAN</code>, Mode <code>6</code>)</h3>
+<p>A triangle fan shares a single origin vertex among all triangles in
+the set.</p>
+<ul>
+<li><strong>Indexed Mode</strong>: The very first index in the index
+buffer (index 0) serves as the central hub. Triangle <span
+class="math inline">\(k\)</span> (starting at <span
+class="math inline">\(k = 0\)</span>) is constructed using the index at
+position <code>0</code>, followed by the indices at positions <span
+class="math inline">\(k+1\)</span> and <span
+class="math inline">\(k+2\)</span>.</li>
+<li><strong>Non-Indexed Mode</strong>: Vertex <code>0</code> serves as
+the central hub, forming triangle <span class="math inline">\(k\)</span>
+using vertices <span class="math inline">\(0\)</span>, <span
+class="math inline">\(k+1\)</span>, and <span
+class="math inline">\(k+2\)</span>.</li>
+<li><strong>Minimum Elements</strong>: Requires at least 3 elements,
+producing <span class="math inline">\(n - 2\)</span> triangles for <span
+class="math inline">\(n\)</span> elements.</li>
+</ul>
+<h2 id="primitive-restart">Primitive Restart</h2>
+<p>Standard glTF 2.0 does not support primitive restart tokens (such as
+<code>0xFFFF</code> or <code>0xFFFFFFFF</code>) within index buffers to
+break strips or fans into separate sub-topologies. Multi-part surfaces
+using strips or fans must be split across multiple primitives within the
+same mesh.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

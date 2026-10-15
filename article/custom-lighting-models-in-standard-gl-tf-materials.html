@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Lighting Models in Standard glTF Materials - gltf</title>
+    <meta name="description" content="Standard glTF 2.0 assets strictly adhere to a standardized Physically Based Rendering (PBR) metallic-roughness workflow, offering consistent rendering across platforms at the cost of shading flexibility. Injecting custom lighting models—such as stylized t">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/custom-lighting-models-in-standard-gl-tf-materials">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Custom Lighting Models in Standard glTF Materials - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/custom-lighting-models-in-standard-gl-tf-materials" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Standard glTF 2.0 assets strictly adhere to a standardized Physically Based Rendering (PBR) metallic-roughness workflow, offering consistent rendering across platforms at the cost of shading flexibility. Injecting custom lighting models—such as stylized t" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="custom-lighting-models-in-standard-gltf-materials">Custom
+Lighting Models in Standard glTF Materials</h1>
+<p>Standard glTF 2.0 assets strictly adhere to a standardized Physically
+Based Rendering (PBR) metallic-roughness workflow, offering consistent
+rendering across platforms at the cost of shading flexibility. Injecting
+custom lighting models—such as stylized toon shading, custom anisotropy,
+or subsurface scattering—into these assets without breaking
+compatibility requires an architectural approach known as a
+<strong>hook-based material plugin architecture</strong> (or
+<strong>modular shader chunk injection</strong>). This article breaks
+down how this architectural pattern works, why it decouples surface
+parameters from light evaluation, and how it is implemented in modern
+real-time rendering engines.</p>
+<h3 id="the-material-plugin-and-hook-architecture">The Material Plugin
+and Hook Architecture</h3>
+<p>The primary architectural pattern used to inject custom lighting into
+standard glTF materials is the <strong>Hook-Based Shader Plugin
+Architecture</strong>. Instead of writing an entirely custom shader from
+scratch—which requires manually re-implementing UV transformations,
+morph targets, skinning, normal mapping, and environment
+reflections—this approach uses the engine’s existing PBR shader template
+as a base.</p>
+<p>The host rendering engine defines structured interception points
+(hooks or chunks) throughout the shader compilation pipeline:</p>
+<ol type="1">
+<li><strong>Vertex and Attribute Stage:</strong> Standard glTF geometry,
+vertex colors, joint indices, and morph target weights are evaluated
+using the standard runtime pipeline.</li>
+<li><strong>Surface Property Unpacking:</strong> Standard glTF textures
+(base color, metallic-roughness, normal, emissive, occlusion) are
+sampled and unpacked into a generic surface state struct.</li>
+<li><strong>Lighting Evaluation Hook:</strong> The standard
+metallic-roughness Bidirectional Reflectance Distribution Function
+(BRDF) evaluation is intercepted and replaced with a custom
+function.</li>
+<li><strong>Final Compositing:</strong> Engine-level post-processing,
+tone mapping, and fog application remain intact.</li>
+</ol>
+<h3 id="decoupling-surface-attributes-from-brdf-evaluation">Decoupling
+Surface Attributes from BRDF Evaluation</h3>
+<p>A key requirement for this architecture is the clean separation of
+<strong>material surface data</strong> from the <strong>lighting
+equations</strong>:</p>
+<ul>
+<li><strong>Data Ingestion Layer:</strong> The standard glTF loader
+parses standard materials and maps textures directly to standard GPU
+registers.</li>
+<li><strong>Surface Intermediate Representation (IR):</strong> The
+engine populates a unified surface descriptor containing normal vectors,
+view vectors, roughness, metallic values, and base color.</li>
+<li><strong>Pluggable BRDF Layer:</strong> The custom lighting model is
+injected as an alternate mathematical formulation that consumes the
+Surface IR.</li>
+</ul>
+<p>By keeping the data ingestion layer intact, the original glTF
+geometry, UV coordinates, and texture channels remain fully operational,
+while the direct light accumulation and indirect ambient evaluation are
+re-routed through custom mathematical models.</p>
+<h3 id="engine-implementations">Engine Implementations</h3>
+<p>Modern graphics engines implement this pattern through specific
+modular systems:</p>
+<ul>
+<li><strong>Three.js (<code>onBeforeCompile</code> and Node Material
+System):</strong> Developers intercept the GLSL compilation step using
+<code>onBeforeCompile</code> to search for specific shader chunks (such
+as <code>&lt;lights_fragment_begin&gt;</code> or
+<code>&lt;lights_fragment_end&gt;</code>) and inject custom lighting
+evaluation logic via string manipulation or Abstract Syntax Tree (AST)
+injection. In the WebGPU Node Material system, lighting models can be
+swapped natively by overriding the <code>lightingModel</code> property
+of standard PBR nodes.</li>
+<li><strong>Babylon.js (<code>MaterialPluginBase</code>):</strong>
+Babylon.js exposes a formal <code>MaterialPluginBase</code> class. This
+class allows developers to register custom uniforms, add new shader
+defines, and hook into specific shader compilation phases
+(<code>prepareDefines</code>, <code>getCustomCode</code>) to selectively
+overwrite lighting calculations in standard glTF PBR materials.</li>
+<li><strong>Filament and Custom Renderers:</strong> Engines using
+offline-compiled shader variants often define custom lighting models
+through configuration flags in the material definition (e.g., custom
+<code>surfaceShading</code> functions), letting the compiler swap
+standard Cook-Torrance specular for custom models while preserving
+material inputs.</li>
+</ul>
+<h3 id="leveraging-gltf-extensions-for-custom-lighting-data">Leveraging
+glTF Extensions for Custom Lighting Data</h3>
+<p>To drive custom lighting models using asset-specific parameters
+without corrupting core glTF schemas, the architecture pairs with custom
+glTF vendor extensions (e.g., <code>EXT_</code> or custom vendor
+prefixes) or <code>extras</code> fields:</p>
+<ol type="1">
+<li><strong>Asset Definition:</strong> Extra parameters (such as
+rim-light thresholds, subsurface color ramps, or ramp textures) are
+serialized inside the glTF JSON tree under
+<code>materials[i].extras</code> or a formal extension block.</li>
+<li><strong>Loader Hooking:</strong> The glTF loader's material
+extension hook intercepts material instantiation, reading the extra
+metadata.</li>
+<li><strong>Uniform Binding:</strong> The material plugin automatically
+binds these custom properties to the newly injected shader
+uniforms.</li>
+</ol>
+<p>This end-to-end flow preserves standard DCC-to-engine workflows
+(Blender, Maya) while executing specialized real-time shading.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

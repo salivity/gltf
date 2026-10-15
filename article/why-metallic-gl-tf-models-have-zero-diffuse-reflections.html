@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Metallic glTF Models Have Zero Diffuse Reflections - gltf</title>
+    <meta name="description" content="In the glTF 2.0 physically based rendering (PBR) specification, setting the metallic parameter to 1.0 eliminates diffuse reflection entirely. This article explains the physical principles separating conductors from dielectrics, outlines the mathematical f">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/why-metallic-gl-tf-models-have-zero-diffuse-reflections">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Why Metallic glTF Models Have Zero Diffuse Reflections - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/why-metallic-gl-tf-models-have-zero-diffuse-reflections" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In the glTF 2.0 physically based rendering (PBR) specification, setting the metallic parameter to 1.0 eliminates diffuse reflection entirely. This article explains the physical principles separating conductors from dielectrics, outlines the mathematical f" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="why-metallic-gltf-models-have-zero-diffuse-reflections">Why
+Metallic glTF Models Have Zero Diffuse Reflections</h1>
+<p>In the glTF 2.0 physically based rendering (PBR) specification,
+setting the metallic parameter to 1.0 eliminates diffuse reflection
+entirely. This article explains the physical principles separating
+conductors from dielectrics, outlines the mathematical formulation used
+in glTF shaders to enforce energy conservation, and clarifies how the
+base color shifts from defining diffuse albedo to determining specular
+reflectance.</p>
+<h3 id="the-physics-of-conductors-vs-dielectrics">The Physics of
+Conductors vs. Dielectrics</h3>
+<p>Diffuse reflection is not an instantaneous surface bounce; it is the
+result of subsurface scattering. In dielectric materials (non-metals
+such as wood, stone, plastic, and skin), light penetrates the surface,
+bounces among internal microscopic particles, and re-emerges at random
+angles as diffuse light. A small percentage of light (typically around
+4%) reflects immediately off the outer boundary as specular
+reflection.</p>
+<p>Conductors (metals) possess a high density of free, delocalized
+electrons in their conduction bands. When incident light strikes a metal
+surface, these free electrons immediately interact with the
+electromagnetic wave, either reflecting it directly at the interface or
+absorbing it within a few nanometers, converting it into heat. Because
+light cannot penetrate the volume of a metal without being absorbed,
+subsurface scattering cannot occur. Consequently, true metals physically
+lack a diffuse reflection component.</p>
+<h3 id="the-gltf-metallic-roughness-formulation">The glTF
+Metallic-Roughness Formulation</h3>
+<p>The glTF standard simplifies complex material physics into the
+Cook-Torrance microfacet BRDF model, governed primarily by
+<code>baseColor</code>, <code>metallic</code>, and
+<code>roughness</code>. To ensure that rendering remains physically
+plausible and obeys the law of conservation of energy, the shader splits
+light into diffuse and specular paths based on the <code>metallic</code>
+input.</p>
+<p>In the standard glTF reference implementation, the diffuse color
+(<span class="math inline">\(c_{diff}\)</span>) is calculated using the
+following relationship:</p>
+<p><span class="math display">\[c_{diff} = \text{baseColor} \times (1.0
+- F_0) \times (1.0 - \text{metallic})\]</span></p>
+<p>Where <span class="math inline">\(F_0\)</span> represents specular
+reflectance at normal incidence (fixed at 0.04 for common
+dielectrics).</p>
+<p>When the metallic value reaches 1.0:</p>
+<ul>
+<li>The term <span class="math inline">\((1.0 -
+\text{metallic})\)</span> evaluates to 0.0.</li>
+<li>The diffuse color vector drops to zero: <span
+class="math inline">\(c_{diff} = (0.0, 0.0, 0.0)\)</span>.</li>
+<li>The diffuse BRDF contribution (such as Lambertian diffuse) is
+multiplied by zero, wiping out all diffuse lighting.</li>
+</ul>
+<h3 id="redefining-base-color-as-specular-tint">Redefining Base Color as
+Specular Tint</h3>
+<p>Because metals possess no diffuse reflection, the
+<code>baseColor</code> property changes its physical meaning as the
+metallic value increases.</p>
+<p>For dielectric surfaces (<code>metallic = 0.0</code>),
+<code>baseColor</code> represents the diffuse albedo, while the specular
+reflectance (<span class="math inline">\(F_0\)</span>) remains a fixed
+achromatic value of 4% (RGB: 0.04, 0.04, 0.04).</p>
+<p>For fully metallic surfaces (<code>metallic = 1.0</code>), the
+<code>baseColor</code> is mapped directly to <span
+class="math inline">\(F_0\)</span>. Metals exhibit high,
+wavelength-dependent specular reflection, meaning their specular
+reflections are tinted (such as the distinct yellow tint of gold or the
+reddish hue of copper). By zeroing out the diffuse component, glTF
+transfers 100% of the material's color information into the specular
+reflection term.</p>
+<h3 id="non-binary-metallic-values">Non-Binary Metallic Values</h3>
+<p>While real-world materials are either conductors or dielectrics at a
+microscopic level, glTF permits continuous scalar values between 0.0 and
+1.0 for the metallic factor. Intermediate values exist solely to account
+for macro-level blending across a single pixel—such as fine layers of
+dust, rust, corrosion, or texture filtering artifacts. Even in these
+blended scenarios, the diffuse reflection decreases linearly toward zero
+as the metallic value approaches 1.0 to preserve energy
+conservation.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

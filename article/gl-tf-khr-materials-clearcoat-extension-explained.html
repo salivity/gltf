@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF KHR_materials_clearcoat Extension Explained - gltf</title>
+    <meta name="description" content="The KHRmaterialsclearcoat extension in glTF simulates a thin, transparent, and glossy protective layer applied over a base physical material. This article explains how the clearcoat model functions within physically based rendering (PBR), the specific opt">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-khr-materials-clearcoat-extension-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF KHR_materials_clearcoat Extension Explained - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-khr-materials-clearcoat-extension-explained" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The KHRmaterialsclearcoat extension in glTF simulates a thin, transparent, and glossy protective layer applied over a base physical material. This article explains how the clearcoat model functions within physically based rendering (PBR), the specific opt" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-khr_materials_clearcoat-extension-explained">glTF
+KHR_materials_clearcoat Extension Explained</h1>
+<p>The <code>KHR_materials_clearcoat</code> extension in glTF simulates
+a thin, transparent, and glossy protective layer applied over a base
+physical material. This article explains how the clearcoat model
+functions within physically based rendering (PBR), the specific optical
+behaviors it reproduces, its core parameters, and common real-world use
+cases in 3D computer graphics.</p>
+<h3 id="the-clearcoat-visual-effect">The Clearcoat Visual Effect</h3>
+<p>In standard microfacet-based PBR workflows, a surface possesses a
+single interaction layer defined by roughness, metallicity, and base
+color. The <code>KHR_materials_clearcoat</code> extension extends this
+standard model by adding a secondary, dielectric reflection layer
+situated directly above the base substrate.</p>
+<p>Light striking the object interacts with two distinct interfaces:</p>
+<ol type="1">
+<li><strong>The Clearcoat Layer:</strong> A portion of the incoming
+light reflects immediately off the smooth outer layer, producing sharp,
+white specular highlights typical of dielectric materials.</li>
+<li><strong>The Base Layer:</strong> The remaining light transmits
+through the clearcoat and interacts with the underlying material, which
+can be rough, metallic, or diffusely colored.</li>
+</ol>
+<p>This layered approach allows 3D artists to represent complex
+materials that exhibit simultaneous sharp highlights and diffuse or
+rough underlying textures without increasing mesh geometry.</p>
+<h3 id="key-parameters-in-gltf">Key Parameters in glTF</h3>
+<p>The extension introduces several distinct controls to model the top
+layer independently of the base material:</p>
+<ul>
+<li><strong>Clearcoat Factor (<code>clearcoatFactor</code>):</strong> A
+scalar value ranging from <code>0.0</code> to <code>1.0</code> that
+dictates the intensity or thickness of the clearcoat layer. A value of
+zero disables the effect, while one represents full coating.</li>
+<li><strong>Clearcoat Texture (<code>clearcoatTexture</code>):</strong>
+A grayscale texture map used to modulate the clearcoat factor across the
+surface, enabling effects like worn-away varnish, fingerprint smudges,
+or partial wax coatings.</li>
+<li><strong>Clearcoat Roughness (<code>clearcoatRoughnessFactor</code>
+and <code>clearcoatRoughnessTexture</code>):</strong> Determines the
+microfacet roughness specifically for the clearcoat layer. Even if the
+base material has high roughness (a matte appearance), a low clearcoat
+roughness value yields a sharp, mirror-like highlight on top.</li>
+<li><strong>Clearcoat Normal Map
+(<code>clearcoatNormalTexture</code>):</strong> An independent normal
+map applied strictly to the outer coat. This allows the simulation of
+surface imperfections unique to the top coat—such as an "orange peel"
+texture on car paint or fine scratches on lacquer—while the base
+material retains its own normal map.</li>
+</ul>
+<h3 id="common-use-cases">Common Use Cases</h3>
+<p>The clearcoat extension is essential for accurately rendering a wide
+variety of manufactured and natural surfaces:</p>
+<ul>
+<li><strong>Automotive Paint:</strong> Metal flakes or colored pigments
+reside in a rougher lower layer, overlaid with a pristine, glossy
+lacquer coat.</li>
+<li><strong>Lacquered Wood:</strong> A rough, fibrous wood grain texture
+visible beneath a high-gloss protective varnish.</li>
+<li><strong>Carbon Fiber:</strong> Distinct woven structural patterns
+sealed beneath a smooth polymer resin.</li>
+<li><strong>Glazed Ceramics and Porcelain:</strong> Clay or stone bodies
+sealed under a smooth, reflective glaze.</li>
+<li><strong>Wet Surfaces:</strong> Objects like wet asphalt, stones, or
+skin, where a thin film of water acts as an independent, highly specular
+outer layer.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

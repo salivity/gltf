@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Scale Errors: Centimeters Interpreted as Meters - gltf</title>
+    <meta name="description" content="When a glTF asset exported with centimeter-based values is imported into an engine that adheres to the glTF specification of meters, the asset renders 100 times larger than intended. Because 3D rendering engines rely on physically based units for depth ca">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-scale-errors-centimeters-interpreted-as-meters">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Scale Errors: Centimeters Interpreted as Meters - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-scale-errors-centimeters-interpreted-as-meters" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When a glTF asset exported with centimeter-based values is imported into an engine that adheres to the glTF specification of meters, the asset renders 100 times larger than intended. Because 3D rendering engines rely on physically based units for depth ca" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-scale-errors-centimeters-interpreted-as-meters">glTF Scale
+Errors: Centimeters Interpreted as Meters</h1>
+<p>When a glTF asset exported with centimeter-based values is imported
+into an engine that adheres to the glTF specification of meters, the
+asset renders 100 times larger than intended. Because 3D rendering
+engines rely on physically based units for depth calculation, lighting
+falloff, shadow projection, and post-processing, this drastic scale
+mismatch causes severe visual degradation. The following breakdown
+explains the specific visual errors that occur when a centimeter-scaled
+glTF asset is interpreted in meters.</p>
+<h3 id="camera-clipping-and-disappearing-geometry">Camera Clipping and
+Disappearing Geometry</h3>
+<p>Modern rendering engines rely on near and far clipping planes
+configured for human-scale environments (measured in meters). An asset
+that is 100 times too large frequently breaches these boundaries:</p>
+<ul>
+<li><strong>Near-Plane Invisibility:</strong> When a camera approaches
+or spawns near the object, geometry rapidly clips through the camera's
+near plane, causing large holes or the complete disappearance of
+surfaces.</li>
+<li><strong>Far-Plane Culling:</strong> Massive objects easily extend
+past the camera's far clipping plane, causing distant sections of the
+model to abruptly pop out of view or slice off flatly against the
+background.</li>
+</ul>
+<h3 id="physically-based-light-attenuation-and-dimness">Physically Based
+Light Attenuation and Dimness</h3>
+<p>glTF materials rely on Physically Based Rendering (PBR), where light
+falloff adheres strictly to the inverse-square law measured in
+real-world meters:</p>
+<ul>
+<li><strong>Under-Illumination:</strong> A point or spot light
+calibrated to illuminate a 2-meter radius will appear as a tiny,
+isolated bright spot on an asset that is accidentally 200 meters across.
+The rest of the model remains completely dark.</li>
+<li><strong>PBR Material Inaccuracies:</strong> Subsurface scattering
+(SSS) parameters and transmission depths are defined in meters. On a
+model that is 100 times too large, light fails to penetrate the surface
+proportionally, causing translucent or fleshy materials to render as
+opaque and flat.</li>
+</ul>
+<h3 id="shadow-mapping-and-resolution-degradation">Shadow Mapping and
+Resolution Degradation</h3>
+<p>Shadow mapping algorithms dynamically allocate shadow map texels
+based on bounding boxes and scene dimensions:</p>
+<ul>
+<li><strong>Low Shadow Resolution:</strong> Because the asset’s bounding
+box is 100 times larger than expected, directional shadow cascades must
+cover a massive area, severely diluting shadow resolution. This causes
+cast shadows to appear blurry, jagged, and heavily pixelated.</li>
+<li><strong>Shadow Acne and Peter Panning:</strong> Depth bias values
+tuned for meter-scale models become disproportionate. This leads to
+shadow detachment (peter panning) or widespread self-shadowing striping
+(shadow acne) across planar surfaces.</li>
+</ul>
+<h3 id="failure-of-screen-space-effects-ssao-and-ssr">Failure of
+Screen-Space Effects (SSAO and SSR)</h3>
+<p>Post-processing techniques evaluate spatial relationships using fixed
+metric thresholds:</p>
+<ul>
+<li><strong>Screen-Space Ambient Occlusion (SSAO):</strong> SSAO
+algorithms sample adjacent depth pixels within a radius typically set
+between 0.1 and 0.5 meters. On an asset inflated to 100 times its scale,
+an occlusion radius of 0.2 meters is virtually imperceptible, completely
+stripping ambient contact shadows from corners, creases, and
+crevices.</li>
+<li><strong>Screen-Space Reflections (SSR):</strong> Reflection
+ray-marching routines use metric step sizes and thickness tolerances.
+When applied to 100x oversized geometry, rays fail intersection tests,
+causing reflections to vanish, jitter, or display noisy streak
+artifacts.</li>
+</ul>
+<h3 id="depth-precision-loss-and-z-fighting">Depth Precision Loss and
+Z-Fighting</h3>
+<p>To accommodate the sudden, massive increase in scene scale, users or
+automated engine features often push the camera's far clipping plane
+outward. Stretching the depth buffer over a drastically enlarged
+distance compresses the available z-buffer precision, especially for
+geometry further from the lens. This causes coplanar or closely aligned
+polygons on the model to flicker violently as the GPU struggles to
+determine which surface is in front (Z-fighting).</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

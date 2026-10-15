@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rendering Translucent Paper and Wax in glTF - gltf</title>
+    <meta name="description" content="This article examines how to visually differentiate translucent paper and wax within 3D scenes by utilizing specific glTF PBR extensions. While both materials allow light to pass through them, their visual properties diverge sharply: paper behaves as a th">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/rendering-translucent-paper-and-wax-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Rendering Translucent Paper and Wax in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/rendering-translucent-paper-and-wax-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how to visually differentiate translucent paper and wax within 3D scenes by utilizing specific glTF PBR extensions. While both materials allow light to pass through them, their visual properties diverge sharply: paper behaves as a th" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="rendering-translucent-paper-and-wax-in-gltf">Rendering
+Translucent Paper and Wax in glTF</h1>
+<p>This article examines how to visually differentiate translucent paper
+and wax within 3D scenes by utilizing specific glTF PBR extensions.
+While both materials allow light to pass through them, their visual
+properties diverge sharply: paper behaves as a thin, highly matte
+diffuser, whereas wax exhibits depth, volumetric light absorption, and a
+soft specular sheen. By targeting extensions such as
+<code>KHR_materials_diffuse_transmission</code>,
+<code>KHR_materials_volume</code>, and core PBR roughness controls,
+artists and developers can accurately capture these distinct physical
+behaviors.</p>
+<h2 id="fundamental-visual-distinctions">Fundamental Visual
+Distinctions</h2>
+<p>Translucent paper and wax interact with light in fundamentally
+different ways:</p>
+<ul>
+<li><strong>Paper (Thin-Surface Scattering):</strong> Paper is extremely
+thin and composed of compressed fibers. It exhibits immediate diffuse
+transmission—light entering one side scatters almost instantly and exits
+the opposite side evenly across the surface. It lacks noticeable
+volumetric depth, has a high micro-surface roughness that eliminates
+sharp reflections, and casts relatively crisp shadows when backlit.</li>
+<li><strong>Wax (Dense Volumetric Scattering):</strong> Wax is an
+organic solid with significant physical depth. Light enters the
+material, penetrates beneath the surface, bounces internally, and is
+absorbed over distance before re-emerging. This produces soft, glowing
+edges, blurred self-shadows, and a warm internal color shift. Unlike
+paper, wax typically has a smooth or semi-glossy surface that produces
+noticeable specular highlights.</li>
+</ul>
+<h2 id="gltf-extensions-for-translucent-paper">glTF Extensions for
+Translucent Paper</h2>
+<p>To model thin translucent paper, the scene must simulate light
+passing through a surface without computing internal geometry
+thickness.</p>
+<h3
+id="khr_materials_diffuse_transmission"><code>KHR_materials_diffuse_transmission</code></h3>
+<p>This extension is the primary tool for thin translucent objects. It
+allows incoming light to scatter diffusely through the reverse side of a
+mesh.</p>
+<ul>
+<li><strong><code>diffuseTransmissionFactor</code>:</strong> Set close
+to <code>1.0</code> (or modulated with a texture) to allow backlighting
+to illuminate the paper sheet.</li>
+<li><strong><code>diffuseTransmissionColorFactor</code>:</strong> Kept
+neutral or slightly warm to reflect the paper pulp's tint.</li>
+</ul>
+<h3 id="core-pbr-parameters-for-paper">Core PBR Parameters for
+Paper</h3>
+<ul>
+<li><strong><code>roughnessFactor</code>:</strong> Set high, generally
+between <code>0.8</code> and <code>1.0</code>. Paper does not produce
+clear reflections; light hitting the surface scatters diffusely.</li>
+<li><strong><code>metallicFactor</code>:</strong> Set strictly to
+<code>0.0</code>.</li>
+<li><strong>Volume Settings:</strong> Omit
+<code>KHR_materials_volume</code>. Paper is modeled as a single-sided or
+thin-walled geometry where volumetric calculations are physically
+unnecessary and computationally wasteful.</li>
+</ul>
+<h2 id="gltf-extensions-for-wax">glTF Extensions for Wax</h2>
+<p>Recreating wax requires combining surface diffuse transmission with
+volumetric absorption to convey physical mass and internal light
+decay.</p>
+<h3 id="khr_materials_volume"><code>KHR_materials_volume</code></h3>
+<p>Wax relies on this extension to define how light attenuates as it
+travels through the interior of the 3D mesh.</p>
+<ul>
+<li><strong><code>thicknessFactor</code>:</strong> Represents the actual
+thickness of the object along its surface normals. A texture map can
+modulate thin areas (such as the rim of a candle) versus thick
+areas.</li>
+<li><strong><code>attenuationDistance</code>:</strong> Defines the
+average distance light travels before being absorbed. For wax, this
+value should be short to medium (e.g., a few millimeters to
+centimeters), ensuring only shallow areas glow brightly.</li>
+<li><strong><code>attenuationColor</code>:</strong> Set to the internal
+color of the wax (typically warm yellow, amber, or deep red). As white
+light penetrates the wax, other wavelengths are absorbed, producing a
+saturated glow inside the material.</li>
+</ul>
+<h3
+id="khr_materials_diffuse_transmission-1"><code>KHR_materials_diffuse_transmission</code></h3>
+<p>When paired with <code>KHR_materials_volume</code>, diffuse
+transmission allows light to exit the wax diffusely rather than behaving
+like clear glass. The factor determines how much light breaks out of the
+volume across the object's surface.</p>
+<h3 id="core-pbr-and-optical-properties-for-wax">Core PBR and Optical
+Properties for Wax</h3>
+<ul>
+<li><strong><code>roughnessFactor</code>:</strong> Set between
+<code>0.2</code> and <code>0.5</code>. Unpolished or paraffin wax
+retains a soft, satin specular reflection rather than paper's flat
+finish.</li>
+<li><strong><code>KHR_materials_ior</code>:</strong> Paraffin and
+beeswax have an Index of Refraction (IOR) around <code>1.43</code> to
+<code>1.46</code>. Applying this extension ensures accurate Fresnel
+falloff at grazing angles.</li>
+</ul>
+<h2 id="direct-parameter-comparison">Direct Parameter Comparison</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Material Property</th>
+<th style="text-align: left;">Translucent Paper</th>
+<th style="text-align: left;">Wax</th>
+<th style="text-align: left;">Primary glTF Implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Scattering Model</strong></td>
+<td style="text-align: left;">Thin sheet diffuse transmission</td>
+<td style="text-align: left;">Thick volumetric subsurface decay</td>
+<td
+style="text-align: left;"><code>KHR_materials_diffuse_transmission</code>
+vs <code>KHR_materials_volume</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Surface Finish</strong></td>
+<td style="text-align: left;">Matte (<code>roughness</code>:
+0.8–1.0)</td>
+<td style="text-align: left;">Satin / Gloss (<code>roughness</code>:
+0.2–0.5)</td>
+<td style="text-align: left;"><code>pbrMetallicRoughness</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Internal Depth</strong></td>
+<td style="text-align: left;">None (thin-walled)</td>
+<td style="text-align: left;">Yes (distance-dependent glow)</td>
+<td
+style="text-align: left;"><code>KHR_materials_volume.thicknessFactor</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Color Absorption</strong></td>
+<td style="text-align: left;">Surface tint</td>
+<td style="text-align: left;">Subsurface attenuation color</td>
+<td
+style="text-align: left;"><code>KHR_materials_volume.attenuationColor</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Refraction / IOR</strong></td>
+<td style="text-align: left;">Default / Negligible</td>
+<td style="text-align: left;">IOR ~1.44</td>
+<td style="text-align: left;"><code>KHR_materials_ior</code></td>
+</tr>
+</tbody>
+</table></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

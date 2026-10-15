@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Default Fallback Material Visual Attributes - gltf</title>
+    <meta name="description" content="When a 3D model primitive in a glTF 2.0 file lacks an explicitly assigned material, runtimes must render it using a standardized fallback material based on the Physically Based Rendering (PBR) metallic-roughness workflow. This article breaks down the visu">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-default-fallback-material-visual-attributes">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Default Fallback Material Visual Attributes - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-default-fallback-material-visual-attributes" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When a 3D model primitive in a glTF 2.0 file lacks an explicitly assigned material, runtimes must render it using a standardized fallback material based on the Physically Based Rendering (PBR) metallic-roughness workflow. This article breaks down the visu" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-default-fallback-material-visual-attributes">glTF Default
+Fallback Material Visual Attributes</h1>
+<p>When a 3D model primitive in a glTF 2.0 file lacks an explicitly
+assigned material, runtimes must render it using a standardized fallback
+material based on the Physically Based Rendering (PBR)
+metallic-roughness workflow. This article breaks down the visual
+attributes and parameter values defined by the official glTF
+specification that dictate the baseline appearance, surface properties,
+and visibility of untextured geometry.</p>
+<h3 id="base-color">Base Color</h3>
+<p>The fallback material sets the <code>baseColorFactor</code> to
+<code>[1.0, 1.0, 1.0, 1.0]</code>, representing pure, fully opaque white
+with no texture applied. Because the color components are at their
+maximum values, the material acts as a neutral canvas that does not tint
+incoming light, reflecting 100% of the diffuse light spectrum allowed by
+the surrounding lighting environment.</p>
+<h3 id="metallic-and-roughness-properties">Metallic and Roughness
+Properties</h3>
+<p>Surface reflectance and microfacet dispersion are governed by two
+core PBR factors:</p>
+<ul>
+<li><strong>Metallic Factor (<code>metallicFactor</code>):</strong> Set
+to <code>1.0</code>. A value of 1.0 defines the surface as a pure metal
+(conductor). In a standard PBR model, this means the base color is
+treated entirely as the specular reflectance color rather than a diffuse
+albedo.</li>
+<li><strong>Roughness Factor (<code>roughnessFactor</code>):</strong>
+Set to <code>1.0</code>. A value of 1.0 defines a maximally rough
+microfacet surface.</li>
+</ul>
+<p>Combined, a metallic factor of 1.0 and a roughness factor of 1.0
+produce a completely matte surface where specular highlights are spread
+so broadly across the geometry that the material appears chalky and
+non-glossy, devoid of sharp reflections.</p>
+<h3 id="surface-emission-and-occlusion">Surface Emission and
+Occlusion</h3>
+<ul>
+<li><strong>Emissive Factor (<code>emissiveFactor</code>):</strong> Set
+to <code>[0.0, 0.0, 0.0]</code>. The fallback material emits no
+self-illumination and relies entirely on external environmental light or
+point light sources.</li>
+<li><strong>Ambient Occlusion:</strong> By default, no occlusion texture
+is present, implying an occlusion strength of <code>1.0</code>. Crevices
+and recessed geometry receive full indirect ambient light without
+synthetic micro-shadowing.</li>
+<li><strong>Normal Mapping:</strong> No tangent-space normal texture is
+supplied; surface orientation relies strictly on the primitive's vertex
+normals or flat-interpolated face normals.</li>
+</ul>
+<h3 id="alpha-and-face-culling-settings">Alpha and Face Culling
+Settings</h3>
+<ul>
+<li><strong>Alpha Mode (<code>alphaMode</code>):</strong> Set to
+<code>"OPAQUE"</code>. The geometry ignores any transparency
+calculations, forcing all fragments to write directly to the depth
+buffer at 100% opacity. The <code>alphaCutoff</code> defaults to
+<code>0.5</code>, though it remains inactive under the opaque mode.</li>
+<li><strong>Double Sided (<code>doubleSided</code>):</strong> Set to
+<code>false</code>. Back-face culling is enabled by default, meaning any
+surface polygons facing away from the camera are not rendered unless
+explicitly reversed or configured by the application.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

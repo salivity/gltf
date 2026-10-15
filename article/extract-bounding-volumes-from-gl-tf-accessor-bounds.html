@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extract Bounding Volumes from glTF Accessor Bounds - gltf</title>
+    <meta name="description" content="This article explains how to compute lightweight bounding volumes—such as Axis-Aligned Bounding Boxes (AABBs) and bounding spheres—directly from glTF accessor metadata without parsing binary vertex buffers. By reading the precomputed minimum and maximum v">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/extract-bounding-volumes-from-gl-tf-accessor-bounds">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Extract Bounding Volumes from glTF Accessor Bounds - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/extract-bounding-volumes-from-gl-tf-accessor-bounds" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how to compute lightweight bounding volumes—such as Axis-Aligned Bounding Boxes (AABBs) and bounding spheres—directly from glTF accessor metadata without parsing binary vertex buffers. By reading the precomputed minimum and maximum v" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="extract-bounding-volumes-from-gltf-accessor-bounds">Extract
+Bounding Volumes from glTF Accessor Bounds</h1>
+<p>This article explains how to compute lightweight bounding
+volumes—such as Axis-Aligned Bounding Boxes (AABBs) and bounding
+spheres—directly from glTF accessor metadata without parsing binary
+vertex buffers. By reading the precomputed minimum and maximum vertex
+bounds defined within glTF JSON structures, applications can instantly
+generate spatial boundaries for frustum culling, raycasting, and scene
+organization with minimal memory and processing overhead.</p>
+<h3 id="accessing-the-precomputed-metadata">Accessing the Precomputed
+Metadata</h3>
+<p>In the glTF 2.0 specification, the <code>POSITION</code> attribute
+accessor of any mesh primitive is required to declare <code>min</code>
+and <code>max</code> properties. These properties contain the
+lower-bound <code>[minX, minY, minZ]</code> and upper-bound
+<code>[maxX, maxY, maxZ]</code> coordinates of the vertices referenced
+by that accessor in local object space.</p>
+<p>Because these values are stored directly in the JSON header
+(<code>.gltf</code>) or the initial JSON chunk of a binary container
+(<code>.glb</code>), you do not need to read, decompress, or iterate
+over the binary buffer payloads (<code>bufferViews</code>) to find the
+spatial extent of a primitive.</p>
+<h3 id="generating-an-axis-aligned-bounding-box-aabb">Generating an
+Axis-Aligned Bounding Box (AABB)</h3>
+<p>To construct a local-space AABB for a single primitive:</p>
+<ol type="1">
+<li>Locate the primitive's <code>attributes.POSITION</code> integer
+index.</li>
+<li>Read the corresponding accessor object from the glTF
+<code>accessors</code> array.</li>
+<li>Extract <code>accessor.min</code> as the box minimum vector: <span
+class="math inline">\(V_{min} = (min_x, min_y, min_z)\)</span>.</li>
+<li>Extract <code>accessor.max</code> as the box maximum vector: <span
+class="math inline">\(V_{max} = (max_x, max_y, max_z)\)</span>.</li>
+</ol>
+<p>If a mesh contains multiple primitives, calculate the union of all
+primitive bounds:</p>
+<ul>
+<li><span class="math inline">\(Mesh_{min} = (\min(min_{x, 1}, min_{x,
+2}, \dots), \min(min_{y, 1}, min_{y, 2}, \dots), \min(min_{z, 1},
+min_{z, 2}, \dots))\)</span></li>
+<li><span class="math inline">\(Mesh_{max} = (\max(max_{x, 1}, max_{x,
+2}, \dots), \max(max_{y, 1}, max_{y, 2}, \dots), \max(max_{z, 1},
+max_{z, 2}, \dots))\)</span></li>
+</ul>
+<h3 id="deriving-a-bounding-sphere">Deriving a Bounding Sphere</h3>
+<p>A basic bounding sphere can be approximated directly from the
+extracted <span class="math inline">\(V_{min}\)</span> and <span
+class="math inline">\(V_{max}\)</span> vectors:</p>
+<ol type="1">
+<li><p><strong>Calculate the Center:</strong><br />
+<span class="math inline">\(Center = \frac{V_{min} +
+V_{max}}{2}\)</span></p></li>
+<li><p><strong>Calculate the Radius:</strong><br />
+<span class="math inline">\(Radius = \frac{\|V_{max} -
+V_{min}\|}{2}\)</span></p></li>
+</ol>
+<p>While this produces an enclosing sphere derived from the box diagonal
+rather than a minimal bounding sphere fitted strictly to the vertices,
+it requires zero vertex traversal and suffices for coarse visibility
+culling.</p>
+<h3 id="transforming-bounds-to-world-space">Transforming Bounds to World
+Space</h3>
+<p>glTF accessor bounds represent geometry in local coordinate space. To
+project these bounds into world space:</p>
+<ol type="1">
+<li><strong>Compute the Global Transform:</strong> Traverse the scene
+graph from the root node to the target mesh node, multiplying local
+transformation matrices (derived from <code>translation</code>,
+<code>rotation</code>, and <code>scale</code>, or the
+<code>matrix</code> property) to determine the world matrix (<span
+class="math inline">\(M\)</span>).</li>
+<li><strong>Transforming the AABB:</strong> Transform all eight corners
+of the local AABB by <span class="math inline">\(M\)</span>. Determine
+the new world-space AABB by finding the component-wise minimum and
+maximum of the eight transformed corner vertices.</li>
+<li><strong>Transforming the Bounding Sphere:</strong> Multiply the
+local <span class="math inline">\(Center\)</span> by <span
+class="math inline">\(M\)</span>. Multiply the local <span
+class="math inline">\(Radius\)</span> by the maximum scale factor
+extracted from the matrix's principal axes:<br />
+<span class="math inline">\(Scale_{max} = \max(\|M_{col0}\|,
+\|M_{col1}\|, \|M_{col2}\|)\)</span>.</li>
+</ol>
+<h3 id="performance-advantages">Performance Advantages</h3>
+<p>Extracting bounds directly from accessors executes in <span
+class="math inline">\(O(1)\)</span> time per primitive, bypassing
+expensive buffer decoding, network streams, or GPU readbacks. This
+allows graphics engines to perform coarse scene graph traversal, spatial
+partitioning (such as BVH or Octree generation), and view-frustum
+culling before geometry buffers are loaded into memory.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

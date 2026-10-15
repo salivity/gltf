@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why glTF Cubic Spline Animation Needs 3x Memory - gltf</title>
+    <meta name="description" content="In glTF 2.0 animation tracks, utilizing cubic spline interpolation results in exactly three times the memory footprint of equivalent linear or step tracks. This footprint expansion occurs because the glTF specification structures cubic spline data as Herm">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/why-gl-tf-cubic-spline-animation-needs-3-x-memory">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Why glTF Cubic Spline Animation Needs 3x Memory - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/why-gl-tf-cubic-spline-animation-needs-3-x-memory" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In glTF 2.0 animation tracks, utilizing cubic spline interpolation results in exactly three times the memory footprint of equivalent linear or step tracks. This footprint expansion occurs because the glTF specification structures cubic spline data as Herm" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="why-gltf-cubic-spline-animation-needs-3x-memory">Why glTF Cubic
+Spline Animation Needs 3x Memory</h1>
+<p>In glTF 2.0 animation tracks, utilizing cubic spline interpolation
+results in exactly three times the memory footprint of equivalent linear
+or step tracks. This footprint expansion occurs because the glTF
+specification structures cubic spline data as Hermite splines, requiring
+three distinct data points—an in-tangent, the actual keyframe value, and
+an out-tangent—for every keyframe timestamp. Consequently, an animation
+track storing cubic splines must allocate three times the buffer space
+compared to standard linear interpolation, which only requires the
+keyframe value itself.</p>
+<h2 id="how-gltf-stores-animation-samplers">How glTF Stores Animation
+Samplers</h2>
+<p>An animation in glTF relies on an animation sampler, which pairs an
+<code>input</code> accessor containing time values with an
+<code>output</code> accessor containing the animated property values
+(such as translation, rotation, or scale).</p>
+<p>In linear (<code>LINEAR</code>) and step (<code>STEP</code>)
+interpolation modes:</p>
+<ul>
+<li>For each time entry in the <code>input</code> array, there is a
+single corresponding element in the <code>output</code> array.</li>
+<li>If a translation track has 10 keyframes, the <code>output</code>
+accessor holds 10 three-component vectors (<code>VEC3</code>), totaling
+30 floating-point numbers.</li>
+</ul>
+<h2 id="the-hermite-spline-data-structure">The Hermite Spline Data
+Structure</h2>
+<p>glTF implements cubic interpolation via cubic Hermite splines. To
+mathematically define a smooth cubic curve between two adjacent
+keyframes <span class="math inline">\(k\)</span> and <span
+class="math inline">\(k+1\)</span>, the runtime engine needs to know not
+only the values at both points, but also the arrival direction
+(in-tangent) and the departure direction (out-tangent).</p>
+<p>To accommodate this mathematical model, the glTF specification
+dictates that for every keyframe in a <code>CUBICSPLINE</code> animation
+track, the <code>output</code> buffer must supply three sequential
+values:</p>
+<ol type="1">
+<li><strong>In-tangent vector (<span
+class="math inline">\(a_k\)</span>):</strong> Represents the incoming
+slope or velocity of the property arriving at keyframe <span
+class="math inline">\(k\)</span>.</li>
+<li><strong>Keyframe value (<span
+class="math inline">\(v_k\)</span>):</strong> The actual target property
+value (e.g., position, orientation, or scale) at keyframe <span
+class="math inline">\(k\)</span>.</li>
+<li><strong>Out-tangent vector (<span
+class="math inline">\(b_k\)</span>):</strong> Represents the outgoing
+slope or velocity of the property departing from keyframe <span
+class="math inline">\(k\)</span>.</li>
+</ol>
+<p>These three elements share identical data types and dimensions. If
+animating a standard 3D position vector (<code>VEC3</code>), all three
+components are stored as individual <code>VEC3</code> elements within
+the underlying buffer view.</p>
+<h2 id="the-memory-footprint-comparison">The Memory Footprint
+Comparison</h2>
+<p>Because each timestamp associates with an in-tangent, a value, and an
+out-tangent, the number of stored components scales directly:</p>
+<ul>
+<li><p><strong>Linear Track:</strong> <span
+class="math display">\[\text{Elements per Keyframe} = 1 \
+(\text{Value})\]</span> For a 10-keyframe <code>VEC3</code> track: <span
+class="math inline">\(10 \times 1 \times 3 \text{ floats} = 30 \text{
+floats}\)</span> (120 bytes).</p></li>
+<li><p><strong>Cubic Spline Track:</strong> <span
+class="math display">\[\text{Elements per Keyframe} = 3 \
+(\text{In-Tangent} + \text{Value} + \text{Out-Tangent})\]</span> For a
+10-keyframe <code>VEC3</code> track: <span class="math inline">\(10
+\times 3 \times 3 \text{ floats} = 90 \text{ floats}\)</span> (360
+bytes).</p></li>
+</ul>
+<p>Even the first and last keyframes must store all three values, where
+the first in-tangent and the last out-tangent are typically set to zero
+or ignored by the evaluator.</p>
+<h2 id="why-tangents-are-explicitly-stored">Why Tangents Are Explicitly
+Stored</h2>
+<p>Rather than having the runtime compute tangents dynamically (such as
+through Catmull-Rom splines, which infer tangents from neighboring
+points), glTF mandates explicit tangent storage. Explicit Hermite
+tangents allow digital content creation (DCC) tools to export precise,
+customized curve handles, including broken handles for sharp directional
+transitions. Storing these vectors directly guarantees that animations
+render identically across all conformant engines, trading buffer
+capacity for visual consistency and predictable runtime evaluation
+costs.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

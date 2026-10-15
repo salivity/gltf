@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Camera Transitions in Web 3D Engines - gltf</title>
+    <meta name="description" content="This article explores how modern web 3D engines parse, interpolate, and execute smooth transitions between multiple camera viewpoints defined inside a glTF (GL Transmission Format) file. When a 3D asset contains multiple predefined views, web runtimes suc">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-camera-transitions-in-web-3-d-engines">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Camera Transitions in Web 3D Engines - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-camera-transitions-in-web-3-d-engines" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores how modern web 3D engines parse, interpolate, and execute smooth transitions between multiple camera viewpoints defined inside a glTF (GL Transmission Format) file. When a 3D asset contains multiple predefined views, web runtimes suc" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-camera-transitions-in-web-3d-engines">glTF Camera
+Transitions in Web 3D Engines</h1>
+<p>This article explores how modern web 3D engines parse, interpolate,
+and execute smooth transitions between multiple camera viewpoints
+defined inside a glTF (GL Transmission Format) file. When a 3D asset
+contains multiple predefined views, web runtimes such as Three.js,
+Babylon.js, or Model Viewer extract camera node transforms and
+projection properties, using mathematical interpolation techniques like
+spherical linear interpolation (slerp) and easing curves to seamlessly
+blend the user's active viewport from one perspective to another.</p>
+<h3 id="how-cameras-are-defined-in-gltf">How Cameras Are Defined in
+glTF</h3>
+<p>In the glTF 2.0 specification, cameras are defined as top-level
+objects under the <code>cameras</code> array, specifying either
+<code>perspective</code> or <code>orthographic</code> projections with
+parameters such as <code>yfov</code> (vertical field of view),
+<code>znear</code>, <code>zfar</code>, and <code>aspectRatio</code>.</p>
+<p>However, a camera definition itself does not have a spatial position.
+Spatial placement occurs when a node in the glTF scene hierarchy
+references a camera index. The node provides the spatial transformation
+data—namely <code>translation</code>, <code>rotation</code>
+(quaternions), and <code>scale</code> (TRS). Web engines parse these
+nodes into their own native camera or dummy node representations upon
+loading the asset.</p>
+<h3 id="extraction-and-target-management">Extraction and Target
+Management</h3>
+<p>When a web engine loads a glTF file, it typically does not switch the
+active rendering camera back and forth between the loaded glTF camera
+instances. Doing so causes abrupt, instantaneous scene cuts.</p>
+<p>Instead, engines handle transitions using a single active rendering
+camera:</p>
+<ol type="1">
+<li><strong>Cataloging Views:</strong> The engine scans the loaded scene
+graph for nodes containing camera references, storing their world
+matrices or decomposing them into target positions, target quaternion
+rotations, and projection settings (such as field of view).</li>
+<li><strong>Virtual Targets:</strong> These parsed states act as
+stationary target markers rather than live rendering devices.</li>
+</ol>
+<h3 id="mathematical-interpolation-between-viewpoints">Mathematical
+Interpolation Between Viewpoints</h3>
+<p>To move the active camera from Viewpoint A to Viewpoint B, the engine
+calculates intermediate steps per frame over a set duration. This
+involves three distinct interpolation tasks:</p>
+<ul>
+<li><strong>Position (Translation):</strong> Engines interpolate spatial
+coordinates using linear interpolation (Lerp). For curved cinematic
+paths, engines can fit viewpoints to a spline curve (such as a
+Catmull-Rom spline) to prevent rigid, linear motion.</li>
+<li><strong>Orientation (Rotation):</strong> Direct interpolation of
+Euler angles results in gimbal lock and unnatural twisting. Web engines
+use Spherical Linear Interpolation (Slerp) on quaternions, ensuring the
+camera rotates along the shortest, smoothest arc between the source and
+target orientations.</li>
+<li><strong>Field of View (Zoom/Lens):</strong> If the glTF cameras
+feature different focal lengths or FOV values, the engine linearly
+interpolates the active camera's FOV value while recalculating the
+projection matrix on each frame to match.</li>
+</ul>
+<h3 id="driving-the-animation">Driving the Animation</h3>
+<p>Web engines drive these transitions using one of three primary
+architectures:</p>
+<ol type="1">
+<li><strong>Third-Party Tweening Libraries:</strong> Frameworks like
+GSAP or Tween.js take the current position and quaternion of the active
+camera and interpolate those values toward the target glTF node's global
+transform over time, applying custom easing equations (e.g., cubic
+ease-in-out).</li>
+<li><strong>Native Engine Animators:</strong> Engines like Babylon.js
+provide built-in systems (such as
+<code>Animation.CreateAndStartAnimation</code>) that target camera
+properties directly within the engine’s internal render loop.</li>
+<li><strong>Orbit and Pan Controls Integration:</strong> When engines
+use orbital camera controls (like Three.js <code>OrbitControls</code>),
+simply moving the camera can break the control target. In these setups,
+the engine simultaneously interpolates both the camera position and the
+controls' "look-at" target point derived from the glTF camera's forward
+directional vector.</li>
+</ol>
+<h3 id="handling-user-input-during-transitions">Handling User Input
+During Transitions</h3>
+<p>A critical part of transition handling is state management. During
+interpolation, web engines typically disable user interaction (pointer
+drags, scroll zooms) to prevent conflicts between the transition
+algorithm and manual input. Once the camera arrives within an acceptable
+threshold of the target transform, control is re-enabled, anchoring the
+active view to the selected glTF camera coordinate.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

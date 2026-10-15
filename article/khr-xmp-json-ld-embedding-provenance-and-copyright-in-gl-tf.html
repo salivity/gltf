@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KHR_xmp_json_ld: Embedding Provenance and Copyright in glTF - gltf</title>
+    <meta name="description" content="The KHRxmpjsonld extension standardizes how 3D assets carry identification, licensing, and digital history by embedding Adobe’s Extensible Metadata Platform (XMP) data directly into glTF 2.0 files using JSON-LD (JavaScript Object Notation for Linked Data)">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/khr-xmp-json-ld-embedding-provenance-and-copyright-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="KHR_xmp_json_ld: Embedding Provenance and Copyright in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/khr-xmp-json-ld-embedding-provenance-and-copyright-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The KHRxmpjsonld extension standardizes how 3D assets carry identification, licensing, and digital history by embedding Adobe’s Extensible Metadata Platform (XMP) data directly into glTF 2.0 files using JSON-LD (JavaScript Object Notation for Linked Data)" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1
+id="khr_xmp_json_ld-embedding-provenance-and-copyright-in-gltf">KHR_xmp_json_ld:
+Embedding Provenance and Copyright in glTF</h1>
+<p>The <code>KHR_xmp_json_ld</code> extension standardizes how 3D assets
+carry identification, licensing, and digital history by embedding
+Adobe’s Extensible Metadata Platform (XMP) data directly into glTF 2.0
+files using JSON-LD (JavaScript Object Notation for Linked Data). By
+translating traditional XML-based XMP schemas into semantic JSON, this
+extension allows creators and automated pipelines to append immutable
+copyright details, usage rights, authorship records, and
+cryptographically verifiable provenance information across the entire
+model or on individual components.</p>
+<h3 id="structural-architecture-in-gltf">Structural Architecture in
+glTF</h3>
+<p>The extension introduces a centralized dictionary at the glTF root
+level:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;extensionsUsed&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;KHR_xmp_json_ld&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;extensions&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;KHR_xmp_json_ld&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;packets&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        <span class="fu">{</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;@context&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>            <span class="dt">&quot;dc&quot;</span><span class="fu">:</span> <span class="st">&quot;http://purl.org/dc/elements/1.1/&quot;</span><span class="fu">,</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>            <span class="dt">&quot;xmpRights&quot;</span><span class="fu">:</span> <span class="st">&quot;http://ns.adobe.com/xap/1.0/rights/&quot;</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>          <span class="fu">},</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;dc:creator&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;Jane Doe&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;xmpRights:Marked&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;xmpRights:UsageTerms&quot;</span><span class="fu">:</span> <span class="st">&quot;CC-BY-4.0&quot;</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        <span class="fu">}</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>      <span class="ot">]</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>The <code>packets</code> array stores distinct metadata payloads.
+Each packet is a self-contained JSON-LD block defining namespaces
+(<code>@context</code>) that map standard semantic vocabularies to
+explicit Uniform Resource Identifiers (URIs).</p>
+<h3 id="granular-metadata-assignment">Granular Metadata Assignment</h3>
+<p>Rather than restricting metadata to the file as a single unit,
+<code>KHR_xmp_json_ld</code> enables hierarchical, component-level
+assignment. Specific parts of a glTF asset reference an entry in the
+root <code>packets</code> array by its zero-based index:</p>
+<ul>
+<li><strong>Asset Level:</strong> Stored in
+<code>asset.extensions.KHR_xmp_json_ld.packet</code>, applying global
+terms to the entire scene.</li>
+<li><strong>Component Level:</strong> Attached to <code>scenes</code>,
+<code>nodes</code>, <code>meshes</code>, <code>materials</code>,
+<code>images</code>, or <code>animations</code>.</li>
+</ul>
+<p>This granularity is critical for composite 3D models. For example, if
+a model contains third-party photogrammetry scans alongside custom
+procedural textures, the base mesh and specific image maps can point to
+different packets that specify distinct creators, source URLs, and
+licensing agreements.</p>
+<h3 id="embedding-copyright-and-legal-rights">Embedding Copyright and
+Legal Rights</h3>
+<p>Copyright and intellectual property declarations rely on established
+semantic schemas, primarily Dublin Core (<code>dc:</code>) and XMP
+Rights Management (<code>xmpRights:</code>):</p>
+<ul>
+<li><strong>Authorship:</strong> <code>dc:creator</code> lists
+individuals or entities responsible for the asset.</li>
+<li><strong>Copyright Notices:</strong> <code>dc:rights</code> holds
+explicit copyright statements (e.g.,
+<code>"Copyright 2024 Studio Name"</code>).</li>
+<li><strong>Licensing Flags:</strong> <code>xmpRights:Marked</code>
+accepts a boolean indicating whether the asset is under public domain
+(<code>false</code>) or intellectual property protections
+(<code>true</code>).</li>
+<li><strong>Terms of Use:</strong> <code>xmpRights:UsageTerms</code> and
+<code>xmpRights:WebStatement</code> point to human-readable terms or
+machine-readable URLs containing full license texts.</li>
+</ul>
+<h3 id="provenance-tracking-and-digital-history">Provenance Tracking and
+Digital History</h3>
+<p>Provenance metadata captures how an asset was created, modified, and
+handled throughout its lifecycle:</p>
+<ol type="1">
+<li><strong>Origin Tracking:</strong> Fields such as
+<code>xmp:CreateDate</code>, <code>xmp:ModifyDate</code>, and
+<code>xmp:CreatorTool</code> specify when the model was generated and
+which software or pipeline exported it.</li>
+<li><strong>Derivation Chains:</strong> Using the XMP Media Management
+schema (<code>xmpMM:</code>), assets define their lineage.
+<code>xmpMM:DocumentID</code> tracks the overall project identity,
+<code>xmpMM:InstanceID</code> identifies the specific revision, and
+<code>xmpMM:DerivedFrom</code> references the unique identifier of an
+original source file prior to modification or optimization.</li>
+<li><strong>C2PA Integration:</strong> The Coalition for Content
+Provenance and Authenticity (C2PA) utilizes this extension to associate
+tamper-evident manifests with 3D assets. Hashes and cryptographic
+signatures can tie the JSON-LD packets to specific mesh geometries and
+textures, making unauthorized alterations or attribution stripping
+detectable.</li>
+</ol>
+<h3 id="interoperability-and-processing-efficiency">Interoperability and
+Processing Efficiency</h3>
+<p>Traditional XMP implementations require parsing raw XML packets
+embedded within binary or text streams. By defining the format strictly
+as JSON-LD, <code>KHR_xmp_json_ld</code> allows native JavaScript
+engines, WebGL runtimes, and digital asset management (DAM) platforms to
+parse, validate, and index copyright and provenance information using
+default JSON parsers without additional decoding overhead.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

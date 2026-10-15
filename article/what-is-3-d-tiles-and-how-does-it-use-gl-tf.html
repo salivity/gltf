@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What Is 3D Tiles and How Does It Use glTF? - gltf</title>
+    <meta name="description" content="The 3D Tiles standard is an open specification designed for streaming and rendering massive heterogeneous 3D geospatial datasets over the web. This article explains what the 3D Tiles standard is, how it organizes large-scale environments using spatial ind">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/what-is-3-d-tiles-and-how-does-it-use-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="What Is 3D Tiles and How Does It Use glTF? - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/what-is-3-d-tiles-and-how-does-it-use-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The 3D Tiles standard is an open specification designed for streaming and rendering massive heterogeneous 3D geospatial datasets over the web. This article explains what the 3D Tiles standard is, how it organizes large-scale environments using spatial ind" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="what-is-3d-tiles-and-how-does-it-use-gltf">What Is 3D Tiles and
+How Does It Use glTF?</h1>
+<p>The 3D Tiles standard is an open specification designed for streaming
+and rendering massive heterogeneous 3D geospatial datasets over the web.
+This article explains what the 3D Tiles standard is, how it organizes
+large-scale environments using spatial indexing, and how it directly
+integrates glTF (GL Transmission Format) as its primary geometric and
+visual payload to deliver high-performance graphics efficiently across
+platforms.</p>
+<h3 id="understanding-the-3d-tiles-standard">Understanding the 3D Tiles
+Standard</h3>
+<p>Developed by Cesium and adopted as a community standard by the Open
+Geospatial Consortium (OGC), 3D Tiles addresses the challenge of
+visualizing massive 3D data—such as citywide photogrammetry, BIM/CAD
+models, terrain, and point clouds—on hardware that cannot load the full
+dataset into memory at once.</p>
+<p>The standard achieves this through Hierarchical Level of Detail
+(HLOD). A 3D Tiles dataset, known as a <em>tileset</em>, is structured
+as a spatial tree (such as an octree, quadtree, or k-d tree). Each tile
+in the hierarchy contains:</p>
+<ul>
+<li><strong>Bounding Volumes:</strong> Mathematical boundaries (boxes,
+spheres, or geographic regions) that define the spatial extent of the
+tile.</li>
+<li><strong>Geometric Error:</strong> A metric determining the visual
+error introduced if the tile is rendered instead of a higher-resolution
+version, allowing the runtime engine to select the appropriate level of
+detail based on the camera's distance.</li>
+<li><strong>Content:</strong> The actual 3D payload rendered by the
+graphics engine.</li>
+</ul>
+<p>Clients evaluate these properties against the user's viewport,
+requesting and rendering only the tiles necessary for the current view,
+which optimizes memory usage and network bandwidth.</p>
+<h3 id="gltf-as-the-foundational-payload">glTF as the Foundational
+Payload</h3>
+<p>While 3D Tiles defines the spatial hierarchy and streaming logic, it
+does not define a new 3D graphics format. Instead, it relies on glTF (GL
+Transmission Format), an open standard created by the Khronos Group, to
+deliver the actual 3D geometry, materials, and textures.</p>
+<p>Often described as the "JPEG of 3D," glTF minimizes both the file
+size of 3D assets and the runtime processing needed by the GPU. It
+stores vertex data, indices, and animations in binary buffers that can
+be loaded directly into GPU buffers with minimal parsing.</p>
+<h4 id="the-evolution-from-3d-tiles-10-to-11">The Evolution from 3D
+Tiles 1.0 to 1.1</h4>
+<p>The relationship between 3D Tiles and glTF evolved significantly with
+the release of 3D Tiles 1.1:</p>
+<ul>
+<li><strong>3D Tiles 1.0 (Embedded Containers):</strong> In the initial
+release, 3D Tiles wrapped glTF within custom tile formats. For example,
+Batched 3D Model (<code>.b3dm</code>) and Instanced 3D Model
+(<code>.i3dm</code>) embedded a binary glTF file alongside custom batch
+tables for semantic metadata.</li>
+<li><strong>3D Tiles 1.1 (Direct glTF Integration):</strong> 3D Tiles
+1.1 eliminated these custom container formats. Tiles now directly
+reference standard glTF or binary glTF (<code>.glb</code>) files as
+their content payload. This shift unified the ecosystem, allowing
+developers to use standard glTF pipelines and tools without proprietary
+wrappers.</li>
+</ul>
+<h3 id="semantic-metadata-and-extensions">Semantic Metadata and
+Extensions</h3>
+<p>By adopting glTF natively, 3D Tiles 1.1 leverages the glTF extension
+ecosystem to handle complex geospatial and engineering requirements.</p>
+<p>Through extensions such as <code>EXT_mesh_features</code> and
+<code>EXT_structural_metadata</code>, arbitrary metadata (such as
+building IDs, materials, or structural properties from BIM files) can be
+mapped directly to vertices, instances, or textures within the glTF
+file. This enables interactive features—such as clicking a building to
+query its metadata or dynamically restyling features based on
+attributes—without sacrificing GPU rendering performance.</p>
+<h3 id="summary-of-benefits">Summary of Benefits</h3>
+<p>Combining the 3D Tiles spatial tree with the glTF payload provides a
+robust framework for geospatial visualization:</p>
+<ul>
+<li><strong>High Performance:</strong> glTF ensures rapid decoding and
+direct-to-GPU data transfer, while 3D Tiles limits the rendered data to
+what is visible.</li>
+<li><strong>Interoperability:</strong> Both 3D Tiles (OGC) and glTF
+(Khronos Group) are open, community-driven standards widely supported
+across web, desktop, and game engine environments like Unreal Engine and
+Unity.</li>
+<li><strong>Flexibility:</strong> The architecture decouples the spatial
+data structure from the graphics rendering pipeline, allowing
+independent optimization of streaming logic and asset compression.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

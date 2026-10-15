@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Texture Filtering Modes for Crisp UI Text - gltf</title>
+    <meta name="description" content="Rendering legible, high-contrast text on user interface elements in glTF requires selecting the correct texture sampler filtering modes. Because standard 3D mipmapping often introduces unwanted blur to fine typographic details, configuring the appropriate">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-texture-filtering-modes-for-crisp-ui-text">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Texture Filtering Modes for Crisp UI Text - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-texture-filtering-modes-for-crisp-ui-text" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Rendering legible, high-contrast text on user interface elements in glTF requires selecting the correct texture sampler filtering modes. Because standard 3D mipmapping often introduces unwanted blur to fine typographic details, configuring the appropriate" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-texture-filtering-modes-for-crisp-ui-text">glTF Texture
+Filtering Modes for Crisp UI Text</h1>
+<p>Rendering legible, high-contrast text on user interface elements in
+glTF requires selecting the correct texture sampler filtering modes.
+Because standard 3D mipmapping often introduces unwanted blur to fine
+typographic details, configuring the appropriate magnification and
+minification filters ensures that glyphs remain sharp whether viewed
+straight-on, scaled, or placed at an angle in 3D space.</p>
+<h3 id="understanding-gltf-sampler-properties">Understanding glTF
+Sampler Properties</h3>
+<p>In the glTF 2.0 specification, texture sampling behavior is
+configured inside the <code>samplers</code> array using two primary
+properties:</p>
+<ul>
+<li><strong><code>magFilter</code></strong>: Determines how the texture
+is sampled when a texel is smaller than a screen pixel
+(magnification).</li>
+<li><strong><code>minFilter</code></strong>: Determines how the texture
+is sampled when a texel is larger than a screen pixel
+(minification).</li>
+</ul>
+<p>These properties take WebGL integer constants to define filtering
+behavior.</p>
+<h3 id="recommended-filtering-configurations">Recommended Filtering
+Configurations</h3>
+<p>The ideal filtering mode depends on the technique used to render the
+text texture:</p>
+<h4 id="1-pre-rendered-bitmap-text-direct-11-pixel-mapping">1.
+Pre-rendered Bitmap Text (Direct 1:1 Pixel Mapping)</h4>
+<p>When UI elements are fixed in screen space or designed to render at
+native pixel resolution, mipmapping should be disabled to prevent the
+renderer from selecting lower-resolution mip levels that cause text to
+blur.</p>
+<ul>
+<li><strong><code>magFilter</code>: <code>9729</code>
+(<code>LINEAR</code>)</strong> or <strong><code>9728</code>
+(<code>NEAREST</code>)</strong><br />
+Use <code>LINEAR</code> for general smoothness if minor scaling occurs.
+Use <code>NEAREST</code> only if you are adhering to a strict pixel-art
+aesthetic where sub-pixel interpolation is unwanted.</li>
+<li><strong><code>minFilter</code>: <code>9729</code>
+(<code>LINEAR</code>)</strong><br />
+Disables mipmapping entirely. This forces the GPU to sample directly
+from the base level (Level 0), preventing the premature softening common
+with default trilinear mipmaps.</li>
+</ul>
+<h4 id="2-signed-distance-field-sdf--msdf-text">2. Signed Distance Field
+(SDF / MSDF) Text</h4>
+<p>Signed Distance Fields and Multi-channel Signed Distance Fields
+represent vector glyph outlines mathematically inside a texture. The
+fragment shader calculates the sharp vector boundary at runtime.</p>
+<ul>
+<li><strong><code>magFilter</code>: <code>9729</code>
+(<code>LINEAR</code>)</strong></li>
+<li><strong><code>minFilter</code>: <code>9729</code>
+(<code>LINEAR</code>)</strong></li>
+</ul>
+<p><code>LINEAR</code> filtering is strictly required for SDF and MSDF
+textures. The shader relies on linear interpolation between neighboring
+texel values to calculate the continuous distance gradient. Using
+<code>NEAREST</code> breaks the interpolation, resulting in jagged,
+stepped edges. Mipmaps should generally be avoided unless specifically
+generated with distance-preserving downsampling algorithms.</p>
+<h4 id="3-spatial-in-world-3d-ui-perspective-scaled">3. Spatial,
+In-World 3D UI (Perspective-Scaled)</h4>
+<p>If the UI element exists inside the 3D scene where the camera can
+move arbitrarily far away, disabling mipmaps entirely will cause severe
+shimmering and aliasing artifacts.</p>
+<ul>
+<li><strong><code>magFilter</code>: <code>9729</code>
+(<code>LINEAR</code>)</strong></li>
+<li><strong><code>minFilter</code>: <code>9987</code>
+(<code>LINEAR_MIPMAP_LINEAR</code>)</strong></li>
+</ul>
+<p>To maintain crispness while using trilinear filtering
+(<code>LINEAR_MIPMAP_LINEAR</code>), configure the target 3D engine
+(such as Three.js, Babylon.js, or Godot) to enable <strong>anisotropic
+filtering</strong> (e.g., 4x, 8x, or 16x). While anisotropic filtering
+is configured at the engine/material runtime level rather than stored
+directly in the core glTF schema, it works alongside
+<code>LINEAR_MIPMAP_LINEAR</code> to prevent oblique text surfaces from
+degrading into a blur.</p>
+<h3 id="summary-of-gltf-sampler-values">Summary of glTF Sampler
+Values</h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Text Rendering Method</th>
+<th style="text-align: left;"><code>magFilter</code></th>
+<th style="text-align: left;"><code>minFilter</code></th>
+<th style="text-align: left;">Target Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Pixel UI / 2D
+Overlay</strong></td>
+<td style="text-align: left;"><code>9729</code>
+(<code>LINEAR</code>)</td>
+<td style="text-align: left;"><code>9729</code>
+(<code>LINEAR</code>)</td>
+<td style="text-align: left;">Sharp raster glyphs without mipmap
+blur</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>SDF / MSDF Vector
+Text</strong></td>
+<td style="text-align: left;"><code>9729</code>
+(<code>LINEAR</code>)</td>
+<td style="text-align: left;"><code>9729</code>
+(<code>LINEAR</code>)</td>
+<td style="text-align: left;">Smooth mathematical edge
+interpolation</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Perspective 3D
+Surface</strong></td>
+<td style="text-align: left;"><code>9729</code>
+(<code>LINEAR</code>)</td>
+<td style="text-align: left;"><code>9987</code>
+(<code>LINEAR_MIPMAP_LINEAR</code>)</td>
+<td style="text-align: left;">Anti-aliased text over distance (pair with
+anisotropic filtering)</td>
+</tr>
+</tbody>
+</table></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

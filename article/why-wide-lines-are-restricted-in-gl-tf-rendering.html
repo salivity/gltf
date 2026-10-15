@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Wide Lines Are Restricted in glTF Rendering - gltf</title>
+    <meta name="description" content="In standard glTF (GL Transmission Format) rendering, wide lines—lines with a width greater than one pixel—are unsupported or heavily restricted by default to guarantee visual consistency across devices. Because glTF is designed as a universal, cross-platf">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/why-wide-lines-are-restricted-in-gl-tf-rendering">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Why Wide Lines Are Restricted in glTF Rendering - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/why-wide-lines-are-restricted-in-gl-tf-rendering" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In standard glTF (GL Transmission Format) rendering, wide lines—lines with a width greater than one pixel—are unsupported or heavily restricted by default to guarantee visual consistency across devices. Because glTF is designed as a universal, cross-platf" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="why-wide-lines-are-restricted-in-gltf-rendering">Why Wide Lines
+Are Restricted in glTF Rendering</h1>
+<p>In standard glTF (GL Transmission Format) rendering, wide lines—lines
+with a width greater than one pixel—are unsupported or heavily
+restricted by default to guarantee visual consistency across devices.
+Because glTF is designed as a universal, cross-platform runtime asset
+format, its core specification relies on native GPU line primitives that
+modern graphics APIs no longer uniformly support. This article explains
+the technical reasons behind this restriction, including underlying
+graphics API limitations, cross-platform determinism, rasterization
+inconsistencies, and the standard industry workarounds.</p>
+<h3 id="deprecation-in-underlying-graphics-apis">Deprecation in
+Underlying Graphics APIs</h3>
+<p>The primary driver behind glTF’s line width restriction is the
+hardware-level deprecation and limitation of wide line primitives in
+modern graphics APIs. Standard glTF primitives map directly to basic GPU
+drawing commands (<code>LINES</code>, <code>LINE_STRIP</code>, and
+<code>LINE_LOOP</code>).</p>
+<ul>
+<li><strong>WebGL and OpenGL:</strong> While early OpenGL specifications
+supported arbitrary line widths via <code>glLineWidth()</code>, modern
+OpenGL core profiles made wide lines optional or deprecated them. In
+WebGL—the native target for glTF on the web—line width implementation
+relies on the underlying platform's translation layer (such as Google’s
+ANGLE, which maps WebGL calls to DirectX). Direct3D does not support
+native wide lines at all, forcing the maximum supported line width in
+almost all modern WebGL implementations to be permanently fixed at
+<code>1.0</code>.</li>
+<li><strong>Vulkan and Metal:</strong> In Vulkan, drawing lines wider
+than 1.0 pixel requires the optional <code>wideLines</code> device
+feature, which is not guaranteed on all mobile hardware. Apple’s Metal
+API similarly lacks native support for rasterizing wide line primitives
+without converting them into triangle meshes.</li>
+</ul>
+<h3 id="cross-platform-determinism">Cross-Platform Determinism</h3>
+<p>glTF aims to be the "JPEG of 3D," meaning a model should appear
+identical regardless of the operating system, device, or rendering
+engine. If the core glTF specification mandated support for wide lines,
+rendering engines would produce vastly different visual results:</p>
+<ul>
+<li>A desktop engine using legacy OpenGL might successfully render a
+thick 5-pixel line.</li>
+<li>A browser using WebGL on Windows would clamp that same line to a
+1-pixel width.</li>
+<li>A mobile device might drop the primitive entirely or exhibit major
+performance bottlenecks.</li>
+</ul>
+<p>To maintain reliable cross-platform determinism, standard glTF
+restricts lines to an implementation-dependent single-pixel width rather
+than promising behavior that underlying APIs cannot deliver.</p>
+<h3 id="geometric-and-rasterization-challenges">Geometric and
+Rasterization Challenges</h3>
+<p>Native GPU line rasterization does not handle the visual properties
+expected of thick lines. Real-world vector graphics require
+handling:</p>
+<ul>
+<li><strong>Caps and Joins:</strong> When two lines meet at an angle,
+they require miter, bevel, or round joins. Native line primitives have
+no mechanism to calculate or render line joins or end caps, resulting in
+visual gaps or artifacts at vertices.</li>
+<li><strong>Perspective Scaling:</strong> Native line primitives
+rasterize in screen-space pixels rather than world-space units. A
+5-pixel-wide line remains 5 pixels wide whether the object is right in
+front of the camera or a mile away, breaking realistic 3D
+perspective.</li>
+<li><strong>Antialiasing:</strong> Hardware line smoothing varies widely
+between vendors, often yielding jagged edges or severe blurriness
+depending on the graphics driver.</li>
+</ul>
+<h3 id="the-recommended-solution-triangle-meshes">The Recommended
+Solution: Triangle Meshes</h3>
+<p>To render thick, stylized, or perspective-correct lines in glTF,
+content creators must avoid line primitives and instead generate
+triangle geometry.</p>
+<p>Modeling lines as 2D ribbons, camera-facing screen-space quads
+(billboards), or extruded polygonal tubes ensures that the line is
+rendered using standard triangle rasterization. Because triangles are
+universally supported with complete precision across all graphics
+pipelines, this approach guarantees proper width, perspective scaling,
+join geometry, and consistent visual quality across every glTF-compliant
+viewer.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

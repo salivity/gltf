@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clearcoat and Metalness Interaction in glTF - gltf</title>
+    <meta name="description" content="In glTF’s physically based rendering (PBR) pipeline, the KHRmaterialsclearcoat extension adds an independent, transparent dielectric layer on top of a standard metallic-roughness base material. When applied over a metallic base (where metallicFactor appro">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/clearcoat-and-metalness-interaction-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Clearcoat and Metalness Interaction in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/clearcoat-and-metalness-interaction-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In glTF’s physically based rendering (PBR) pipeline, the KHRmaterialsclearcoat extension adds an independent, transparent dielectric layer on top of a standard metallic-roughness base material. When applied over a metallic base (where metallicFactor appro" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="clearcoat-and-metalness-interaction-in-gltf">Clearcoat and
+Metalness Interaction in glTF</h1>
+<p>In glTF’s physically based rendering (PBR) pipeline, the
+<code>KHR_materials_clearcoat</code> extension adds an independent,
+transparent dielectric layer on top of a standard metallic-roughness
+base material. When applied over a metallic base (where
+<code>metallicFactor</code> approaches 1.0), the clearcoat alters the
+surface’s visual behavior by introducing a two-tier specular reflection:
+an achromatic, dielectric reflection on the outer surface and a colored,
+conductive reflection on the substrate below. This interaction dictates
+how light attenuates, preserves energy, and decouples surface roughness
+between the coating and the underlying metal.</p>
+<h3 id="physical-layering-and-energy-conservation">Physical Layering and
+Energy Conservation</h3>
+<p>The clearcoat operates as a distinct, thin dielectric film resting
+directly above the substrate. In glTF, standard metals do not possess
+diffuse reflections; their color comes entirely from tinted specular
+reflections determined by the base color (<code>baseColorTexture</code>
+or <code>baseColorFactor</code>).</p>
+<p>When light strikes the surface:</p>
+<ol type="1">
+<li><strong>Clearcoat Reflection:</strong> A portion of the incoming
+light is immediately reflected at the clearcoat interface. Because the
+clearcoat is strictly dielectric, this reflection is achromatic (white)
+and governed by standard dielectric Fresnel equations (typically
+defaulting to an index of refraction of 1.5, yielding roughly 4%
+reflectance at normal incidence).</li>
+<li><strong>Transmission and Attenuation:</strong> The remaining light
+transmits through the clearcoat to hit the base material. The clearcoat
+layer absorbs or redirects this light, meaning the energy reaching the
+metal substrate is diminished by the amount reflected by the
+clearcoat.</li>
+<li><strong>Substrate Interaction:</strong> The transmitted light
+interacts with the metal layer. Because the base is metallic, it
+reflects the transmitted light using its colored specular response.</li>
+<li><strong>Exit Reflection:</strong> The light reflected by the metal
+passes back out through the clearcoat, contributing a secondary, colored
+reflection beneath the clearcoat's primary reflection.</li>
+</ol>
+<h3 id="roughness-decoupling">Roughness Decoupling</h3>
+<p>One of the primary visual effects of combining clearcoat with
+metalness is the separation of roughness values. The base material uses
+its own roughness parameter (<code>roughnessFactor</code>), while the
+clearcoat has an independent roughness value controlled by
+<code>clearcoatRoughnessFactor</code>.</p>
+<ul>
+<li><strong>Smooth Clearcoat over Rough Metal:</strong> Setting a low
+clearcoat roughness over a high base roughness creates the appearance of
+brushed, sandblasted, or oxidized metal encased in a smooth resin,
+lacquer, or glass finish. The object displays a sharp, white specular
+highlight from the clearcoat alongside a broad, blurred, colored sheen
+from the underlying metal.</li>
+<li><strong>Rough Clearcoat over Smooth Metal:</strong> Setting a high
+clearcoat roughness over a low base roughness creates a frosted, matte,
+or dusty appearance over a mirror-like metallic core.</li>
+</ul>
+<h3 id="normal-mapping-and-geometric-detail">Normal Mapping and
+Geometric Detail</h3>
+<p>The clearcoat extension supports its own normal map
+(<code>clearcoatNormalTexture</code>), separate from the base material's
+normal map. When combined with a metallic base:</p>
+<ul>
+<li>The base normal map perturbs the colored reflections of the metal
+substrate, simulating dents, scratches, or tooling marks in the
+metal.</li>
+<li>The clearcoat normal map perturbs only the outer white reflection,
+simulating orange peel, surface scratches, or uneven varnish
+application.</li>
+</ul>
+<p>This separation ensures that underlying metal damage appears visually
+beneath a smooth topcoat, or conversely, that a pristine metallic
+surface can exhibit surface-level protective coating imperfections.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

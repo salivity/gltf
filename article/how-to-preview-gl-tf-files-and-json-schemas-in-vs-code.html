@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Preview glTF Files and JSON Schemas in VS Code - gltf</title>
+    <meta name="description" content="This article explains how Visual Studio Code bridges the gap between raw 3D data and interactive rendering through dedicated glTF extensions. By coupling strict Khronos Group JSON schema validation with embedded Webview engines like Babylon.js or Three.js">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-to-preview-gl-tf-files-and-json-schemas-in-vs-code">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Preview glTF Files and JSON Schemas in VS Code - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-to-preview-gl-tf-files-and-json-schemas-in-vs-code" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how Visual Studio Code bridges the gap between raw 3D data and interactive rendering through dedicated glTF extensions. By coupling strict Khronos Group JSON schema validation with embedded Webview engines like Babylon.js or Three.js" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-preview-gltf-files-and-json-schemas-in-vs-code">How to
+Preview glTF Files and JSON Schemas in VS Code</h1>
+<p>This article explains how Visual Studio Code bridges the gap between
+raw 3D data and interactive rendering through dedicated glTF extensions.
+By coupling strict Khronos Group JSON schema validation with embedded
+Webview engines like Babylon.js or Three.js, developers can inspect,
+validate, and preview 3D assets in real time alongside their source
+code.</p>
+<h2 id="the-role-of-json-schemas-in-gltf-validation">The Role of JSON
+Schemas in glTF Validation</h2>
+<p>The glTF (GL Transmission Format) standard uses JSON to describe
+scene graphs, node hierarchies, materials, cameras, and animations,
+while referencing separate or embedded binary buffers for geometry and
+textures. Because the structural data is standard JSON, VS Code natively
+leverages JSON Schema to provide deep code intelligence.</p>
+<p>When opening a <code>.gltf</code> file, VS Code associates the
+document with the official Khronos glTF JSON Schema. This integration
+provides several immediate benefits:</p>
+<ul>
+<li><strong>Instant Validation:</strong> Flags syntax errors, missing
+required properties, or invalid data types based on the specific glTF
+version (such as 2.0).</li>
+<li><strong>IntelliSense and Autocomplete:</strong> Suggests valid
+properties, accessor types, and standard material definitions as you
+type.</li>
+<li><strong>Contextual Documentation:</strong> Hovering over any
+property displays tooltips generated directly from schema descriptions,
+eliminating the need to cross-reference external documentation.</li>
+</ul>
+<h2 id="integrating-3d-previews-via-webview-panels">Integrating 3D
+Previews via Webview Panels</h2>
+<p>To visualize the model represented by the JSON structure, developers
+use extensions such as the official <strong>glTF Tools</strong>
+extension for VS Code. The editor does not render 3D scenes natively;
+instead, it uses the VS Code Webview API to create an isolated browser
+context within an editor tab.</p>
+<p>Once installed, the extension provides a command to open a live 3D
+preview alongside the text editor. The underlying previewer can
+typically switch between several standard rendering engines—including
+Babylon.js, Three.js, and Google's Filament—to show how the asset
+renders across different target environments and Physically Based
+Rendering (PBR) pipelines.</p>
+<h2
+id="bi-directional-inspection-and-live-synchronization">Bi-Directional
+Inspection and Live Synchronization</h2>
+<p>The true integration between the preview tool and the JSON editor is
+bidirectional:</p>
+<ol type="1">
+<li><strong>Editor to Preview:</strong> When you modify values in the
+JSON file—such as changing a base color factor, adjusting roughness, or
+altering a node transformation matrix—saving the file automatically
+refreshes the 3D viewport, providing immediate visual feedback.</li>
+<li><strong>Preview to Editor:</strong> Advanced previewers support
+outline synchronization. Clicking a specific mesh, node, or material in
+the 3D viewport automatically navigates the cursor to the corresponding
+line in the JSON file, simplifying debugging in complex scenes.</li>
+</ol>
+<h2 id="working-with-binary-gltf-glb">Working with Binary glTF
+(.glb)</h2>
+<p>While standard <code>.gltf</code> files are human-readable text,
+production workflows often rely on <code>.glb</code> files, which
+package the JSON declaration and binary buffers into a single
+container.</p>
+<p>The glTF extension ecosystem integrates with VS Code’s custom editor
+APIs to handle <code>.glb</code> files seamlessly. It can deconstruct
+the binary container on the fly, presenting the embedded JSON chunk in
+the text editor for modification while keeping the 3D preview active.
+Developers can also use built-in commands to convert between
+<code>.gltf</code> and <code>.glb</code> formats directly inside the
+workspace without external CLI tools.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

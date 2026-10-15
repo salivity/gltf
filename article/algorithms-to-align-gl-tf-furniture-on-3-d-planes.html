@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithms to Align glTF Furniture on 3D Planes - gltf</title>
+    <meta name="description" content="Automatically placing 3D glTF furniture flat against detected real-world surfaces is a core requirement of Augmented Reality (AR) and spatial computing applications. This process relies on a combination of plane-detection algorithms, geometric transformat">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/algorithms-to-align-gl-tf-furniture-on-3-d-planes">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Algorithms to Align glTF Furniture on 3D Planes - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/algorithms-to-align-gl-tf-furniture-on-3-d-planes" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Automatically placing 3D glTF furniture flat against detected real-world surfaces is a core requirement of Augmented Reality (AR) and spatial computing applications. This process relies on a combination of plane-detection algorithms, geometric transformat" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="algorithms-to-align-gltf-furniture-on-3d-planes">Algorithms to
+Align glTF Furniture on 3D Planes</h1>
+<p>Automatically placing 3D glTF furniture flat against detected
+real-world surfaces is a core requirement of Augmented Reality (AR) and
+spatial computing applications. This process relies on a combination of
+plane-detection algorithms, geometric transformation pipelines, and
+bounding volume analysis. By sampling surface normals from spatial
+sensors and calculating rotational transforms, systems ensure that
+digital assets conform to physical floors, walls, and tabletops without
+clipping or hovering.</p>
+<h2 id="1-raycasting-and-hit-testing">1. Raycasting and Hit-Testing</h2>
+<p>The initial placement process begins with raycasting. When a user
+selects a location on a screen or spatial interface, a ray is projected
+from the virtual camera through the screen coordinates into the 3D
+reconstructed scene.</p>
+<ul>
+<li><strong>Hit-Test Execution:</strong> Frameworks like ARCore, ARKit,
+and WebXR intersect this ray with detected planar geometry generated
+from SLAM (Simultaneous Localization and Mapping).</li>
+<li><strong>Pose Extraction:</strong> The hit-test returns a 6-DoF
+(Degrees of Freedom) pose consisting of a 3D coordinate vector <span
+class="math inline">\((x, y, z)\)</span> and an orientation representing
+the plane's surface normal.</li>
+</ul>
+<h2 id="2-vector-alignment-via-quaternions">2. Vector Alignment via
+Quaternions</h2>
+<p>Once the target surface normal is extracted, the application must
+compute the rotational transformation required to align the glTF asset's
+bottom surface to that normal.</p>
+<ul>
+<li><strong>Two-Vector Rotation:</strong> The algorithm defines the
+model’s default local orientation—typically the positive Y-axis vector
+<span class="math inline">\((0, 1, 0)\)</span> representing "up."</li>
+<li><strong>Quaternion Calculation:</strong> Using the dot product and
+cross product of the model’s up-vector (<span
+class="math inline">\(\vec{u}\)</span>) and the detected plane’s surface
+normal (<span class="math inline">\(\vec{n}\)</span>), the algorithm
+computes a rotation quaternion: <span class="math display">\[\theta =
+\arccos(\vec{u} \cdot \vec{n})\]</span> <span
+class="math display">\[\vec{axis} = \frac{\vec{u} \times
+\vec{n}}{\|\vec{u} \times \vec{n}\|}\]</span></li>
+<li><strong>Implementation:</strong> In 3D rendering engines (such as
+Three.js or Babylon.js), this is commonly executed via functions like
+<code>Quaternion.setFromUnitVectors(objectUp, planeNormal)</code>.</li>
+</ul>
+<h2 id="3-oriented-bounding-box-obb-and-pivot-correction">3. Oriented
+Bounding Box (OBB) and Pivot Correction</h2>
+<p>glTF models often have inconsistent origin (pivot) points. A model's
+pivot might be positioned at its geometric center, top, or offset
+arbitrarily, which can cause the furniture to sink into the floor or
+hover above it.</p>
+<ul>
+<li><strong>Bottom Face Identification:</strong> The algorithm parses
+the glTF's mesh vertices to generate an Oriented Bounding Box (OBB) or
+an Axis-Aligned Bounding Box (AABB).</li>
+<li><strong>Offset Compensation:</strong> The lowest point along the
+model's vertical axis (<span
+class="math inline">\(Y_{\text{min}}\)</span>) is calculated. The system
+then applies a translation offset along the plane normal vector: <span
+class="math display">\[\vec{P}_{\text{adjusted}} = \vec{P}_{\text{hit}}
+- (\vec{n} \times |Y_{\text{min}}|)\]</span> This translation ensures
+that the lowest contact patch of the furniture rests directly on the
+mathematical plane.</li>
+</ul>
+<h2 id="4-gravity-alignment-and-yaw-constraints">4. Gravity Alignment
+and Yaw Constraints</h2>
+<p>While the bottom of the furniture must match the surface normal,
+horizontal furniture (such as chairs and tables) must also account for
+gravity.</p>
+<ul>
+<li><strong>Yaw Isolation:</strong> For horizontal planes, the surface
+normal is parallel to gravity. The algorithm locks the pitch and roll to
+match the plane normal and isolates the yaw axis (rotation around the
+normal) to allow user rotation or alignment with adjacent walls.</li>
+<li><strong>Vertical Plane Snapping (Walls):</strong> When placing
+wall-mounted glTF items (such as shelves or artwork), the algorithm
+aligns the asset's rear bounding plane to the vertical surface normal
+while constraining the asset's local "up" vector to remain parallel to
+real-world gravity.</li>
+</ul>
+<h2 id="5-ransac-and-icp-for-mesh-refinement">5. RANSAC and ICP for Mesh
+Refinement</h2>
+<p>When working with dense raw point clouds or non-planar triangle
+meshes rather than pre-calculated ARKit/ARCore planes, point-cloud
+fitting algorithms are used directly:</p>
+<ul>
+<li><strong>RANSAC (Random Sample Consensus):</strong> Iteratively
+samples subsets of points from a spatial mesh to find the mathematical
+equation of the dominant plane within a region, filtering out sensor
+noise.</li>
+<li><strong>Iterative Closest Point (ICP):</strong> Used for advanced
+contact-surface fitting, ICP minimizes the distance between the contact
+vertices of the glTF model and the scanned surface points, allowing
+complex multi-legged furniture to find stable equilibrium on slightly
+uneven surfaces.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

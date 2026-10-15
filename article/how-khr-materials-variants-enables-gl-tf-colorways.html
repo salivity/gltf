@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How KHR_materials_variants Enables glTF Colorways - gltf</title>
+    <meta name="description" content="The KHRmaterialsvariants extension allows a single glTF or GLB 3D asset to store multiple material variations—such as different colors, patterns, and finishes—without duplicating the underlying geometry. By defining a global list of variant names and mapp">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-khr-materials-variants-enables-gl-tf-colorways">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How KHR_materials_variants Enables glTF Colorways - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-khr-materials-variants-enables-gl-tf-colorways" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The KHRmaterialsvariants extension allows a single glTF or GLB 3D asset to store multiple material variations—such as different colors, patterns, and finishes—without duplicating the underlying geometry. By defining a global list of variant names and mapp" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-khr_materials_variants-enables-gltf-colorways">How
+KHR_materials_variants Enables glTF Colorways</h1>
+<p>The <code>KHR_materials_variants</code> extension allows a single
+glTF or GLB 3D asset to store multiple material variations—such as
+different colors, patterns, and finishes—without duplicating the
+underlying geometry. By defining a global list of variant names and
+mapping them to specific materials directly within the mesh primitives,
+3D commerce platforms and configurators can instantly switch visual
+styles in real time. This approach dramatically reduces file size, cuts
+network requests, and streamlines 3D asset management for multi-SKU
+products.</p>
+<h2 id="the-architecture-of-khr_materials_variants">The Architecture of
+KHR_materials_variants</h2>
+<p>In standard glTF 2.0, each mesh primitive can only reference a single
+material. Traditionally, displaying five different color options of a
+chair required exporting five separate 3D models or writing complex,
+custom JavaScript logic to swap textures manually at runtime.</p>
+<p><code>KHR_materials_variants</code> solves this by introducing a
+standardized architecture based on two core components:</p>
+<ol type="1">
+<li><strong>The Root Variants Array:</strong> At the document root
+level, the extension defines an array of named variants (for example:
+<code>"Red Leather"</code>, <code>"Blue Velvet"</code>, or
+<code>"Matte Black"</code>).</li>
+<li><strong>Primitive-Level Material Mappings:</strong> Within each mesh
+primitive, the extension attaches a mapping table. This table pairs a
+specific material index with one or more variant indices defined in the
+root array.</li>
+</ol>
+<p>When a 3D runtime loads the file, it defaults to the primary material
+assigned to the primitive. When a user selects a variant from a UI, the
+viewer reads the mapping table and swaps the active material to the one
+associated with the selected variant index.</p>
+<h2 id="eliminating-geometry-duplication">Eliminating Geometry
+Duplication</h2>
+<p>The most significant technical advantage of this extension is
+geometry reuse. A complex 3D product might have tens of thousands of
+polygons, bone rigs, and morph targets. In a colorway scenario, these
+structural elements do not change; only the surface properties (albedo,
+roughness, metallic, normal maps) change.</p>
+<p>By packing multiple material references into a single asset:</p>
+<ul>
+<li><strong>Geometry is downloaded once:</strong> Vertices, normals,
+tangents, and UV coordinates are shared across all variants.</li>
+<li><strong>Draw calls and memory footprints are optimized:</strong> The
+GPU retains the mesh buffer in memory, changing only shader parameters
+or texture bindings when switching colorways.</li>
+<li><strong>File sizes are minimized:</strong> A product with ten
+colorways is only marginally larger than a single-variant model, as the
+only added data consists of small JSON mapping blocks and additional
+texture maps.</li>
+</ul>
+<h2 id="dynamic-asset-management-for-e-commerce">Dynamic Asset
+Management for E-Commerce</h2>
+<p><code>KHR_materials_variants</code> has become the standard for
+digital retail and product configurators. Because variant metadata is
+baked natively into the asset specification, it works predictably across
+different WebGL, WebGPU, and native engines (such as Babylon.js,
+Three.js, and Google’s <code>&lt;model-viewer&gt;</code>).</p>
+<p>Digital asset pipelines no longer need to maintain separate files for
+every product SKU. Instead, artists export a single master asset that
+accurately represents the entire product catalog, enabling instant,
+lag-free visual switching on product display pages.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

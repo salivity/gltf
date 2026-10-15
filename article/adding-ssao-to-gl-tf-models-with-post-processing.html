@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adding SSAO to glTF Models with Post-Processing - gltf</title>
+    <meta name="description" content="This article outlines the post-processing pipeline required to implement Screen-Space Ambient Occlusion (SSAO) on 3D models stored in the glTF format. While glTF inherently supports static ambient occlusion via pre-baked texture maps, dynamic SSAO calcula">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/adding-ssao-to-gl-tf-models-with-post-processing">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Adding SSAO to glTF Models with Post-Processing - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/adding-ssao-to-gl-tf-models-with-post-processing" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article outlines the post-processing pipeline required to implement Screen-Space Ambient Occlusion (SSAO) on 3D models stored in the glTF format. While glTF inherently supports static ambient occlusion via pre-baked texture maps, dynamic SSAO calcula" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="adding-ssao-to-gltf-models-with-post-processing">Adding SSAO to
+glTF Models with Post-Processing</h1>
+<p>This article outlines the post-processing pipeline required to
+implement Screen-Space Ambient Occlusion (SSAO) on 3D models stored in
+the glTF format. While glTF inherently supports static ambient occlusion
+via pre-baked texture maps, dynamic SSAO calculates soft contact shadows
+in real time based on the rendered geometry. The following sections
+break down the multi-stage post-processing techniques used by modern
+real-time rendering engines—such as Three.js, Babylon.js, or custom
+WebGL/WebGPU pipelines—to extract scene data from glTF assets, compute
+occlusion values, and blend the final result.</p>
+<h3 id="1-generating-depth-and-normal-buffers-pre-pass">1. Generating
+Depth and Normal Buffers (Pre-Pass)</h3>
+<p>Before computing occlusion, the renderer must extract the geometric
+information of the rendered glTF scene into screen-space textures (a
+mini G-buffer):</p>
+<ul>
+<li><strong>Linear Depth Buffer:</strong> glTF meshes are rendered to an
+off-screen framebuffer to capture depth information. This depth buffer
+is typically linearized so that distance from the camera scales
+uniformly across the screen.</li>
+<li><strong>View-Space Normal Buffer:</strong> Alongside depth, surface
+normals transformed into view space are rendered into an RGB texture.
+These normals define the orientation of the surface at each pixel,
+determining the direction in which occlusion tests should occur.</li>
+</ul>
+<p>Engines often achieve this either through a depth-normal pre-pass or
+by writing directly to multiple render targets (MRT) during the standard
+rendering pass.</p>
+<h3 id="2-hemisphere-sampling-and-occlusion-testing">2. Hemisphere
+Sampling and Occlusion Testing</h3>
+<p>The core SSAO pass runs as a full-screen quad shader that reads the
+depth and normal buffers:</p>
+<ul>
+<li><strong>Sample Kernel Creation:</strong> A set of sample points
+(usually 16 to 64 samples) distributed inside a hemisphere is generated.
+The hemisphere is oriented along the surface normal extracted from the
+normal buffer. Samples are clustered closer to the origin to favor
+nearby occlusion.</li>
+<li><strong>Projection to Screen Space:</strong> Each sample point in
+the hemisphere is projected back into screen space using the camera's
+projection matrix.</li>
+<li><strong>Depth Comparison:</strong> The shader reads the scene depth
+at the sample's projected coordinates and compares it to the sample’s
+calculated view-space depth. If the scene depth is closer to the camera
+than the sample depth, the sample is occluded.</li>
+<li><strong>Range Check:</strong> A falloff function is applied to
+prevent distant, unrelated geometry from incorrectly occluding
+foreground objects (often referred to as "halo" artifacts).</li>
+</ul>
+<h3 id="3-jittering-and-randomization">3. Jittering and
+Randomization</h3>
+<p>Evaluating high sample counts per pixel is computationally expensive.
+To keep sample counts low while maintaining performance:</p>
+<ul>
+<li><strong>Noise Texture Rotation:</strong> A small, tiled noise
+texture (typically 4x4 pixels containing random 2D rotation vectors) is
+mapped across the screen.</li>
+<li><strong>Sample Rotation:</strong> The sample kernel is randomly
+rotated around the normal vector using this noise texture. This
+transforms banding patterns into high-frequency noise, which can be
+resolved efficiently in a subsequent blur pass.</li>
+</ul>
+<h3 id="4-bilateral-filtering-depth-aware-blur">4. Bilateral Filtering
+(Depth-Aware Blur)</h3>
+<p>Because the randomization step introduces high-frequency noise, a
+blur pass is essential to smooth the occlusion factor:</p>
+<ul>
+<li><strong>Edge-Preserving Blur:</strong> A standard Gaussian blur
+would cause occlusion shadows to bleed across object boundaries and
+distinct depth layers. Instead, an edge-preserving bilateral filter is
+used.</li>
+<li><strong>Weight Calculation:</strong> The filter weights neighbor
+samples based on both spatial distance and depth/normal differences.
+Samples with significant depth or normal disparities are discarded,
+keeping the contact shadows sharp along edges while smoothing flat
+surfaces.</li>
+</ul>
+<h3 id="5-final-compositing">5. Final Compositing</h3>
+<p>Once the smoothed occlusion texture is generated, it must be
+integrated with the glTF PBR (Physically Based Rendering) pipeline:</p>
+<ul>
+<li><strong>Indirect Lighting Modulation:</strong> SSAO is designed to
+simulate the blockage of indirect ambient light. In physically accurate
+engines, the SSAO scalar (ranging from 0.0 to 1.0) is multiplied
+specifically by the ambient light term, image-based lighting (IBL), or
+the diffuse indirect component before direct lighting is added.</li>
+<li><strong>Full-Scene Multiplication:</strong> In simpler rendering
+setups, the SSAO texture is directly multiplied over the final rendered
+color buffer of the glTF scene, darkening cavities, crevices, and
+contact points between meshes.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

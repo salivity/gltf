@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile glTF Texture Resolution Standards - gltf</title>
+    <meta name="description" content="Balancing visual fidelity against download speed and runtime memory is one of the most critical challenges when deploying glTF assets to mobile devices. This article outlines the industry-standard texture resolutions, channel-packing practices, and compre">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/mobile-gl-tf-texture-resolution-standards">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Mobile glTF Texture Resolution Standards - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/mobile-gl-tf-texture-resolution-standards" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Balancing visual fidelity against download speed and runtime memory is one of the most critical challenges when deploying glTF assets to mobile devices. This article outlines the industry-standard texture resolutions, channel-packing practices, and compre" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="mobile-gltf-texture-resolution-standards">Mobile glTF Texture
+Resolution Standards</h1>
+<p>Balancing visual fidelity against download speed and runtime memory
+is one of the most critical challenges when deploying glTF assets to
+mobile devices. This article outlines the industry-standard texture
+resolutions, channel-packing practices, and compression workflows that
+maintain high visual quality while keeping mobile 3D models lightweight
+and responsive.</p>
+<h2 id="the-standard-10241024-and-20482048">The Standard: 1024×1024 and
+2048×2048</h2>
+<p>For the majority of mobile web and native real-time 3D applications,
+standardizing on <strong>1024×1024 (1K)</strong> and <strong>2048×2048
+(2K)</strong> dimensions provides the optimal compromise between network
+bandwidth, GPU memory (VRAM), and visual sharpness.</p>
+<ul>
+<li><strong>2048×2048 (2K):</strong> Reserved strictly for hero assets,
+close-up product views, or central characters where fine surface details
+(text, stitching, complex micro-patterns) are visible on high-DPI
+screens.</li>
+<li><strong>1024×1024 (1K):</strong> The baseline standard for the
+majority of standalone mobile assets, secondary characters, large props,
+and primary architectural elements.</li>
+<li><strong>512×512 (512px) and below:</strong> Ideal for background
+props, small accessories, UI elements, and auxiliary objects rarely
+inspected closely.</li>
+</ul>
+<p>All texture dimensions must strictly follow <strong>Power of Two
+(POT)</strong> sizing (e.g., 512, 1024, 2048). Non-power-of-two (NPOT)
+textures often fail to generate hardware mipmaps correctly, resulting in
+texture shimmering and increased memory overhead on mobile GPUs.</p>
+<h2 id="differential-map-resolution-and-channel-packing">Differential
+Map Resolution and Channel Packing</h2>
+<p>A common mistake is assigning the same texture resolution to every
+map in a PBR (Physically Based Rendering) material. Assigning
+resolutions according to how the human eye perceives different surface
+information significantly reduces the asset footprint without degrading
+quality.</p>
+<h3 id="1-base-color-albedo">1. Base Color (Albedo)</h3>
+<p>The base color defines the overall look and coloration of the object.
+Keep this map at the primary asset resolution (typically 1K or 2K) to
+prevent blurry textures on high-resolution smartphone screens.</p>
+<h3 id="2-normal-maps">2. Normal Maps</h3>
+<p>Normal maps simulate geometric surface contours and react directly to
+lighting. Compression artifacts and downscaling in normal maps are
+immediately noticeable as blocky lighting artifacts. Maintain normal
+maps at the same resolution as the base color (or at most one step
+down), and avoid extreme lossy compression on this channel.</p>
+<h3 id="3-orm-occlusion-roughness-metallic-channel-packing">3. ORM
+(Occlusion, Roughness, Metallic) Channel Packing</h3>
+<p>glTF natively supports combining Ambient Occlusion, Roughness, and
+Metallic into the Red, Green, and Blue channels of a single texture.
+Because roughness and metalness data often contain broad, continuous
+values rather than sharp high-frequency edges, the ORM map can safely be
+downscaled to <strong>half the resolution of the Base Color</strong>
+(e.g., a 1K Base Color paired with a 512×512 ORM map) with virtually no
+perceptible loss in rendering quality.</p>
+<h2 id="compression-standards-khr_texture_basisu">Compression Standards:
+KHR_texture_basisu</h2>
+<p>Resolution is only half the battle; texture compression dictates the
+final network payload and runtime VRAM usage. Standard PNG and JPEG
+formats must be completely decoded into uncompressed raw RGBA in mobile
+memory, quickly exhausting mobile GPU limits.</p>
+<p>The mobile industry standard for glTF is the
+<code>KHR_texture_basisu</code> extension, which uses Basis Universal
+compression to create <code>.ktx2</code> files:</p>
+<ul>
+<li><strong>UASTC Mode:</strong> High-quality compression suited for
+normal maps and detailed base color maps where visual artifacts cannot
+be tolerated. It provides modest file-size reduction over the wire but
+transcodes directly to native GPU formats (ASTC on modern mobile
+chips).</li>
+<li><strong>ETC1S Mode:</strong> Extremely high compression yielding
+very small network payloads (often 75–90% smaller than PNG). It is ideal
+for base color maps on non-hero assets and smooth gradient maps, though
+it can cause banding on normal maps.</li>
+</ul>
+<h2 id="recommended-resolution-guidelines">Recommended Resolution
+Guidelines</h2>
+<ul>
+<li><strong>Target Maximum Download Size per Asset:</strong> Under 3 MB
+to 5 MB for primary web assets; under 1 MB for secondary elements.</li>
+<li><strong>Primary Screen Asset:</strong> 1024×1024 (or 2048×2048 if
+zoom is enabled) Base Color + Normal; 1024×1024 ORM map.</li>
+<li><strong>Secondary/Environment Asset:</strong> 512×512 to 1024×1024
+Base Color; 512×512 Normal and ORM maps.</li>
+<li><strong>Texture Atlasing:</strong> Combine multiple small objects
+sharing the same scene into a single 2048×2048 texture atlas rather than
+loading several individual 512×512 textures to minimize draw calls and
+state changes on mobile hardware.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

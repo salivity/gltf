@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Avoid Rendering Logic in glTF Extras - gltf</title>
+    <meta name="description" content="Storing rendering logic inside the glTF extras object compromises asset portability, introduces pipeline instability, and breaks the core philosophy of glTF as a universal 3D transmission format. While the extras field offers a tempting shortcut for passi">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/why-avoid-rendering-logic-in-gl-tf-extras">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Why Avoid Rendering Logic in glTF Extras - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/why-avoid-rendering-logic-in-gl-tf-extras" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Storing rendering logic inside the glTF extras object compromises asset portability, introduces pipeline instability, and breaks the core philosophy of glTF as a universal 3D transmission format. While the extras field offers a tempting shortcut for passi" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="why-avoid-rendering-logic-in-gltf-extras">Why Avoid Rendering
+Logic in glTF Extras</h1>
+<p>Storing rendering logic inside the glTF <code>extras</code> object
+compromises asset portability, introduces pipeline instability, and
+breaks the core philosophy of glTF as a universal 3D transmission
+format. While the <code>extras</code> field offers a tempting shortcut
+for passing arbitrary engine-specific data—such as shader paths, blend
+modes, rendering passes, and logic flags—relying on it couples assets
+directly to a single runtime implementation. This article examines the
+structural, architectural, and workflow problems that arise when engine
+developers repurpose <code>extras</code> as a container for rendering
+logic instead of adhering to standardized formats and engine-level
+architectures.</p>
+<h3 id="the-breakdown-of-portability-and-interoperability">The Breakdown
+of Portability and Interoperability</h3>
+<p>The primary objective of glTF is to serve as the "JPEG of 3D"—an
+efficient, interoperable asset format that displays consistently across
+diverse engines, tools, and platforms. When an engine requires custom
+rendering logic hidden inside the <code>extras</code> property to render
+an asset correctly, that asset ceases to be interoperable. It becomes a
+proprietary format wrapped in a <code>.gltf</code> or <code>.glb</code>
+container. Other tools and platforms cannot interpret the logic, causing
+visual degradation, runtime errors, or complete rendering failures
+outside of the target engine.</p>
+<h3 id="lack-of-validation-and-schema-enforcement">Lack of Validation
+and Schema Enforcement</h3>
+<p>The <code>extras</code> property in glTF is explicitly untyped; the
+specification allows it to contain any valid JSON data.
+Consequently:</p>
+<ul>
+<li><strong>No Schema Validation:</strong> glTF validators cannot
+inspect or validate the payload. Typos, missing fields, or invalid enum
+values pass through asset pipelines undetected until runtime.</li>
+<li><strong>No Backward or Forward Compatibility Guarantees:</strong>
+Because the data is unversioned by default, updates to your engine's
+rendering architecture can instantly break existing assets, requiring
+fragile custom migration scripts.</li>
+<li><strong>Tooling Incompatibility:</strong> Digital Content Creation
+(DCC) software such as Blender, Maya, or 3ds Max does not understand
+your proprietary rendering conventions. If an artist re-exports an
+asset, custom <code>extras</code> blocks are often overwritten,
+discarded, or formatted incorrectly.</li>
+</ul>
+<h3 id="violation-of-the-separation-of-concerns">Violation of the
+Separation of Concerns</h3>
+<p>A clean game or engine architecture maintains a strict boundary
+between content definition and runtime execution.</p>
+<ul>
+<li><strong>Content Definitions (glTF):</strong> Describe <em>what</em>
+an object is—geometry, skeletal hierarchies, animations, and standard
+physical material parameters (PBR).</li>
+<li><strong>Rendering Logic (Engine):</strong> Governs <em>how</em>
+things are drawn—render queues, pipeline states, shader variants,
+lighting passes, depth testing parameters, and hardware-specific
+optimizations.</li>
+</ul>
+<p>Embedding rendering instructions directly into the asset blurs this
+separation. Assets should declare their visual and physical properties,
+leaving the engine to decide the optimal rendering technique based on
+the target hardware, platform constraints, and rendering pipeline
+(forward, deferred, clustered, or ray-traced).</p>
+<h3 id="gltf-extensions-provide-a-standardized-alternative">glTF
+Extensions Provide a Standardized Alternative</h3>
+<p>If standard glTF properties do not meet your visual requirements, the
+format already includes a formal mechanism: glTF Extensions
+(<code>extensions</code>).</p>
+<p>Unlike <code>extras</code>, formal extensions:</p>
+<ul>
+<li>Require clear schemas that allow third-party tools to parse and
+validate data.</li>
+<li>Allow assets to declare fallback behavior using
+<code>extensionsUsed</code> versus <code>extensionsRequired</code>.</li>
+<li>Encourage alignment with industry-standard material models (such as
+<code>KHR_materials_clearcoat</code>,
+<code>KHR_materials_transmission</code>, and
+<code>KHR_materials_volume</code>) rather than reinventing the wheel
+with ad-hoc engine parameters.</li>
+</ul>
+<p>If you must define custom capabilities, implementing a
+vendor-prefixed extension (e.g., <code>EXT_</code> or a company prefix)
+provides structural clarity, proper validation capability, and explicit
+declaration of requirements.</p>
+<h3 id="complexities-in-pipeline-automation">Complexities in Pipeline
+Automation</h3>
+<p>Relying on <code>extras</code> for critical rendering instructions
+complicates automated asset optimization and ingestion. Common
+optimization tools (such as gltfpack, Draco compressors, or mesh
+optimizers) merge nodes, combine primitives, and strip unnecessary
+metadata to maximize GPU throughput. Custom rendering logic tied to
+specific node structures or primitives in <code>extras</code> is easily
+broken or discarded during these optimization passes, forcing teams to
+write expensive custom tooling to protect their proprietary
+metadata.</p>
+<h3 id="the-correct-approach-for-engine-developers">The Correct Approach
+for Engine Developers</h3>
+<p>To keep glTF pipelines robust and maintainable, engine developers
+should:</p>
+<ol type="1">
+<li><strong>Map Standard glTF to Internal States:</strong> Parse
+standard glTF PBR materials and node trees, translating them into the
+engine's internal materials, shaders, and render components at load
+time.</li>
+<li><strong>Use External Archetypes or Prefabs:</strong> Keep custom
+rendering rules, shader associations, and post-processing behaviors
+inside engine-native scene, prefab, or material asset files that merely
+reference the clean glTF geometry and textures.</li>
+<li><strong>Formalize Custom Data as Extensions:</strong> When
+proprietary data must accompany the asset, define a validated custom
+extension rather than dropping untyped structures into
+<code>extras</code>.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Role of inverseBindMatrices in glTF Mesh Skinning - gltf</title>
+    <meta name="description" content="This article provides a concise technical explanation of the inverseBindMatrices accessor in the glTF (GL Transmission Format) 2.0 specification. It covers why this data is mathematically necessary for linear blend skinning, how it transforms vertex data">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/role-of-inverse-bind-matrices-in-gl-tf-mesh-skinning">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Role of inverseBindMatrices in glTF Mesh Skinning - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/role-of-inverse-bind-matrices-in-gl-tf-mesh-skinning" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a concise technical explanation of the inverseBindMatrices accessor in the glTF (GL Transmission Format) 2.0 specification. It covers why this data is mathematically necessary for linear blend skinning, how it transforms vertex data" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="role-of-inversebindmatrices-in-gltf-mesh-skinning">Role of
+inverseBindMatrices in glTF Mesh Skinning</h1>
+<p>This article provides a concise technical explanation of the
+<code>inverseBindMatrices</code> accessor in the glTF (GL Transmission
+Format) 2.0 specification. It covers why this data is mathematically
+necessary for linear blend skinning, how it transforms vertex data
+between coordinate spaces, the default behavior when it is omitted, and
+how it ensures smooth 3D character deformation.</p>
+<h2 id="the-coordinate-space-problem-in-skinning">The Coordinate Space
+Problem in Skinning</h2>
+<p>In skeletal animation (skinning), a 3D mesh's vertices are deformed
+according to the movement of an underlying joint hierarchy. By default,
+the vertices of a mesh are defined in a single, shared coordinate system
+known as mesh space or model space (often matching the initial "bind
+pose").</p>
+<p>When a joint moves or rotates, its transform is computed relative to
+the scene's hierarchy. However, you cannot directly apply a joint's
+world-space transformation to a vertex that is defined in mesh space.
+Doing so would apply the joint's global position to vertices that are
+already offset in world space, causing severe visual artifacts or mesh
+explosion. To deform a vertex properly, the rendering engine must first
+calculate the vertex's position relative to the joint itself.</p>
+<h2 id="the-function-of-inversebindmatrices">The Function of
+<code>inverseBindMatrices</code></h2>
+<p>The <code>inverseBindMatrices</code> accessor provides an array of
+<span class="math inline">\(4 \times 4\)</span> floating-point
+matrices—one for each joint listed in the <code>skin.joints</code>
+array.</p>
+<p>Each inverse bind matrix is the inverse of the joint's world-space
+transform at the exact moment the mesh was bound to the skeleton (the
+bind pose). Its primary mathematical purpose is to transform a vertex
+from mesh space into the local coordinate space of a specific joint.</p>
+<p>Once the vertex is in the joint's local coordinate space, the runtime
+skinning algorithm applies the joint's current transform to move the
+vertex to its new animated position.</p>
+<h2 id="the-skinning-math-breakdown">The Skinning Math Breakdown</h2>
+<p>In standard linear blend skinning (LBS), each vertex is transformed
+by calculating a weighted sum across all affecting joints. For each
+joint <span class="math inline">\(j\)</span> influencing a vertex, the
+transformation pipeline functions as follows:</p>
+<ol type="1">
+<li><strong>Transform to Joint Space:</strong> The vertex position in
+mesh space (<span class="math inline">\(v\)</span>) is multiplied by the
+joint's inverse bind matrix (<span
+class="math inline">\(IBM_j\)</span>): <span
+class="math display">\[\text{Local Vertex} = IBM_j \times
+v\]</span></li>
+<li><strong>Transform to Animated Space:</strong> The local vertex is
+multiplied by the joint's current global transform matrix (<span
+class="math inline">\(M_j\)</span>): <span
+class="math display">\[\text{Skin Matrix}_j = M_j \times
+IBM_j\]</span></li>
+<li><strong>Blend the Results:</strong> The final vertex position (<span
+class="math inline">\(v&#39;\)</span>) is computed by weighting the
+results of all contributing joints: <span class="math display">\[v&#39;
+= \sum_{j} (w_j \times \text{Skin Matrix}_j \times v)\]</span>
+<em>(where <span class="math inline">\(w_j\)</span> represents the
+vertex weight for joint <span class="math inline">\(j\)</span>, and the
+sum of all weights equals 1.0)</em></li>
+</ol>
+<p>Without the inverse bind matrix, the initial step cannot occur,
+making it impossible to determine the relative distance and orientation
+between the joint and the vertex in the resting pose.</p>
+<h2 id="optional-omission-and-default-behavior">Optional Omission and
+Default Behavior</h2>
+<p>According to the glTF 2.0 specification, the
+<code>inverseBindMatrices</code> property is optional. If a skin does
+not define an accessor for <code>inverseBindMatrices</code>, the
+renderer must assume an identity matrix for each joint.</p>
+<p>An identity matrix assumes that each joint's local origin and
+orientation precisely match the origin and orientation of the mesh
+coordinate space in the bind pose. While this is rare for complex
+character skeletons, it can be useful in simplified rigs or procedural
+nodes where joints are pre-aligned with mesh space. For standard
+animated characters, <code>inverseBindMatrices</code> is required to
+preserve proper geometry during playback.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

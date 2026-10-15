@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baking Photogrammetry Details into glTF Normal Maps - gltf</title>
+    <meta name="description" content="This article explains the technical pipeline for transferring surface detail from high-polygon photogrammetry scans onto lightweight, real-time 3D assets. It covers generating the optimized low-poly proxy, establishing clean UV layouts, casting surface ve">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/baking-photogrammetry-details-into-gl-tf-normal-maps">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Baking Photogrammetry Details into glTF Normal Maps - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/baking-photogrammetry-details-into-gl-tf-normal-maps" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains the technical pipeline for transferring surface detail from high-polygon photogrammetry scans onto lightweight, real-time 3D assets. It covers generating the optimized low-poly proxy, establishing clean UV layouts, casting surface ve" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="baking-photogrammetry-details-into-gltf-normal-maps">Baking
+Photogrammetry Details into glTF Normal Maps</h1>
+<p>This article explains the technical pipeline for transferring surface
+detail from high-polygon photogrammetry scans onto lightweight,
+real-time 3D assets. It covers generating the optimized low-poly proxy,
+establishing clean UV layouts, casting surface vectors during the normal
+map bake, aligning with glTF format standards, and packing the resulting
+textures for efficient web and mobile delivery.</p>
+<h3 id="1-generating-high-poly-and-low-poly-meshes">1. Generating
+High-Poly and Low-Poly Meshes</h3>
+<p>Photogrammetry software constructs dense point clouds and converts
+them into raw, unoptimized 3D meshes that often contain millions of
+polygons and irregular topology. Because raw scans cannot be rendered
+efficiently in real-time environments, a dual-mesh workflow is
+required:</p>
+<ul>
+<li><strong>High-Poly Source:</strong> The raw, high-density
+photogrammetric scan containing the microscopic surface details,
+crevices, and geometric imperfections.</li>
+<li><strong>Low-Poly Target:</strong> A retopologized mesh generated via
+decimation algorithms or manual quad-retopology. This mesh mimics the
+macroscopic silhouette of the original scan while drastically lowering
+polygon counts to tens of thousands (or fewer) of triangles.</li>
+</ul>
+<h3 id="2-uv-unwrapping-and-mesh-alignment">2. UV Unwrapping and Mesh
+Alignment</h3>
+<p>Before baking can occur, the low-poly target must be UV unwrapped.
+The UV coordinates dictate how a 2D image maps to the 3D surface. To
+ensure quality baking:</p>
+<ul>
+<li>UV islands should maximize texture space without overlapping.</li>
+<li>Hard geometric edges should align with UV seams to prevent shading
+artifacts.</li>
+<li>The low-poly model and the high-poly scan must occupy the exact same
+coordinate space, sharing identical positions, rotations, and
+scales.</li>
+</ul>
+<h3 id="3-ray-casting-and-normal-map-baking">3. Ray Casting and Normal
+Map Baking</h3>
+<p>Normal map baking transfers the fine directional vectors of the
+high-poly mesh onto a flat 2D texture applied to the low-poly mesh.</p>
+<p>A baking engine (such as Blender, Marmoset Toolbag, or Substance 3D
+Baker) shoots projection rays outward from the low-poly surface toward
+the high-poly surface using an inflated boundary known as a "cage."
+Where the ray intersects the high-poly surface, the engine records the
+angle of the high-poly surface normal.</p>
+<p>This directional vector (<span class="math inline">\(X, Y,
+Z\)</span>) is converted into an RGB color value:</p>
+<ul>
+<li><strong>Red Channel:</strong> Tangent (<span
+class="math inline">\(X\)</span> axis, left/right surface
+direction)</li>
+<li><strong>Green Channel:</strong> Bitangent (<span
+class="math inline">\(Y\)</span> axis, up/down surface direction)</li>
+<li><strong>Blue Channel:</strong> Normal (<span
+class="math inline">\(Z\)</span> axis, depth pointing directly away from
+the surface)</li>
+</ul>
+<p>The resulting Tangent Space Normal Map creates the illusion of depth
+by recalculating surface lighting per pixel rather than per vertex.</p>
+<h3 id="4-conforming-to-the-gltf-specification">4. Conforming to the
+glTF Specification</h3>
+<p>The glTF (GL Transmission Format) and GLB specifications define
+strict requirements for normal maps to render correctly across diverse
+WebGL and native engines:</p>
+<ul>
+<li><strong>Tangent Space Standard:</strong> glTF relies on the
+MikkTSpace standard for calculating vertex tangents. Bakers must be set
+to MikkTSpace to avoid inverted or distorted shading seams.</li>
+<li><strong>Green Channel Direction (OpenGL):</strong> glTF requires
+OpenGL-style normal maps, where the Green channel (<span
+class="math inline">\(+Y\)</span>) points upward. If the map is baked in
+a DirectX format (where Green is <span class="math inline">\(-Y\)</span>
+downward), the green channel must be inverted before export.</li>
+<li><strong>Linear Color Space:</strong> Normal map textures in glTF are
+interpreted linearly (<code>sRGB = false</code>). Storing or reading
+normal maps with sRGB gamma curves will distort the light
+calculations.</li>
+</ul>
+<h3 id="5-packaging-and-lightweight-delivery">5. Packaging and
+Lightweight Delivery</h3>
+<p>Once baked, the normal map is integrated into the glTF PBR
+(Physically Based Rendering) material stack alongside base color,
+metallic-roughness, and ambient occlusion maps.</p>
+<p>To maximize loading speed and minimize file size over the
+network:</p>
+<ul>
+<li>The normal map is saved as an 8-bit PNG, JPEG, or compressed using
+WebP.</li>
+<li>For advanced production delivery, glTF extensions like
+<code>KHR_texture_basisu</code> allow normal maps to be transcoded into
+universal GPU formats (KTX2 / Basis Universal), keeping memory
+footprints tiny on mobile devices.</li>
+<li>The geometry and texture references are packaged into a single
+binary <code>.glb</code> container, delivering photorealistic visual
+fidelity at a fraction of the raw scan's computational overhead.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

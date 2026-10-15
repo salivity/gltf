@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Role of alphaCutoff in glTF Alpha Masking - gltf</title>
+    <meta name="description" content="In the glTF 2.0 specification, the alphaCutoff property defines the exact threshold used to determine whether a fragment is rendered or completely discarded when a material uses the MASK alpha mode. This article explains how alphaCutoff functions within 3">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/the-role-of-alpha-cutoff-in-gl-tf-alpha-masking">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="The Role of alphaCutoff in glTF Alpha Masking - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/the-role-of-alpha-cutoff-in-gl-tf-alpha-masking" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In the glTF 2.0 specification, the alphaCutoff property defines the exact threshold used to determine whether a fragment is rendered or completely discarded when a material uses the MASK alpha mode. This article explains how alphaCutoff functions within 3" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="the-role-of-alphacutoff-in-gltf-alpha-masking">The Role of
+alphaCutoff in glTF Alpha Masking</h1>
+<p>In the glTF 2.0 specification, the <code>alphaCutoff</code> property
+defines the exact threshold used to determine whether a fragment is
+rendered or completely discarded when a material uses the
+<code>MASK</code> alpha mode. This article explains how
+<code>alphaCutoff</code> functions within 3D rendering pipelines, why it
+is essential for rendering cutout surfaces like foliage and fences, and
+how it avoids common transparency sorting artifacts while maintaining
+depth-buffer compatibility.</p>
+<h3 id="the-mechanics-of-alpha-masking">The Mechanics of Alpha
+Masking</h3>
+<p>glTF materials support three primary alpha modes:
+<code>OPAQUE</code>, <code>BLEND</code>, and <code>MASK</code>. While
+<code>BLEND</code> allows for smooth, semi-transparent transitions and
+<code>OPAQUE</code> ignores transparency entirely, <code>MASK</code>
+provides a binary pass/fail approach to surface visibility.</p>
+<p>The <code>alphaCutoff</code> property acts as the evaluation
+threshold for this binary decision:</p>
+<ul>
+<li>If the evaluated alpha value of the base color is <strong>greater
+than or equal to</strong> <code>alphaCutoff</code>, the fragment is
+treated as fully opaque (alpha is set to 1.0).</li>
+<li>If the alpha value is <strong>strictly less than</strong>
+<code>alphaCutoff</code>, the fragment is discarded from rendering
+entirely.</li>
+</ul>
+<p>By default, the glTF specification sets <code>alphaCutoff</code> to
+0.5 if not explicitly declared in the material definition.</p>
+<h3 id="depth-testing-and-sorting-advantages">Depth Testing and Sorting
+Advantages</h3>
+<p>The primary functional benefit of using <code>alphaCutoff</code> over
+traditional alpha blending is compatibility with the depth buffer
+(Z-buffer). Transparent objects using <code>BLEND</code> mode generally
+cannot write to the depth buffer without causing rendering anomalies,
+requiring game engines and WebGL viewers to sort meshes from back to
+front every frame.</p>
+<p>Because <code>MASK</code> mode strictly discards fragments, surviving
+fragments write directly to the depth buffer just like opaque geometry.
+This eliminates sorting artifacts, reduces CPU overhead for transparency
+sorting, and ensures that geometric clipping behaves predictably from
+any camera angle.</p>
+<h3 id="integration-with-modern-rendering-pipelines">Integration with
+Modern Rendering Pipelines</h3>
+<p>Fragment discarding via <code>alphaCutoff</code> enables masked
+assets to integrate smoothly with standard deferred and forward
+rendering techniques:</p>
+<ul>
+<li><strong>Shadow Mapping:</strong> Shadow passes can execute
+depth-only pre-passes that sample the alpha texture and discard
+fragments below the cutoff, creating accurate, sharp silhouette shadows
+for complex geometry.</li>
+<li><strong>Depth-Dependent Effects:</strong> Effects such as Screen
+Space Ambient Occlusion (SSAO), Depth of Field (DoF), and temporal
+antialiasing rely heavily on an accurate depth map, which masked
+materials populate reliably.</li>
+</ul>
+<h3 id="common-use-cases">Common Use Cases</h3>
+<p><code>alphaCutoff</code> is optimized for geometry requiring fine,
+perforated detail where full volumetric transparency is unnecessary.
+Common applications include:</p>
+<ul>
+<li>Foliage, tree leaves, and grass blades.</li>
+<li>Chain-link fences, wire mesh, and grates.</li>
+<li>Fringes on clothing and hair cards in real-time character
+models.</li>
+<li>Decals with sharp, distinct boundaries.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

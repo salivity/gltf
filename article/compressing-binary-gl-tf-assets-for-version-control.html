@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compressing Binary glTF Assets for Version Control - gltf</title>
+    <meta name="description" content="Binary glTF (.glb) files present significant challenges in version control systems like Git due to their monolithic binary nature, which causes repository bloat and prevents delta compression. This article examines the most effective compression technique">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/compressing-binary-gl-tf-assets-for-version-control">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Compressing Binary glTF Assets for Version Control - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/compressing-binary-gl-tf-assets-for-version-control" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Binary glTF (.glb) files present significant challenges in version control systems like Git due to their monolithic binary nature, which causes repository bloat and prevents delta compression. This article examines the most effective compression technique" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="compressing-binary-gltf-assets-for-version-control">Compressing
+Binary glTF Assets for Version Control</h1>
+<p>Binary glTF (<code>.glb</code>) files present significant challenges
+in version control systems like Git due to their monolithic binary
+nature, which causes repository bloat and prevents delta compression.
+This article examines the most effective compression techniques and
+workflow strategies—including geometry compression with Draco and
+Meshopt, texture decoupling, and Git Large File Storage (LFS)
+configuration—to keep 3D asset repositories lightweight, maintainable,
+and fast to synchronize.</p>
+<h2 id="the-core-challenge-of-binary-gltf-in-vcs">The Core Challenge of
+Binary glTF in VCS</h2>
+<p>A standard <code>.glb</code> file packages 3D model geometry, scene
+hierarchy, animations, and image textures into a single binary blob.
+Version control systems (VCS) like Git are designed for line-by-line
+text diffing. When a <code>.glb</code> asset is modified—even by moving
+a single vertex or tweaking an embedded texture—the internal byte layout
+shifts dramatically. Git cannot create efficient binary deltas for
+packed assets, forcing it to store a nearly complete duplicate of the
+file with every commit, leading to rapid repository growth.</p>
+<h2 id="geometry-compression-draco-vs-meshopt">Geometry Compression:
+Draco vs. Meshopt</h2>
+<p>Geometry data accounts for a large portion of untextured models. Two
+primary compression standards exist within the glTF ecosystem:</p>
+<ul>
+<li><strong>Draco Compression
+(<code>KHR_draco_mesh_compression</code>):</strong> Draco aggressively
+compresses vertex positions, normals, texture coordinates, and indices.
+While it achieves high compression ratios (often reducing geometry by
+70–90%), it alters vertex order and requires significant CPU overhead to
+decode. For version control, a Draco-compressed <code>.glb</code>
+remains an opaque binary file; modifying the mesh creates an entirely
+different binary stream, offering no delta benefits in Git.</li>
+<li><strong>Meshoptimizer
+(<code>EXT_meshopt_compression</code>):</strong> Meshopt focuses on
+optimizing vertex cache efficiency and compressing data into
+SIMD-friendly formats. Although its compression ratio is slightly lower
+than Draco's, it maintains the deterministic order of data and decodes
+orders of magnitude faster. For assets stored directly in Git, Meshopt's
+predictable structure yields more consistent binary footprints across
+asset revisions.</li>
+</ul>
+<h2 id="container-decoupling-gltf-vs-glb">Container Decoupling: glTF vs.
+GLB</h2>
+<p>The most effective technique for version control is avoiding
+monolithic <code>.glb</code> containers during the active production
+phase:</p>
+<ul>
+<li><strong>Split the Asset:</strong> Save models as plain-text
+<code>.gltf</code> files accompanied by separate external
+<code>.bin</code> buffers and distinct image files (such as PNG or
+KTX2).</li>
+<li><strong>Targeted Commits:</strong> In a decoupled state, editing a
+material only alters the JSON-formatted <code>.gltf</code> text file,
+which Git diffs with near-zero overhead. Modifying a texture updates
+only that specific image file, leaving the geometry <code>.bin</code>
+file untouched.</li>
+<li><strong>Automated Build Pipelines:</strong> Compile the decoupled
+<code>.gltf</code>, <code>.bin</code>, and textures into a single,
+optimized <code>.glb</code> file during a downstream continuous
+integration (CI) release step rather than tracking the compiled
+<code>.glb</code> in the core source tree.</li>
+</ul>
+<h2 id="texture-optimization-and-basis-universal">Texture Optimization
+and Basis Universal</h2>
+<p>Textures typically account for 60% to 80% of a <code>.glb</code>
+file's total size. Compressing embedded textures drastically reduces
+asset weight:</p>
+<ul>
+<li><strong>KTX2 and Basis Universal
+(<code>KHR_texture_basisu</code>):</strong> Convert embedded PNG or JPEG
+textures to KTX2 containers using Basis Universal encoding (ETC1S or
+UASTC). ETC1S provides massive size reductions for standard albedo
+textures, while UASTC is ideal for normal maps requiring high
+fidelity.</li>
+<li><strong>Channel Packing:</strong> Pack grayscale maps (roughness,
+metallic, ambient occlusion) into the separate color channels of a
+single texture to eliminate duplicate image overhead.</li>
+</ul>
+<h2 id="version-control-infrastructure-optimization">Version Control
+Infrastructure Optimization</h2>
+<p>Compression applied at the file level must be paired with appropriate
+VCS configuration:</p>
+<ul>
+<li><strong>Git Large File Storage (Git LFS):</strong> Move all
+<code>.glb</code>, <code>.bin</code>, and texture files to Git LFS using
+<code>.gitattributes</code>. This stores files on a remote server while
+keeping lightweight pointer files in the Git history, preventing the
+local <code>.git</code> directory from expanding indefinitely with every
+revision.</li>
+<li><strong>Disable Meaningless Deltas:</strong> For repositories
+storing <code>.glb</code> files without Git LFS, configure
+<code>.gitattributes</code> to mark the format as binary
+(<code>*.glb -diff -merge</code>). This prevents the VCS from spending
+CPU cycles attempting to calculate line-by-line diffs on binary
+data.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

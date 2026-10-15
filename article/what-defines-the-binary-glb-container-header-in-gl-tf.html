@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What Defines the Binary GLB Container Header in glTF? - gltf</title>
+    <meta name="description" content="A binary glTF (GLB) file begins with a fixed 12-byte header that identifies the container format, specifies the specification version, and defines the total byte length of the entire file. Following this header, the file structure consists of structured b">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/what-defines-the-binary-glb-container-header-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="What Defines the Binary GLB Container Header in glTF? - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/what-defines-the-binary-glb-container-header-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="A binary glTF (GLB) file begins with a fixed 12-byte header that identifies the container format, specifies the specification version, and defines the total byte length of the entire file. Following this header, the file structure consists of structured b" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="what-defines-the-binary-glb-container-header-in-gltf">What
+Defines the Binary GLB Container Header in glTF?</h1>
+<p>A binary glTF (GLB) file begins with a fixed 12-byte header that
+identifies the container format, specifies the specification version,
+and defines the total byte length of the entire file. Following this
+header, the file structure consists of structured binary chunks
+containing JSON-formatted scene metadata and raw binary buffers for
+meshes, animations, and textures. Understanding the exact byte layout,
+field definitions, and data alignment of this 12-byte header is
+essential for building GLB parsers, validators, and asset pipelines.</p>
+<h2 id="the-12-byte-header-specification">The 12-Byte Header
+Specification</h2>
+<p>The binary glTF header must occupy the exact first 12 bytes of any
+GLB container. All fields are encoded as 32-bit unsigned little-endian
+integers (<code>uint32</code>).</p>
+<p>The header consists of three sequential fields:</p>
+<ol type="1">
+<li><strong><code>magic</code> (4 bytes)</strong>: A constant byte
+sequence identifying the file as a GLB container. It represents the
+ASCII string <code>glTF</code>, which corresponds to the hexadecimal
+value <code>0x46546C67</code>. When evaluated as a 32-bit little-endian
+integer, byte 0 is <code>0x67</code> ('g'), byte 1 is <code>0x6C</code>
+('l'), byte 2 is <code>0x54</code> ('T'), and byte 3 is
+<code>0x46</code> ('F').</li>
+<li><strong><code>version</code> (4 bytes)</strong>: An integer defining
+the binary container format version. For assets compliant with glTF 2.0,
+this value must evaluate to integer <code>2</code>
+(<code>0x00000002</code>).</li>
+<li><strong><code>length</code> (4 bytes)</strong>: The total size of
+the binary container in bytes, including the 12-byte header itself, all
+chunk headers, and all chunk payload data.</li>
+</ol>
+<h2 id="binary-layout-and-memory-alignment">Binary Layout and Memory
+Alignment</h2>
+<p>The layout of the 12-byte header maps to a standard C/C++ struct:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode c"><code class="sourceCode c"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> GlbHeader <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint32_t</span> magic<span class="op">;</span>    <span class="co">// 0x46546C67 (&quot;glTF&quot;)</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint32_t</span> version<span class="op">;</span>  <span class="co">// 2 for glTF 2.0</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">uint32_t</span> length<span class="op">;</span>   <span class="co">// Total file size in bytes</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="op">};</span></span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Offset (Bytes)</th>
+<th>Field Name</th>
+<th>Data Type</th>
+<th>Value / Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0–3</td>
+<td><code>magic</code></td>
+<td><code>uint32</code></td>
+<td><code>0x46546C67</code> (ASCII string <code>"glTF"</code>)</td>
+</tr>
+<tr>
+<td>4–7</td>
+<td><code>version</code></td>
+<td><code>uint32</code></td>
+<td><code>2</code> (glTF binary version)</td>
+</tr>
+<tr>
+<td>8–11</td>
+<td><code>length</code></td>
+<td><code>uint32</code></td>
+<td>Total byte length of the GLB container</td>
+</tr>
+</tbody>
+</table>
+<h2 id="validation-requirements-for-glb-parsers">Validation Requirements
+for GLB Parsers</h2>
+<p>When developing an asset loader or parser, validating the header
+ensures file integrity before attempting to read subsequent data
+chunks:</p>
+<ul>
+<li><strong>Magic Number Verification</strong>: Read the first four
+bytes and verify equality with <code>0x46546C67</code>. If the value
+does not match, abort processing immediately, as the file is not a valid
+GLB container.</li>
+<li><strong>Version Check</strong>: Inspect the version field. If an
+engine only supports glTF 2.0, ensure this value equals <code>2</code>.
+If it equals <code>1</code>, the asset belongs to the deprecated glTF
+1.0 binary specification, which uses a different chunk framing
+system.</li>
+<li><strong>Payload Bounds Checking</strong>: Compare the header's
+<code>length</code> field against the actual byte length reported by the
+file system or network transport buffer. A mismatch indicates an
+incomplete download or corrupted file.</li>
+</ul>
+<h2 id="transition-to-the-chunk-stream">Transition to the Chunk
+Stream</h2>
+<p>Directly following byte 11 of the 12-byte container header, the GLB
+format introduces chunked storage. Each chunk consists of an 8-byte
+chunk header (<code>uint32 chunkLength</code> and
+<code>uint32 chunkType</code>), immediately followed by the chunk
+payload.</p>
+<p>The first chunk immediately following the 12-byte header must always
+be the structured JSON chunk (<code>chunkType = 0x4E4F534A</code>,
+representing <code>"JSON"</code>), containing the scene hierarchy, node
+definitions, and buffer views. Subsequent chunks contain the raw binary
+buffer data (<code>chunkType = 0x004E4942</code>, representing
+<code>"BIN\0"</code>). Proper parsing requires advancing precisely 12
+bytes past the start of the file before reading the first chunk
+header.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

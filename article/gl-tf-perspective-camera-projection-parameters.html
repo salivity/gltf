@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Perspective Camera Projection Parameters - gltf</title>
+    <meta name="description" content="In glTF (GL Transmission Format), a camera node defines a perspective projection by referencing a reusable perspective camera object stored in the asset&#39;s root arrays. This article explains how glTF separates spatial transformation from camera optics, det">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-perspective-camera-projection-parameters">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Perspective Camera Projection Parameters - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-perspective-camera-projection-parameters" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In glTF (GL Transmission Format), a camera node defines a perspective projection by referencing a reusable perspective camera object stored in the asset&#39;s root arrays. This article explains how glTF separates spatial transformation from camera optics, det" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-perspective-camera-projection-parameters">glTF Perspective
+Camera Projection Parameters</h1>
+<p>In glTF (GL Transmission Format), a camera node defines a perspective
+projection by referencing a reusable perspective camera object stored in
+the asset's root arrays. This article explains how glTF separates
+spatial transformation from camera optics, details the specific
+parameters within the <code>perspective</code> property—including
+vertical field of view, clipping planes, and aspect ratio—and shows how
+these values construct standard projection matrices.</p>
+<h3 id="separation-of-nodes-and-camera-definitions">Separation of Nodes
+and Camera Definitions</h3>
+<p>glTF separates the camera's spatial position from its optical
+characteristics:</p>
+<ul>
+<li><strong>The Node:</strong> Defines the camera's transform
+(translation, rotation, and scale) in the 3D scene graph. A node points
+to a camera by its index in the root <code>cameras</code> array using
+the <code>"camera"</code> property.</li>
+<li><strong>The Camera Object:</strong> Defines the projection math. It
+resides in the top-level <code>"cameras"</code> array and specifies a
+<code>"type"</code> (set to <code>"perspective"</code>) and a
+<code>"perspective"</code> object containing the projection
+parameters.</li>
+</ul>
+<p>By default, a glTF camera looks down its local negative Z-axis
+(<code>-Z</code>), with the local Y-axis pointing up (<code>+Y</code>)
+and the local X-axis pointing right (<code>+X</code>).</p>
+<h3 id="perspective-camera-properties">Perspective Camera
+Properties</h3>
+<p>Inside the <code>"perspective"</code> object, glTF defines four core
+attributes:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;cameras&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;perspective&quot;</span><span class="fu">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;perspective&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;aspectRatio&quot;</span><span class="fu">:</span> <span class="fl">1.5</span><span class="fu">,</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;yfov&quot;</span><span class="fu">:</span> <span class="fl">0.785398</span><span class="fu">,</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;zfar&quot;</span><span class="fu">:</span> <span class="fl">100.0</span><span class="fu">,</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;znear&quot;</span><span class="fu">:</span> <span class="fl">0.1</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">}</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;nodes&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;camera&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;translation&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="fl">0.0</span><span class="ot">,</span> <span class="fl">1.0</span><span class="ot">,</span> <span class="fl">5.0</span><span class="ot">]</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<ol type="1">
+<li><p><strong><code>yfov</code> (Float, Required):</strong> The
+vertical Field of View specified in <strong>radians</strong>. For
+example, a 45-degree vertical FOV is represented as roughly
+<code>0.785398</code> radians. glTF uses vertical FOV rather than
+horizontal FOV as the primary metric, matching common graphics API
+conventions.</p></li>
+<li><p><strong><code>znear</code> (Float, Required):</strong> The
+distance from the camera origin to the near clipping plane along the
+negative Z-axis. This value must strictly be greater than zero
+(<code>znear &gt; 0</code>) to prevent division-by-zero errors in
+perspective divide operations.</p></li>
+<li><p><strong><code>zfar</code> (Float, Optional):</strong> The
+distance from the camera origin to the far clipping plane along the
+negative Z-axis. When present, it must be greater than
+<code>znear</code>. If omitted, the camera defines an <strong>infinite
+perspective projection</strong>, where the far plane extends
+indefinitely.</p></li>
+<li><p><strong><code>aspectRatio</code> (Float, Optional):</strong> The
+aspect ratio of the viewport, defined as width divided by height
+(<code>width / height</code>). This property is optional; if omitted,
+the rendering engine dynamically computes the aspect ratio from the
+display canvas dimensions.</p></li>
+</ol>
+<h3 id="matrix-derivation">Matrix Derivation</h3>
+<p>When a runtime engine parses these parameters, it computes a standard
+right-handed perspective projection matrix:</p>
+<ul>
+<li><strong>Horizontal Field of View:</strong> Computed as
+<code>xfov = 2 * atan(tan(yfov / 2) * aspectRatio)</code>.</li>
+<li><strong>Finite Projection:</strong> When <code>zfar</code> is
+present, the matrix maps <code>znear</code> and <code>zfar</code> to
+standard normalized device coordinates (typically <code>[-1, 1]</code>
+or <code>[0, 1]</code> depending on the graphics backend like WebGL,
+Vulkan, or DirectX).</li>
+<li><strong>Infinite Projection:</strong> When <code>zfar</code> is
+undefined, the engine uses the infinite perspective projection
+formulation, avoiding depth-buffer precision issues at extreme
+distances.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

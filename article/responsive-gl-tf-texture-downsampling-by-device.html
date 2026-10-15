@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive glTF Texture Downsampling by Device - gltf</title>
+    <meta name="description" content="Responsive asset loading optimizes 3D web experiences by evaluating a client device’s hardware constraints—such as GPU limits, available VRAM, and display resolution—and dynamically downsampling glTF textures to match those capabilities. By serving lower-">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/responsive-gl-tf-texture-downsampling-by-device">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Responsive glTF Texture Downsampling by Device - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/responsive-gl-tf-texture-downsampling-by-device" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Responsive asset loading optimizes 3D web experiences by evaluating a client device’s hardware constraints—such as GPU limits, available VRAM, and display resolution—and dynamically downsampling glTF textures to match those capabilities. By serving lower-" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="responsive-gltf-texture-downsampling-by-device">Responsive glTF
+Texture Downsampling by Device</h1>
+<p>Responsive asset loading optimizes 3D web experiences by evaluating a
+client device’s hardware constraints—such as GPU limits, available VRAM,
+and display resolution—and dynamically downsampling glTF textures to
+match those capabilities. By serving lower-resolution texture payloads
+to constrained devices while reserving high-fidelity assets for capable
+desktop systems, applications reduce initial download times, prevent
+WebGL out-of-memory crashes, and maintain stable frame rates across
+diverse hardware ecosystems.</p>
+<h3 id="client-capability-detection">Client Capability Detection</h3>
+<p>Before loading or decoding a glTF file, the client application
+queries the browser environment to establish a hardware profile. This
+profiling generally relies on three standard browser APIs:</p>
+<ol type="1">
+<li><strong>WebGL Context Queries:</strong> The renderer initializes a
+lightweight, offscreen WebGL context to query hardware constraints using
+<code>gl.getParameter()</code>. Key metrics include
+<code>MAX_TEXTURE_SIZE</code> (the maximum width and height the GPU can
+allocate) and <code>MAX_RENDERBUFFER_SIZE</code>. The application can
+also inspect unmasked renderer strings via the
+<code>WEBGL_debug_renderer_info</code> extension to classify the GPU
+tier (e.g., Apple M-series versus an integrated mobile GPU).</li>
+<li><strong>Device Memory and CPU Concurrency:</strong> The
+<code>navigator.deviceMemory</code> API provides an estimate of client
+RAM in gigabytes, while <code>navigator.hardwareConcurrency</code>
+returns the core count. Devices reporting 4 GB or less of RAM are prime
+candidates for aggressive downsampling to prevent the browser from
+killing the rendering tab.</li>
+<li><strong>Display and Network Parameters:</strong>
+<code>window.devicePixelRatio</code> combined with viewport size
+dictates whether 4K textures are visually redundant. Concurrently, the
+Network Information API (<code>navigator.connection</code>) flags
+constrained connections (such as 3G or data-saver modes), prioritizing
+performance over texture density.</li>
+</ol>
+<h3 id="texture-downsampling-strategies">Texture Downsampling
+Strategies</h3>
+<p>Once a performance budget is established, the application uses one of
+two primary approaches to downsample the glTF texture data:</p>
+<h4 id="1-variant-switching-via-gltf-extensions">1. Variant Switching
+via glTF Extensions</h4>
+<p>The most efficient approach avoids transferring full-resolution
+assets altogether. The standard glTF format can be authored to reference
+multiple texture resolutions using custom properties or structural
+extensions like <code>KHR_texture_basisu</code>.</p>
+<p>A pre-loader intercepts the glTF JSON structure before buffers are
+downloaded. It inspects the hardware profile, selects the appropriate
+resolution tier (for example, 512×512 for low-end mobile, 1024×1024 for
+mid-range, and 2048×2048 for high-end), and rewrites the image URIs in
+the glTF document before passing it to the runtime loader (such as
+Three.js or Babylon.js).</p>
+<h4
+id="2-compressed-texture-mip-level-selection-ktx2--basis-universal">2.
+Compressed Texture Mip-Level Selection (KTX2 / Basis Universal)</h4>
+<p>When using the <code>KHR_texture_basisu</code> extension, textures
+are stored as KTX2 containers holding universal texture formats (like
+ETC1S or UASTC). These containers natively bundle a complete mipmap
+chain.</p>
+<p>Instead of generating lower-resolution variants beforehand, the
+client-side transcoder dynamically skips higher-resolution mip levels
+during the transcoding step. For a constrained device, the transcoder
+ignores Mip Level 0 (e.g., 2048×2048) and transcodes Mip Level 1
+(1024×1024) or Mip Level 2 (512×512) directly into the target
+GPU-compressed format (such as ASTC for mobile or BC7 for desktop). This
+technique downsamples the texture directly into VRAM without re-encoding
+image buffers on the main thread.</p>
+<h4 id="3-runtime-canvas-downsampling-fallback">3. Runtime Canvas
+Downsampling (Fallback)</h4>
+<p>If the asset pipeline only provides standard PNG or JPEG textures
+embedded in a standard <code>.glb</code> binary, downsampling must occur
+on the client:</p>
+<ol type="1">
+<li>The raw image is decoded into an <code>ImageBitmap</code> using
+<code>createImageBitmap()</code> with resizing options, or loaded into
+an offscreen HTML <code>&lt;canvas&gt;</code>.</li>
+<li>The canvas scales the dimensions down using bilinear filtering
+(e.g., halving the dimensions).</li>
+<li>The scaled canvas data is uploaded directly to the WebGL texture
+unit via <code>gl.texImage2D()</code>.</li>
+<li>The original, full-sized image buffer is immediately dereferenced
+and garbage collected to free system memory.</li>
+</ol>
+<h3 id="workflow-integration">Workflow Integration</h3>
+<p>In an end-to-end implementation, the pipeline follows a structured
+sequence:</p>
+<pre><code>[Detect Hardware &amp; Screen] 
+         │
+         ▼
+[Compute Texture Budget (e.g., Max 1024px)]
+         │
+         ▼
+[Fetch glTF Manifest / Metadata]
+         │
+         ├─► If Multi-Res CDN: Request specific resolution tier via URL query
+         │
+         ├─► If KTX2 / Basis: Transcode starting from calculated Mip level
+         │
+         └─► If Static PNG/JPG: Resize via OffscreenCanvas before GPU upload
+         │
+         ▼
+[Upload to WebGL/WebGPU VRAM]</code></pre>
+<p>By shifting texture resolution dynamically, responsive asset loading
+resolves the conflict between high-end visual realism and low-end mobile
+stability, ensuring optimal resource utilization across all client
+devices.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

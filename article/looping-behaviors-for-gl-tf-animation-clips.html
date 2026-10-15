@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Looping Behaviors for glTF Animation Clips - gltf</title>
+    <meta name="description" content="Understanding animation playback in glTF requires distinguishing between the format&#39;s underlying data structure and the rendering engines that process it. This article explores how looping behaviors—including standard repeat cycles, clamp-to-edge playback">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/looping-behaviors-for-gl-tf-animation-clips">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Looping Behaviors for glTF Animation Clips - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/looping-behaviors-for-gl-tf-animation-clips" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Understanding animation playback in glTF requires distinguishing between the format&#39;s underlying data structure and the rendering engines that process it. This article explores how looping behaviors—including standard repeat cycles, clamp-to-edge playback" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="looping-behaviors-for-gltf-animation-clips">Looping Behaviors
+for glTF Animation Clips</h1>
+<p>Understanding animation playback in glTF requires distinguishing
+between the format's underlying data structure and the rendering engines
+that process it. This article explores how looping behaviors—including
+standard repeat cycles, clamp-to-edge playback, ping-pong sequences, and
+clip chaining—are defined and applied to glTF animation clips across
+interactive 3D environments.</p>
+<h2 id="gltf-core-architecture-vs-playback-logic">glTF Core Architecture
+vs. Playback Logic</h2>
+<p>The glTF 2.0 core specification does not store playback directives,
+loop counters, or sequencing logic within the file itself. Instead, glTF
+defines the raw animation data: target nodes, channels, transformation
+paths (translation, rotation, scale, weights), and samplers containing
+input keyframe timestamps and output values. Interpolation modes such as
+<code>LINEAR</code>, <code>STEP</code>, and <code>CUBICSPLINE</code>
+determine how values transition between keyframes, but they do not
+dictate what happens when the timeline reaches the final keyframe.</p>
+<p>Because glTF is an interchange format designed for cross-platform
+efficiency, playback behaviors are delegated to the host runtime engine
+(such as Three.js, Babylon.js, Unity, Unreal Engine, or Godot). The
+runtime’s animation mixer reads the timeline bounds of the glTF clip and
+executes the desired looping logic.</p>
+<h2 id="common-looping-behaviors-for-gltf-clips">Common Looping
+Behaviors for glTF Clips</h2>
+<p>When managing sequential or standalone animation clips sourced from
+glTF files, rendering engines provide several standardized playback
+modes:</p>
+<h3 id="1-loop-repeat--cycle">1. Loop (Repeat / Cycle)</h3>
+<p>The animation plays forward from the start timestamp to the end
+timestamp. Upon reaching the end, the playhead immediately resets to the
+first keyframe and continues playback.</p>
+<ul>
+<li><strong>Use Cases:</strong> Walk cycles, run cycles, idle stances,
+and rotating objects.</li>
+<li><strong>glTF Authoring Requirement:</strong> To prevent visual
+stutter or "popping," the transform values of the first and final
+keyframes in the glTF sampler must match identically.</li>
+</ul>
+<h3 id="2-once-clamp-to-edge--hold">2. Once (Clamp to Edge / Hold)</h3>
+<p>The animation plays forward from beginning to end and stops
+immediately upon reaching the final timestamp. The animated target
+remains frozen at its final state until the runtime issues a reset or
+transitions to another clip.</p>
+<ul>
+<li><strong>Use Cases:</strong> One-shot actions, such as opening a
+chest, firing a weapon, or playing a character death sequence.</li>
+<li><strong>Runtime Mechanics:</strong> The runtime clamps the time
+parameter <span class="math inline">\(t\)</span> such that <span
+class="math inline">\(t = \min(t, t_{\max})\)</span>, retaining the
+final sampler output.</li>
+</ul>
+<h3 id="3-ping-pong-alternate--mirror">3. Ping-Pong (Alternate /
+Mirror)</h3>
+<p>The animation plays forward from start to finish, then plays in
+reverse from finish to start, repeating this oscillation
+indefinitely.</p>
+<ul>
+<li><strong>Use Cases:</strong> Symmetrical mechanical motions,
+breathing effects, or swaying foliage.</li>
+<li><strong>glTF Optimization:</strong> Ping-pong enables smooth
+back-and-forth movement without requiring authors to duplicate keyframes
+in the glTF buffer, keeping file sizes smaller.</li>
+</ul>
+<h2 id="sequential-clip-chaining-and-transitions">Sequential Clip
+Chaining and Transitions</h2>
+<p>Complex animations often require sequencing multiple distinct glTF
+animation tracks—for example, playing an "Equip Weapon" clip once,
+transitioning into an "Aiming" loop, and ending with an "Attack"
+clip.</p>
+<p>Because glTF stores each clip as an isolated entry inside the
+top-level <code>animations</code> array, sequencing relies on runtime
+features:</p>
+<ul>
+<li><strong>End-of-Clip Events:</strong> Runtimes listen for a
+completion event emitted when a non-looping clip finishes its timeline,
+subsequently triggering the playback of the next clip in the
+sequence.</li>
+<li><strong>Cross-Fading and Weight Blending:</strong> When switching
+between sequential clips (e.g., from a walk cycle to a run cycle),
+animation controllers smoothly interpolate the weight values between two
+glTF tracks over a defined duration, preventing abrupt visual
+snaps.</li>
+<li><strong>Timeline Clamping and Offset:</strong> Sequential clips can
+be offset programmatically to start at specific relative timestamps or
+synchronized across multiple models using shared runtime clocks.</li>
+</ul>
+<h2 id="technical-considerations-for-seamless-looping">Technical
+Considerations for Seamless Looping</h2>
+<p>To ensure glTF clips behave correctly in looping sequences, 3D
+artists and developers must observe specific data constraints:</p>
+<ul>
+<li><strong>Timestamp Alignment:</strong> All animation channels
+intended to loop simultaneously must share the exact same start and end
+timestamps. Desynchronized channel durations cause partial elements of a
+model to reset prematurely.</li>
+<li><strong>Cubic Spline Tangents:</strong> When using glTF's
+<code>CUBICSPLINE</code> interpolation, the outgoing tangent of the
+final keyframe and the incoming tangent of the initial keyframe must
+align smoothly to avoid velocity discontinuities during loop
+resets.</li>
+<li><strong>Morph Target Resets:</strong> When looping blend shapes or
+morph targets, weights must return precisely to their initial values to
+prevent mesh deformation artifacts at loop seams.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

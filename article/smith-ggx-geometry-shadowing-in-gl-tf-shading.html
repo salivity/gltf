@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smith GGX Geometry Shadowing in glTF Shading - gltf</title>
+    <meta name="description" content="This article explains the critical role of the Smith GGX geometry shadowing function within the glTF 2.0 standard. It covers how the function models microfacet occlusion, integrates into the Cook-Torrance bidirectional reflectance distribution function (B">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/smith-ggx-geometry-shadowing-in-gl-tf-shading">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Smith GGX Geometry Shadowing in glTF Shading - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/smith-ggx-geometry-shadowing-in-gl-tf-shading" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains the critical role of the Smith GGX geometry shadowing function within the glTF 2.0 standard. It covers how the function models microfacet occlusion, integrates into the Cook-Torrance bidirectional reflectance distribution function (B" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="smith-ggx-geometry-shadowing-in-gltf-shading">Smith GGX Geometry
+Shadowing in glTF Shading</h1>
+<p>This article explains the critical role of the Smith GGX geometry
+shadowing function within the glTF 2.0 standard. It covers how the
+function models microfacet occlusion, integrates into the Cook-Torrance
+bidirectional reflectance distribution function (BRDF), and guarantees
+physically accurate, energy-conserving specular reflections across
+real-time 3D graphics engines.</p>
+<h2 id="the-microfacet-model-and-the-cook-torrance-brdf">The Microfacet
+Model and the Cook-Torrance BRDF</h2>
+<p>In glTF’s standard metallic-roughness Physically Based Rendering
+(PBR) workflow, light interaction with a surface is computed using the
+Cook-Torrance microfacet specular BRDF. This model treats a microscopic
+surface as a collection of perfectly reflective microfacets oriented
+randomly according to surface roughness. The equation is defined as:</p>
+<p><span class="math display">\[f_r = \frac{D \cdot F \cdot
+G}{4(\mathbf{n} \cdot \mathbf{v})(\mathbf{n} \cdot
+\mathbf{l})}\]</span></p>
+<p>Where:</p>
+<ul>
+<li><strong><span class="math inline">\(D\)</span></strong> is the
+microfacet Normal Distribution Function (NDF), represented in glTF by
+the GGX/Trowbridge-Reitz distribution.</li>
+<li><strong><span class="math inline">\(F\)</span></strong> is the
+Fresnel term, which models reflectance based on the viewing angle using
+the Schlick approximation.</li>
+<li><strong><span class="math inline">\(G\)</span></strong> is the
+Geometry function, which accounts for the occlusion of microfacets.</li>
+<li><strong><span class="math inline">\(\mathbf{n} \cdot
+\mathbf{v}\)</span></strong> and <strong><span
+class="math inline">\(\mathbf{n} \cdot \mathbf{l}\)</span></strong> are
+the dot products of the surface normal with the view and light
+directions, respectively.</li>
+</ul>
+<h2 id="the-role-of-the-geometry-function-g">The Role of the Geometry
+Function (<span class="math inline">\(G\)</span>)</h2>
+<p>Rough surfaces feature microscopic peaks and valleys. When light
+strikes these irregularities, two physical phenomena occur:</p>
+<ol type="1">
+<li><strong>Shadowing:</strong> Incoming light is blocked by adjacent
+microfacets before reaching a reflective surface.</li>
+<li><strong>Masking:</strong> Reflected light is blocked by adjacent
+microfacets before reaching the camera or observer.</li>
+</ol>
+<p>Without a geometry function to reduce light output at shallow angles,
+a rendered surface reflects more energy than it receives. This produces
+unnatural edge highlights and breaks the law of conservation of energy.
+The geometry function models this loss of light, attenuating specular
+brightness based on roughness and angle.</p>
+<h2 id="the-smith-ggx-formulation-in-gltf">The Smith GGX Formulation in
+glTF</h2>
+<p>The glTF specification defines the use of the <strong>Smith
+method</strong> adapted specifically for the GGX distribution. The Smith
+formulation assumes microfacet heights and slopes are statistically
+independent, calculating the shadowing and masking components
+separately:</p>
+<p><span class="math display">\[G(\mathbf{l}, \mathbf{v}, \mathbf{h}) =
+G_1(\mathbf{l}) \cdot G_1(\mathbf{v})\]</span></p>
+<h3 id="height-correlated-smith-model">Height-Correlated Smith
+Model</h3>
+<p>Rather than calculating independent probabilities, modern glTF
+implementations use the <strong>height-correlated Smith GGX
+formulation</strong>. This accounts for the statistical correlation
+between the incoming light ray and the outgoing viewing ray: microfacets
+positioned higher up on the surface are simultaneously less likely to be
+shadowed and less likely to be masked.</p>
+<p>The height-correlated function is formulated as:</p>
+<p><span class="math display">\[G(\mathbf{l}, \mathbf{v}) =
+\frac{2(\mathbf{n} \cdot \mathbf{v})(\mathbf{n} \cdot
+\mathbf{l})}{(\mathbf{n} \cdot \mathbf{l})\sqrt{\alpha^2 + (1 -
+\alpha^2)(\mathbf{n} \cdot \mathbf{v})^2} + (\mathbf{n} \cdot
+\mathbf{v})\sqrt{\alpha^2 + (1 - \alpha^2)(\mathbf{n} \cdot
+\mathbf{l})^2}}\]</span></p>
+<p>Where <span class="math inline">\(\alpha\)</span> represents the
+roughness parameter mapped quadratically from the glTF roughness input
+(<span class="math inline">\(\alpha = \text{roughness}^2\)</span>).</p>
+<h2 id="optimization-via-the-visibility-function-v">Optimization via the
+Visibility Function (<span class="math inline">\(V\)</span>)</h2>
+<p>In real-time rendering, glTF shaders combine the geometry function
+with the Cook-Torrance denominator into a single term known as the
+<strong>Visibility function</strong> (<span
+class="math inline">\(V\)</span>):</p>
+<p><span class="math display">\[V = \frac{G}{4(\mathbf{n} \cdot
+\mathbf{v})(\mathbf{n} \cdot \mathbf{l})}\]</span></p>
+<p>By combining these calculations, common factors cancel out, producing
+an optimized equation:</p>
+<p><span class="math display">\[V = \frac{0.5}{(\mathbf{n} \cdot
+\mathbf{l})\sqrt{\alpha^2 + (1 - \alpha^2)(\mathbf{n} \cdot
+\mathbf{v})^2} + (\mathbf{n} \cdot \mathbf{v})\sqrt{\alpha^2 + (1 -
+\alpha^2)(\mathbf{n} \cdot \mathbf{l})^2}}\]</span></p>
+<p>This mathematical simplification allows real-time engines to compute
+accurate specular reflections using minimal GPU instructions.</p>
+<h2 id="visual-and-technical-importance">Visual and Technical
+Importance</h2>
+<p>The Smith GGX geometry function provides several key benefits in the
+glTF pipeline:</p>
+<ul>
+<li><strong>Elimination of Grazing-Angle Artifacts:</strong> It
+suppresses glowing white silhouettes that occur on rough surfaces viewed
+at glancing angles.</li>
+<li><strong>Consistent Material Appearance:</strong> Specifying the
+exact Smith GGX formulation ensures that a glTF asset looks identical
+when rendered across different engines, such as Three.js, Babylon.js,
+Blender, or Unreal Engine.</li>
+<li><strong>Roughness Scaling:</strong> At a roughness of zero (<span
+class="math inline">\(\alpha \to 0\)</span>), the function evaluates
+cleanly to mirror reflection behavior, smoothly transitioning to matte,
+diffuse-like scattering as roughness approaches one.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How glTF Optimizes Mobile GPU Memory Bandwidth - gltf</title>
+    <meta name="description" content="This article examines how the GL Transmission Format (glTF) minimizes memory bandwidth consumption on mobile Graphics Processing Units (GPUs). Mobile system architectures are severely constrained by thermal envelopes and battery capacity, making external">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-gl-tf-optimizes-mobile-gpu-memory-bandwidth">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How glTF Optimizes Mobile GPU Memory Bandwidth - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-gl-tf-optimizes-mobile-gpu-memory-bandwidth" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how the GL Transmission Format (glTF) minimizes memory bandwidth consumption on mobile Graphics Processing Units (GPUs). Mobile system architectures are severely constrained by thermal envelopes and battery capacity, making external" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-gltf-optimizes-mobile-gpu-memory-bandwidth">How glTF
+Optimizes Mobile GPU Memory Bandwidth</h1>
+<p>This article examines how the GL Transmission Format (glTF) minimizes
+memory bandwidth consumption on mobile Graphics Processing Units (GPUs).
+Mobile system architectures are severely constrained by thermal
+envelopes and battery capacity, making external memory access the
+primary bottleneck in mobile rendering. glTF addresses these constraints
+by delivering binary data in GPU-ready layouts, leveraging
+hardware-native texture compression, applying vertex quantization, and
+optimizing cache access patterns to dramatically reduce data transfer
+between mobile system memory and the GPU cache.</p>
+<h3 id="the-mobile-architecture-bottleneck">The Mobile Architecture
+Bottleneck</h3>
+<p>Mobile graphics hardware relies predominantly on Tile-Based (or
+Tile-Based Deferred) Rendering (TBDR) architectures. Unlike desktop GPUs
+with dedicated, high-power VRAM, mobile System-on-Chips (SoCs) share
+low-power DDR (LPDDR) memory between the CPU, GPU, and other subsystems.
+Transferring data over the shared system bus consumes significant
+electrical power and generates heat, leading to thermal throttling.
+Minimizing the byte footprint of 3D assets during transfer and runtime
+sampling is essential for sustaining frame rates and battery life.</p>
+<h3 id="direct-to-gpu-binary-layouts">Direct-to-GPU Binary Layouts</h3>
+<p>Traditional 3D asset formats, such as OBJ or Collada, rely on
+text-based representations that require the CPU to parse strings,
+recalculate indices, and reallocate memory buffers before transmitting
+them to the graphics pipeline. glTF eliminates this runtime parsing step
+by storing geometric data in binary format (<code>.bin</code>).</p>
+<p>Data inside glTF binary buffers is aligned to match the native memory
+expectations of mobile graphics APIs (Vulkan, OpenGL ES, and Metal).
+Attributes such as vertex positions, normals, tangents, and texture
+coordinates are pre-formatted in little-endian binary arrays. Mobile
+runtimes can map these buffers directly into GPU-accessible memory via
+standard buffer views without memory reallocation or transposition,
+avoiding intermediate CPU memory bandwidth spikes.</p>
+<h3 id="native-hardware-texture-compression">Native Hardware Texture
+Compression</h3>
+<p>Textures represent the largest consumer of memory bandwidth during
+rendering. Standard image formats like PNG and JPEG cannot be sampled
+directly by GPU hardware; they must be fully decoded into uncompressed,
+32-bit RGBA bitmaps in system memory. A single 2048x2048 uncompressed
+texture occupies 16 MB of memory, rapidly saturating mobile memory
+channels during texture filtering.</p>
+<p>glTF solves this through the <code>KHR_texture_basisu</code>
+extension, which integrates Basis Universal supercompression wrapped in
+KTX 2.0 containers. This system allows textures to be transcoded at
+runtime directly into hardware-native block compression formats standard
+on mobile devices, notably ASTC (Adaptive Scalable Texture Compression)
+and ETC2 (Ericsson Texture Compression).</p>
+<p>By remaining compressed inside GPU memory:</p>
+<ul>
+<li>Textures consume roughly 75% to 85% less memory footprint.</li>
+<li>The GPU's texture sampling unit decodes only the specific texels
+required on chip during fragment shading.</li>
+<li>L2 texture cache efficiency is drastically improved, preventing
+frequent cache misses that force high-latency fetches from external
+LPDDR RAM.</li>
+</ul>
+<h3 id="vertex-quantization-and-attribute-packing">Vertex Quantization
+and Attribute Packing</h3>
+<p>By default, 3D meshes store attributes using 32-bit floating-point
+numbers (4 bytes per component). A standard vertex containing a 3D
+position, normal, tangent, and UV set requires 56 bytes. Multiplying
+this across complex geometry creates heavy vertex-fetch bandwidth.</p>
+<p>The glTF extension <code>KHR_meshopt_compression</code> (and standard
+glTF attribute normalization) enables vertex attribute quantization:</p>
+<ul>
+<li><strong>Positions and UVs:</strong> Stored as 16-bit normalized
+integers (<code>SHORT</code> or <code>UNSIGNED_SHORT</code>), cutting
+data consumption in half without noticeable precision loss.</li>
+<li><strong>Normals and Tangents:</strong> Stored as 8-bit signed
+normalized integers (<code>BYTE</code>), reducing a 12-byte normal
+vector to just 3 or 4 bytes.</li>
+<li><strong>Colors and Bone Weights:</strong> Packed into 8-bit unsigned
+integers.</li>
+</ul>
+<p>Mobile vertex fetch units can dequantize these smaller integer types
+back to floating-point values in hardware during the vertex shader
+execution. Shrinking the vertex footprint reduces the total volume of
+data pulled across the system bus for every draw call.</p>
+<h3 id="cache-friendly-attribute-interleaving">Cache-Friendly Attribute
+Interleaving</h3>
+<p>The glTF specification supports interleaved vertex buffers, where all
+attributes for a given vertex are stored contiguously in memory (e.g.,
+Position-Normal-UV, Position-Normal-UV) rather than in separate, planar
+arrays.</p>
+<p>When a mobile GPU processes a vertex, it fetches data in cache line
+increments (typically 64 bytes). Planar storage causes the GPU to issue
+separate read requests across distant memory addresses for each
+attribute, degrading cache locality. Interleaved data structures allow a
+mobile GPU to fetch all necessary attributes for a vertex within one or
+two cache lines, minimizing memory bus roundtrips and maximizing the hit
+rate of on-chip L1 and L2 caches.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

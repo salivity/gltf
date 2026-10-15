@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Instanced Mesh Rendering: EXT_mesh_gpu_instancing - gltf</title>
+    <meta name="description" content="The EXTmeshgpuinstancing extension enables glTF 2.0 to efficiently replicate identical 3D geometries by offloading transform and attribute calculations directly to the GPU. Instead of relying on individual nodes and multiple draw calls for repeated object">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-instanced-mesh-rendering-ext-mesh-gpu-instancing">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Instanced Mesh Rendering: EXT_mesh_gpu_instancing - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-instanced-mesh-rendering-ext-mesh-gpu-instancing" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The EXTmeshgpuinstancing extension enables glTF 2.0 to efficiently replicate identical 3D geometries by offloading transform and attribute calculations directly to the GPU. Instead of relying on individual nodes and multiple draw calls for repeated object" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-instanced-mesh-rendering-ext_mesh_gpu_instancing">glTF
+Instanced Mesh Rendering: EXT_mesh_gpu_instancing</h1>
+<p>The <code>EXT_mesh_gpu_instancing</code> extension enables glTF 2.0
+to efficiently replicate identical 3D geometries by offloading transform
+and attribute calculations directly to the GPU. Instead of relying on
+individual nodes and multiple draw calls for repeated objects, this
+extension stores per-instance transform data in contiguous GPU buffers,
+drastically reducing CPU draw call overhead and memory consumption in
+real-time rendering engines.</p>
+<h3 id="the-purpose-of-ext_mesh_gpu_instancing">The Purpose of
+<code>EXT_mesh_gpu_instancing</code></h3>
+<p>In standard glTF, rendering multiple copies of the same geometry—such
+as trees in a forest, rivets on a machine, or buildings in a
+city—requires creating a unique node in the scene hierarchy for each
+instance. While each node can reference the same mesh, the host
+rendering engine must still traverse the scene graph, compute individual
+world matrices, and issue separate draw calls (or manually batch them on
+the CPU).</p>
+<p><code>EXT_mesh_gpu_instancing</code> solves this bottleneck by
+defining an array of instances within a single node. The target graphics
+API (DirectX, Vulkan, WebGL 2.0, or Metal) executes a single instanced
+draw call (such as <code>glDrawElementsInstanced</code>), leaving
+instance data unpacking to the vertex shader.</p>
+<h3 id="extension-structure-in-the-gltf-json-schema">Extension Structure
+in the glTF JSON Schema</h3>
+<p>Unlike mesh-level extensions, <code>EXT_mesh_gpu_instancing</code> is
+declared at the <code>node</code> level. When a node references a mesh,
+the extension dictionary specifies an <code>attributes</code> object
+that maps instance properties to standard glTF <code>accessor</code>
+objects.</p>
+<p>An example node definition looks like this:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;InstancedForest&quot;</span><span class="fu">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;mesh&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;extensions&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;EXT_mesh_gpu_instancing&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;attributes&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;TRANSLATION&quot;</span><span class="fu">:</span> <span class="dv">1</span><span class="fu">,</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;ROTATION&quot;</span><span class="fu">:</span> <span class="dv">2</span><span class="fu">,</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;SCALE&quot;</span><span class="fu">:</span> <span class="dv">3</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">}</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>Every accessor linked within the <code>attributes</code> dictionary
+must have the exact same <code>count</code>. This count dictates the
+total number of instances rendered for that mesh.</p>
+<h3 id="standard-instance-attributes">Standard Instance Attributes</h3>
+<p>The extension standardizes the primary transformation components
+required to position, orient, and scale each instance in space:</p>
+<ul>
+<li><strong>TRANSLATION</strong>: An accessor with type
+<code>VEC3</code> containing local positions for each instance (usually
+<code>FLOAT</code> component type).</li>
+<li><strong>ROTATION</strong>: An accessor with type <code>VEC4</code>
+containing unit quaternions representing orientation (stored as
+normalized <code>FLOAT</code> or normalized integer types).</li>
+<li><strong>SCALE</strong>: An accessor with type <code>VEC3</code>
+defining non-uniform or uniform scaling factors.</li>
+</ul>
+<p>Engines combine these attributes per instance to construct a local
+transform matrix. If an attribute is omitted, the engine falls back to
+default identity values (e.g., scale of <code>[1.0, 1.0, 1.0]</code> or
+rotation of <code>[0.0, 0.0, 0.0, 1.0]</code>).</p>
+<h3 id="custom-attributes">Custom Attributes</h3>
+<p>In addition to spatial transforms, the extension supports arbitrary
+per-instance attributes, prefixed with an underscore (e.g.,
+<code>_COLOR_0</code>, <code>_METALLIC_FACTOR</code>). These custom
+attributes enable per-instance variations in rendering, such as tinting
+particular instances or indexing into a texture array, without breaking
+batching.</p>
+<h3 id="coordinate-space-and-transform-hierarchy">Coordinate Space and
+Transform Hierarchy</h3>
+<p>Instance transforms are relative to the node containing the
+extension:</p>
+<ol type="1">
+<li>The per-instance <code>SCALE</code>, <code>ROTATION</code>, and
+<code>TRANSLATION</code> are evaluated to produce a local instance
+transform.</li>
+<li>The local instance transform is multiplied by the parent node’s
+transform matrix.</li>
+<li>If the parent node has ancestors, standard glTF scene graph
+hierarchy rules apply transitively.</li>
+</ol>
+<p>This hierarchy allows entire instanced groups to be moved, rotated,
+or animated collectively using standard node-level operations.</p>
+<h3 id="rendering-pipeline-execution">Rendering Pipeline Execution</h3>
+<p>When an engine loads a glTF file utilizing
+<code>EXT_mesh_gpu_instancing</code>:</p>
+<ol type="1">
+<li><strong>Buffer Setup</strong>: Accessor data for translations,
+rotations, and scales are bound to GPU vertex buffers.</li>
+<li><strong>Vertex Attribute Divisors</strong>: Vertex attribute
+bindings are configured with an instance divisor of 1, meaning attribute
+pointers advance once per instance rather than once per vertex.</li>
+<li><strong>Shader Processing</strong>: The vertex shader fetches the
+per-instance data using standard instanced hardware inputs (like
+<code>gl_InstanceID</code> or direct instanced vertex attributes),
+reconstructs the instance matrix, and transforms the incoming vertex
+coordinates into world space.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

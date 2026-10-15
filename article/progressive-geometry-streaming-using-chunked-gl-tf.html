@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progressive Geometry Streaming Using Chunked glTF - gltf</title>
+    <meta name="description" content="Progressive geometry streaming with chunked glTF binary data allows web applications to render low-detail 3D meshes almost instantly while progressively downloading and refining geometry in the background. This article explains how to partition glTF binar">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/progressive-geometry-streaming-using-chunked-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Progressive Geometry Streaming Using Chunked glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/progressive-geometry-streaming-using-chunked-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Progressive geometry streaming with chunked glTF binary data allows web applications to render low-detail 3D meshes almost instantly while progressively downloading and refining geometry in the background. This article explains how to partition glTF binar" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="progressive-geometry-streaming-using-chunked-gltf">Progressive
+Geometry Streaming Using Chunked glTF</h1>
+<p>Progressive geometry streaming with chunked glTF binary data allows
+web applications to render low-detail 3D meshes almost instantly while
+progressively downloading and refining geometry in the background. This
+article explains how to partition glTF binary payloads into discrete
+chunks, transport them over standard network protocols, and dynamically
+assemble and update GPU buffers client-side to achieve smooth,
+non-blocking rendering of complex 3D assets.</p>
+<h3 id="understanding-the-gltf-binary-architecture">Understanding the
+glTF Binary Architecture</h3>
+<p>Standard glTF assets (<code>.gltf</code> with an external
+<code>.bin</code> or unified <code>.glb</code> files) describe scene
+hierarchies, materials, and mesh topologies using JSON, while heavy
+geometric data—such as vertex positions, normals, and indices—resides in
+raw binary <code>bufferViews</code>. By default, client runtimes wait
+for the entire binary buffer to download before initializing the mesh.
+Progressive streaming modifies this paradigm by decoupling mesh
+resolution from a single contiguous payload, breaking vertex and index
+data into ordered, sequential segments.</p>
+<h3 id="geometry-preprocessing-and-decomposition">Geometry Preprocessing
+and Decomposition</h3>
+<p>To stream geometry progressively, the base asset must be preprocessed
+into hierarchical stages:</p>
+<ol type="1">
+<li><strong>Base Coarse Mesh:</strong> An initial, highly decimated
+version of the model is generated (e.g., via quadric error metrics).
+This mesh must contain the minimal topology required to establish
+bounding volumes and visual presence.</li>
+<li><strong>Refinement Deltas or Discrete Chunks:</strong> The remaining
+geometric detail is saved as progressive increments. This can be
+accomplished through discrete Level of Detail (LOD) chunks or continuous
+level-of-detail techniques such as edge-collapse splits and vertex
+position deltas.</li>
+<li><strong>Index Sorting:</strong> Indices must be ordered spatially or
+hierarchically so that newly streamed chunks only append to or partially
+update existing GPU index arrays without requiring a full recalculation
+of the topology.</li>
+</ol>
+<h3 id="structuring-gltf-for-chunked-buffers">Structuring glTF for
+Chunked Buffers</h3>
+<p>To represent chunked data within the glTF specification, you can
+leverage custom extensions or exploit multi-buffer architecture:</p>
+<ul>
+<li><strong>Multiple External Buffers:</strong> The JSON structure
+defines multiple <code>buffers</code> and corresponding
+<code>bufferViews</code>. The first buffer points to
+<code>base_lod.bin</code>, while subsequent buffers point to
+<code>chunk_01.bin</code>, <code>chunk_02.bin</code>, and so on.</li>
+<li><strong>Single Fragmented Buffer with HTTP Range Requests:</strong>
+A single <code>.bin</code> file is organized linearly with byte offsets
+defined in the JSON manifest. The client can request specific byte
+ranges for each progressive tier without modifying standard glTF
+indexing logic.</li>
+<li><strong>Compression Layers:</strong> Applying compression tools like
+Draco or Meshoptimizer to individual chunks rather than the entire file
+allows each chunk to be decompressed independently upon arrival.</li>
+</ul>
+<h3 id="network-transport-and-streaming-pipeline">Network Transport and
+Streaming Pipeline</h3>
+<p>The client runtime orchestrates the download using the modern Fetch
+API and Streams API:</p>
+<ol type="1">
+<li><strong>Manifest Retrieval:</strong> The client downloads and parses
+the initial glTF JSON metadata.</li>
+<li><strong>Base Payload Fetch:</strong> The application requests the
+base geometry buffer first. Once fetched, the mesh is immediately
+mounted to the scene with placeholder materials or low-resolution
+textures.</li>
+<li><strong>Sequential or Priority Streaming:</strong> Subsequent chunks
+are requested asynchronously. Using the <code>ReadableStream</code>
+interface or HTTP Range requests (<code>Range: bytes=start-end</code>),
+chunks are prioritized based on camera distance, screen-space error
+(SSE), or user viewport orientation.</li>
+</ol>
+<h3 id="client-side-reconstruction-and-gpu-updates">Client-Side
+Reconstruction and GPU Updates</h3>
+<p>Once a chunk arrives at the browser, it must be integrated into the
+rendering pipeline without causing frame drops:</p>
+<ul>
+<li><strong>Dynamic Buffer Allocation:</strong> During initialization,
+allocate GPU buffers (<code>WebGLBuffer</code> or <code>GPUBuffer</code>
+in WebGPU) large enough to accommodate the full-resolution mesh, or
+reallocate dynamically using growth factors.</li>
+<li><strong>Sub-buffer Uploads:</strong> For WebGL, use
+<code>gl.bufferSubData()</code> to update specific byte offsets of the
+active vertex and index buffers with the newly decoded chunk data. In
+WebGPU, use <code>queue.writeBuffer()</code>.</li>
+<li><strong>Updating Accessors:</strong> The runtime updates the draw
+call parameters (such as the vertex count in
+<code>gl.drawElements()</code> or <code>gl.drawArrays()</code>) to
+immediately render the higher-density topology on the next frame.</li>
+<li><strong>Web Workers for Decompression:</strong> Perform network
+fetching, payload decompression, and vertex delta applications inside
+dedicated Web Workers. This ensures that the main rendering thread
+remains locked to 60 or 120 frames per second during intense geometry
+streaming.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

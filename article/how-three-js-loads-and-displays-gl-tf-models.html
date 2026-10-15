@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Three.js Loads and Displays glTF Models - gltf</title>
+    <meta name="description" content="This article explores how modern web graphics engines, particularly Three.js, ingest, decode, and render 3D assets using the glTF (GL Transmission Format) standard. It details the entire technical pipeline, covering network retrieval, parsing the JSON hie">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-three-js-loads-and-displays-gl-tf-models">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Three.js Loads and Displays glTF Models - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-three-js-loads-and-displays-gl-tf-models" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores how modern web graphics engines, particularly Three.js, ingest, decode, and render 3D assets using the glTF (GL Transmission Format) standard. It details the entire technical pipeline, covering network retrieval, parsing the JSON hie" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-threejs-loads-and-displays-gltf-models">How Three.js Loads
+and Displays glTF Models</h1>
+<p>This article explores how modern web graphics engines, particularly
+Three.js, ingest, decode, and render 3D assets using the glTF (GL
+Transmission Format) standard. It details the entire technical pipeline,
+covering network retrieval, parsing the JSON hierarchy and binary
+buffers, instantiating engine-level scene graph objects, uploading
+geometry and textures to the GPU via WebGL or WebGPU, and executing the
+render loop.</p>
+<h2 id="1-fetching-and-dissecting-the-gltf-container">1. Fetching and
+Dissecting the glTF Container</h2>
+<p>The ingestion process begins using a dedicated loader, such as
+<code>THREE.GLTFLoader</code>. glTF assets arrive in one of two
+formats:</p>
+<ul>
+<li><strong>Standard glTF (<code>.gltf</code>):</strong> A JSON file
+accompanied by external payloads (separate binary <code>.bin</code>
+files for geometry and animation data, and standard image files for
+textures).</li>
+<li><strong>Binary glTF (<code>.glb</code>):</strong> A self-contained
+binary container encapsulating the JSON chunk, binary buffers, and
+texture images in structured byte blocks.</li>
+</ul>
+<p>When handling a <code>.glb</code> file, the loader parses a 12-byte
+header containing a magic number (<code>0x46546C67</code>), version
+number, and total byte length. It then extracts two primary chunks:
+Chunk 0, which contains the UTF-8 encoded JSON schema, and Chunk 1,
+which holds the contiguous binary buffer (<code>ArrayBuffer</code>).</p>
+<h2 id="2-deserializing-binary-data-into-memory">2. Deserializing Binary
+Data into Memory</h2>
+<p>glTF is structured to map directly to modern GPU memory layouts,
+avoiding costly runtime translation. To recreate 3D geometry, the engine
+reads three interconnected elements within the glTF JSON:</p>
+<ol type="1">
+<li><strong><code>buffers</code>:</strong> Raw arrays of binary
+data.</li>
+<li><strong><code>bufferViews</code>:</strong> Slices of a buffer
+defining specific offsets, byte lengths, and optional stride
+intervals.</li>
+<li><strong><code>accessors</code>:</strong> Metadata defining how to
+read a <code>bufferView</code> (e.g., component type like
+<code>FLOAT</code> or <code>UNSIGNED_SHORT</code>, and data type like
+<code>VEC3</code> for coordinates or <code>VEC2</code> for UV
+maps).</li>
+</ol>
+<p>Three.js resolves these accessors into JavaScript
+<code>TypedArrays</code> (such as <code>Float32Array</code> or
+<code>Uint16Array</code>). Each accessor representing an attribute—such
+as vertex positions, normals, tangents, and UV coordinates—is wrapped
+into a <code>THREE.BufferAttribute</code>. Combined, these form a
+<code>THREE.BufferGeometry</code> object.</p>
+<h2 id="3-reconstructing-the-scene-graph">3. Reconstructing the Scene
+Graph</h2>
+<p>The engine parses the structural hierarchy defined in the glTF JSON
+to recreate parent-child relationships in the DOM-like 3D scene
+graph:</p>
+<ul>
+<li><strong>Nodes:</strong> Represent transformation points in space.
+The engine creates <code>THREE.Object3D</code> or
+<code>THREE.Group</code> instances, reading local transformation
+matrices or distinct translation, rotation (quaternion), and scale
+vectors.</li>
+<li><strong>Meshes:</strong> Link structural nodes to geometry and
+materials. Three.js instantiates a <code>THREE.Mesh</code>, assigning
+the deserialized <code>BufferGeometry</code> and constructing the
+corresponding material.</li>
+<li><strong>Cameras and Lights:</strong> If defined (or supported via
+extensions like <code>KHR_lights_punctual</code>), these are
+instantiated as native Three.js camera and light objects.</li>
+</ul>
+<h2 id="4-material-and-texture-processing">4. Material and Texture
+Processing</h2>
+<p>glTF natively uses Physically Based Rendering (PBR). During
+deserialization, the engine parses material descriptions into Three.js
+materials, typically <code>MeshStandardMaterial</code> or
+<code>MeshPhysicalMaterial</code>:</p>
+<ul>
+<li><strong>PBR Properties:</strong> Values such as
+<code>baseColorFactor</code>, <code>metallicFactor</code>, and
+<code>roughnessFactor</code> are converted directly into material
+uniforms.</li>
+<li><strong>Textures:</strong> Embedded images extracted from binary
+chunks or external URLs are decoded asynchronously using native browser
+APIs (<code>createImageBitmap</code> or <code>HTMLImageElement</code>)
+and instantiated as <code>THREE.Texture</code> objects. These are linked
+to their corresponding slots, such as roughness-metallic maps, normal
+maps, or emissive maps.</li>
+</ul>
+<h2 id="5-gpu-allocation-and-drawing">5. GPU Allocation and Drawing</h2>
+<p>Once JavaScript has constructed the scene graph, the data must be
+transferred to the graphics hardware:</p>
+<ol type="1">
+<li><strong>Buffer Allocation:</strong> When the object enters the
+render frustum, Three.js binds vertex attributes via WebGL/WebGPU
+functions (e.g., <code>gl.bindBuffer</code> and
+<code>gl.bufferData</code>). The typed arrays generated by accessors are
+directly loaded into GPU memory as Vertex Buffer Objects (VBOs).</li>
+<li><strong>Shader Generation:</strong> Three.js compiles specialized
+vertex and fragment shaders that match the material's properties, active
+lighting, and any vertex skinning requirements.</li>
+<li><strong>Draw Calls:</strong> In the active animation loop, the
+engine traverses the scene, calculates the world transformation matrix
+for each mesh, binds the relevant textures and VBOs, and executes
+indexed drawing calls (such as <code>gl.drawElements</code>) to render
+the final model onto the canvas.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

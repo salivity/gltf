@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-World Scaling for glTF in Augmented Reality - gltf</title>
+    <meta name="description" content="Deploying glTF assets to augmented reality (AR) requires precise, real-world scaling to bridge the gap between digital content and physical space. Because the glTF (GL Transmission Format) specification explicitly defines one unit as one meter, maintainin">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/real-world-scaling-for-gl-tf-in-augmented-reality">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Real-World Scaling for glTF in Augmented Reality - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/real-world-scaling-for-gl-tf-in-augmented-reality" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Deploying glTF assets to augmented reality (AR) requires precise, real-world scaling to bridge the gap between digital content and physical space. Because the glTF (GL Transmission Format) specification explicitly defines one unit as one meter, maintainin" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="real-world-scaling-for-gltf-in-augmented-reality">Real-World
+Scaling for glTF in Augmented Reality</h1>
+<p>Deploying glTF assets to augmented reality (AR) requires precise,
+real-world scaling to bridge the gap between digital content and
+physical space. Because the glTF (GL Transmission Format) specification
+explicitly defines one unit as one meter, maintaining consistent
+dimensions ensures that virtual objects interact accurately with
+physical environments, depth sensors, and spatial tracking systems.
+Without standard metric adherence, AR experiences suffer from broken
+immersion, inaccurate spatial utility, lighting anomalies, and disrupted
+environmental occlusion.</p>
+<h3 id="the-gltf-standard-1-unit-equals-1-meter">The glTF Standard: 1
+Unit Equals 1 Meter</h3>
+<p>The glTF file format standardizes 3D asset delivery on the web and
+across runtime engines. A fundamental rule of the glTF specification is
+that all asset coordinates are interpreted in meters. When an asset is
+exported with arbitrary units—such as centimeters, inches, or generic 3D
+modeling grid units—without proper unit conversion, AR engines
+misinterpret its true physical footprint. A 10-centimeter coffee mug
+modeled as 10 units wide becomes a 10-meter monolith when placed into an
+AR viewport.</p>
+<h3 id="preserving-human-perception-and-immersion">Preserving Human
+Perception and Immersion</h3>
+<p>Augmented reality relies on convincing the human visual cortex that
+digital objects coexist with the real world. Human perception calculates
+scale relative to known environmental anchors, such as floorboards,
+doorways, and ambient furniture. If a virtual object does not match its
+expected real-world dimensions, cognitive dissonance breaks user
+immersion immediately. Inconsistent sizing prevents users from intuiting
+spatial relationships and undermines the core premise of augmented
+reality.</p>
+<h3 id="accurate-spatial-tracking-and-depth-occlusion">Accurate Spatial
+Tracking and Depth Occlusion</h3>
+<p>Modern AR runtimes—including Apple ARKit, Google ARCore, and
+WebXR—utilize metric visual-inertial odometry (VIO) and LiDAR sensors to
+map surfaces in real-world meters. These systems calculate surface
+boundaries, depth maps, and real-time physics based on these standard
+dimensions:</p>
+<ul>
+<li><strong>Occlusion:</strong> AR engines use depth sensors to
+determine whether a physical object (like a hand or a table leg) sits in
+front of a digital asset. Mismatched asset bounds cause erroneous
+occlusion, making objects improperly clip through physical
+surfaces.</li>
+<li><strong>Physics and Collision:</strong> Real-time physics engines
+apply gravity and collision impulses calculated in meters per second
+squared. A model scaled incorrectly exhibits unnatural physics behavior,
+such as floating or bouncing unnaturally fast.</li>
+</ul>
+<h3 id="functional-reliability-in-e-commerce-and-enterprise">Functional
+Reliability in E-Commerce and Enterprise</h3>
+<p>In industrial applications, architecture, and retail, spatial
+accuracy is a functional requirement rather than an aesthetic choice.
+For "view-in-your-room" e-commerce applications, customers rely on AR to
+verify whether a piece of furniture, an appliance, or an art piece will
+fit their physical space. A misaligned glTF scale leads to misinformed
+purchasing decisions, higher product return rates, and diminished
+consumer trust. In architectural visualization and construction,
+improper scaling can lead to critical miscalculations during on-site
+spatial validation.</p>
+<h3 id="platform-interoperability-and-workflow-efficiency">Platform
+Interoperability and Workflow Efficiency</h3>
+<p>Standardized scaling eliminates the need for arbitrary, client-side
+re-scaling workarounds in AR viewer applications. When assets adhere to
+the glTF metric standard at export, developers can automate asset
+deployment across multiple platforms, devices, and browsers without
+writing custom scaling matrices for individual models. This
+predictability standardizes shadow rendering, light estimation, and
+camera near/far clipping plane performance across the entire digital
+ecosystem.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Mobile AR Engines Calculate glTF Reflections - gltf</title>
+    <meta name="description" content="This article examines how mobile Augmented Reality (AR) engines, such as Apple ARKit and Google ARCore, analyze real-world surroundings to project dynamic, realistic environmental reflections onto glTF 3D assets. It covers the end-to-end pipeline: capturi">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-mobile-ar-engines-calculate-gl-tf-reflections">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Mobile AR Engines Calculate glTF Reflections - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-mobile-ar-engines-calculate-gl-tf-reflections" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how mobile Augmented Reality (AR) engines, such as Apple ARKit and Google ARCore, analyze real-world surroundings to project dynamic, realistic environmental reflections onto glTF 3D assets. It covers the end-to-end pipeline: capturi" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-mobile-ar-engines-calculate-gltf-reflections">How Mobile AR
+Engines Calculate glTF Reflections</h1>
+<p>This article examines how mobile Augmented Reality (AR) engines, such
+as Apple ARKit and Google ARCore, analyze real-world surroundings to
+project dynamic, realistic environmental reflections onto glTF 3D
+assets. It covers the end-to-end pipeline: capturing camera data,
+generating dynamic environment probes, extracting spherical harmonics
+and specular maps, and rendering these data streams using Physically
+Based Rendering (PBR) shaders compatible with the glTF 2.0 standard.</p>
+<h3 id="1-real-world-environmental-capture">1. Real-World Environmental
+Capture</h3>
+<p>The process begins with the mobile device's camera stream. As the
+user moves the device, AR engines continuously map spatial features and
+collect color, exposure, and intensity data from the physical
+environment.</p>
+<p>Because a standard camera feed only captures a narrow field of view,
+AR platforms use machine learning models and spatial tracking to infer
+the unobserved environment:</p>
+<ul>
+<li><strong>ARKit (Environment Probes):</strong> Places reflection
+probes at specific 3D anchors in the scene. As the camera moves, it
+stitches video frames onto a virtual bounding sphere or cube. Deep
+learning models fill in the unseen areas (such as the ceiling or behind
+the user) to create a continuous 360-degree environment.</li>
+<li><strong>ARCore (Environmental HDR):</strong> Uses machine learning
+to predict lighting in all directions from a single camera frame,
+outputting real-time spherical harmonics and an estimated cubemap
+representing the surrounding physical space.</li>
+</ul>
+<h3 id="2-converting-sensor-data-to-image-based-lighting-ibl">2.
+Converting Sensor Data to Image-Based Lighting (IBL)</h3>
+<p>To project light and reflections onto virtual assets, the 360-degree
+environmental data is split into two components: diffuse irradiance and
+specular radiance.</p>
+<h4 id="diffuse-irradiance-spherical-harmonics">Diffuse Irradiance
+(Spherical Harmonics)</h4>
+<p>Diffuse light represents ambient, non-directional illumination
+bouncing off matte surfaces. AR engines approximate this using Spherical
+Harmonics (SH)—typically L2 (9 coefficients) or L3 (16 coefficients).
+Instead of passing a large texture to the graphics pipeline, the engine
+supplies a compact mathematical representation of ambient color and
+brightness, drastically reducing mobile GPU overhead.</p>
+<h4 id="specular-radiance-prefiltered-environment-maps">Specular
+Radiance (Prefiltered Environment Maps)</h4>
+<p>Specular reflections represent the sharp, mirror-like reflections on
+shiny surfaces. Mobile engines project the stitched 360-degree imagery
+into a dynamic cubemap. To allow for varying surface smoothness, the
+cubemap is run through a prefiltering algorithm that generates mipmaps.
+Higher mip levels store increasingly blurred versions of the
+environment, corresponding to surface roughness.</p>
+<h3 id="3-mapping-lighting-data-to-the-gltf-pbr-pipeline">3. Mapping
+Lighting Data to the glTF PBR Pipeline</h3>
+<p>The glTF 2.0 format relies on a metallic-roughness PBR workflow. When
+a glTF asset is rendered in the AR scene, its fragment shader computes
+surface reflections by querying the environment data:</p>
+<ol type="1">
+<li><strong>Fresnel Calculation:</strong> The shader calculates how
+reflective the surface appears based on the viewing angle (the Schlick
+approximation of the Fresnel effect). Grazing angles produce stronger
+reflections than perpendicular views.</li>
+<li><strong>Roughness Sampling:</strong> The shader reads the
+<code>roughnessFactor</code> and the roughness texture channel of the
+glTF material. This determines which mip level of the prefiltered
+environment cubemap to sample. A roughness value near <code>0.0</code>
+samples the crisp base mip level (mirror-like), while higher roughness
+values sample blurrier mip levels.</li>
+<li><strong>Metallic Blending:</strong> The <code>metallicFactor</code>
+controls how the base color interacts with reflections. Non-metals
+(dielectrics) reflect the environment's true colors while preserving
+their own diffuse albedo, while metals tint the reflection with the
+material's base color and eliminate diffuse shading.</li>
+</ol>
+<h3 id="4-real-time-performance-optimizations">4. Real-Time Performance
+Optimizations</h3>
+<p>Running real-time reflections on mobile hardware requires strict
+performance balancing:</p>
+<ul>
+<li><strong>Asynchronous Probe Generation:</strong> Updating a full
+360-degree cubemap every frame causes thermal throttling and frame
+drops. AR engines often update probe textures at lower refresh rates
+(e.g., 10 to 15 Hz) or across alternating frames, while the visual
+renderer continues at 60 or 120 FPS.</li>
+<li><strong>Temporal Filtering:</strong> To prevent sudden popping when
+the camera detects new lighting conditions, engines interpolate between
+old and new environment probes smoothly.</li>
+<li><strong>Low-Resolution Textures:</strong> Specular cubemaps in
+mobile AR rarely exceed 256x256 or 512x512 pixels per face. The inherent
+blur on rough materials conceals the lower resolution, while
+high-frequency details on smooth surfaces are supplemented by
+screen-space reflections or static high-detail fallbacks when
+appropriate.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

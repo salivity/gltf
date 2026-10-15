@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How glTF Mesh Primitives Structure 3D Geometry - gltf</title>
+    <meta name="description" content="In the glTF (GL Transmission Format) 3D asset specification, geometry is structured hierarchically, positioning mesh primitives as the atomic units of renderable data. While a mesh represents a high-level 3D object in a scene, it does not hold vertex or s">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-gl-tf-mesh-primitives-structure-3-d-geometry">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How glTF Mesh Primitives Structure 3D Geometry - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-gl-tf-mesh-primitives-structure-3-d-geometry" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In the glTF (GL Transmission Format) 3D asset specification, geometry is structured hierarchically, positioning mesh primitives as the atomic units of renderable data. While a mesh represents a high-level 3D object in a scene, it does not hold vertex or s" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-gltf-mesh-primitives-structure-3d-geometry">How glTF Mesh
+Primitives Structure 3D Geometry</h1>
+<p>In the glTF (GL Transmission Format) 3D asset specification, geometry
+is structured hierarchically, positioning mesh primitives as the atomic
+units of renderable data. While a <code>mesh</code> represents a
+high-level 3D object in a scene, it does not hold vertex or surface data
+directly; instead, it serves as an array of one or more
+<code>primitives</code>. This article explains how glTF mesh primitives
+decompose geometry into raw data streams, manage topological assembly,
+and bind individual visual components to distinct rendering
+pipelines.</p>
+<h3 id="the-role-of-primitives-in-gltf">The Role of Primitives in
+glTF</h3>
+<p>In glTF, a <code>mesh</code> is a logical container. The physical
+geometry—the points, edges, and surfaces that form an object—resides
+entirely within the <code>primitives</code> array. A primitive defines a
+single draw call for the GPU. By splitting a single mesh into multiple
+primitives, glTF allows different parts of the same conceptual object to
+use different materials, draw modes, or vertex configurations.</p>
+<h3 id="vertex-attributes-decomposition">Vertex Attributes
+Decomposition</h3>
+<p>Each primitive breaks down its vertex data into isolated streams
+known as <code>attributes</code>. These attributes map semantic keys to
+<code>accessor</code> objects, which point to specific slices of raw
+binary data in <code>bufferViews</code>.</p>
+<p>Standard geometric sub-components managed by attributes include:</p>
+<ul>
+<li><strong>POSITION:</strong> Defines the spatial coordinates (<span
+class="math inline">\(X, Y, Z\)</span>) of each vertex.</li>
+<li><strong>NORMAL:</strong> Defines the surface orientation vectors
+used for lighting calculations.</li>
+<li><strong>TANGENT:</strong> Supplies directional vectors along surface
+parameters, essential for normal mapping.</li>
+<li><strong>TEXCOORD_0, TEXCOORD_1, ...:</strong> Defines UV coordinates
+used to map textures onto the surface.</li>
+<li><strong>COLOR_0:</strong> Provides per-vertex color data.</li>
+<li><strong>JOINTS_0 and WEIGHTS_0:</strong> Define skeletal binding
+parameters for skinned mesh animation.</li>
+</ul>
+<p>Because attributes are stored in parallel arrays, graphics hardware
+can read and interleave vertex components efficiently during
+rendering.</p>
+<h3 id="topology-and-indexing">Topology and Indexing</h3>
+<p>Primitives dictate how individual vertices assemble into complex
+geometric shapes through the <code>indices</code> property:</p>
+<ul>
+<li><strong>Indexed Geometry:</strong> When the <code>indices</code>
+property is defined, it points to an accessor containing an array of
+integers. These integers reference vertex indices within the attribute
+streams. This approach eliminates redundant vertex definitions,
+significantly reducing file size for continuous surfaces where multiple
+triangles share common vertices.</li>
+<li><strong>Non-Indexed Geometry:</strong> If <code>indices</code> is
+omitted, the GPU consumes vertices sequentially as they appear in the
+attribute buffers.</li>
+</ul>
+<h3 id="rendering-modes">Rendering Modes</h3>
+<p>The primitive defines geometric topology through the
+<code>mode</code> property, which dictates how the vertex stream
+converts into geometric shapes on screen:</p>
+<ul>
+<li><strong>Points (<code>POINTS</code>):</strong> Renders individual,
+disconnected vertices.</li>
+<li><strong>Lines (<code>LINES</code>, <code>LINE_LOOP</code>,
+<code>LINE_STRIP</code>):</strong> Assembles vertices into independent
+wireframe segments, closed loops, or connected paths.</li>
+<li><strong>Triangles (<code>TRIANGLES</code>,
+<code>TRIANGLE_STRIP</code>, <code>TRIANGLE_FAN</code>):</strong> The
+standard representation for solid surfaces. <code>TRIANGLES</code>
+interprets every three indices as a distinct polygon, while strip and
+fan modes reuse prior vertices to construct continuous meshes with fewer
+indices.</li>
+</ul>
+<h3 id="material-segregation">Material Segregation</h3>
+<p>A primitive can only bind to a single <code>material</code>. If a 3D
+model features multiple materials—such as an automobile model with
+separate metallic paint, glass windows, and rubber tires—the exporter
+must split the geometry into multiple primitives under one parent mesh.
+Each primitive contains its own subset of vertices, indices, and
+rendering attributes tied to its respective material definition.</p>
+<h3 id="morph-targets">Morph Targets</h3>
+<p>Primitives also handle blend-shape deformations through the
+<code>targets</code> array. Each target contains displacement vectors
+(such as relative changes in <code>POSITION</code>, <code>NORMAL</code>,
+or <code>TANGENT</code>) that morph the primitive from its base state.
+Because morph targets exist at the primitive level, facial expressions
+and localized mesh deformations can be isolated specifically to the
+geometry that requires them.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

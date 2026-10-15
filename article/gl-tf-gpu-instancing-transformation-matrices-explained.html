@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF GPU Instancing Transformation Matrices Explained - gltf</title>
+    <meta name="description" content="This article provides an overview of how instance transformation matrices are structured and stored in glTF using the EXTmeshgpuinstancing extension. It explains the decomposed transformation format, how attributes are mapped within binary buffer views, a">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-gpu-instancing-transformation-matrices-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF GPU Instancing Transformation Matrices Explained - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-gpu-instancing-transformation-matrices-explained" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of how instance transformation matrices are structured and stored in glTF using the EXTmeshgpuinstancing extension. It explains the decomposed transformation format, how attributes are mapped within binary buffer views, a" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-gpu-instancing-transformation-matrices-explained">glTF GPU
+Instancing Transformation Matrices Explained</h1>
+<p>This article provides an overview of how instance transformation
+matrices are structured and stored in glTF using the
+<code>EXT_mesh_gpu_instancing</code> extension. It explains the
+decomposed transformation format, how attributes are mapped within
+binary buffer views, and the process by which modern graphics pipelines
+reconstruct the final transformation matrices for GPU rendering.</p>
+<h3 id="decomposed-trs-representation">Decomposed TRS
+Representation</h3>
+<p>Unlike systems that store complete 4x4 matrices directly in vertex
+buffers, the official <code>EXT_mesh_gpu_instancing</code> extension
+stores transformation data in a decomposed Translate-Rotate-Scale (TRS)
+format. Storing full 16-element matrices requires four consecutive
+<code>vec4</code> vertex attribute slots per instance, consuming 64
+bytes per matrix and increasing memory bandwidth usage.</p>
+<p>To optimize storage, glTF breaks down instance transformations into
+individual accessor attributes:</p>
+<ul>
+<li><strong><code>TRANSLATION</code></strong>: Stored as a
+<code>VEC3</code> component (float, or normalized integer formats),
+representing the positional offset in local space.</li>
+<li><strong><code>ROTATION</code></strong>: Stored as a
+<code>VEC4</code> component containing a normalized unit quaternion
+<span class="math inline">\((x, y, z, w)\)</span> defining
+orientation.</li>
+<li><strong><code>SCALE</code></strong>: Stored as a <code>VEC3</code>
+component defining the scaling factors along the X, Y, and Z axes.</li>
+</ul>
+<p>These attributes are optional; if an instance transform only requires
+translation, the <code>ROTATION</code> and <code>SCALE</code> attributes
+can be omitted entirely, adopting default identity values (no rotation
+and unit scale).</p>
+<h3 id="binary-buffer-layout">Binary Buffer Layout</h3>
+<p>Instance attributes point to standard glTF <code>accessor</code>
+objects, which in turn point to <code>bufferView</code> elements
+containing raw binary data.</p>
+<p>The binary data in the underlying <code>buffer</code> can be
+organized in two primary ways:</p>
+<ol type="1">
+<li><strong>Separate Buffers (Contiguous Arrays):</strong> Each
+attribute has its own tightly packed array. For example, a
+<code>TRANSLATION</code> buffer view contains all <span
+class="math inline">\(N\)</span> translation vectors contiguously,
+followed by a separate buffer view for rotations.</li>
+<li><strong>Interleaved Buffers:</strong> All attributes for a single
+instance are stored together sequentially in memory. In an interleaved
+configuration, instance <span class="math inline">\(i\)</span> contains
+translation, rotation, and scale grouped together, defined by a specific
+<code>byteStride</code> in the corresponding
+<code>bufferView</code>.</li>
+</ol>
+<h3 id="gpu-ingestion-and-matrix-reconstruction">GPU Ingestion and
+Matrix Reconstruction</h3>
+<p>When rendering, graphics APIs (DirectX, Vulkan, WebGL, or Metal)
+configure these buffers as instanced vertex attribute streams with a
+step rate (or attribute divisor) of one per instance rather than one per
+vertex.</p>
+<p>The vertex shader reads the <code>TRANSLATION</code>,
+<code>ROTATION</code>, and <code>SCALE</code> attributes per instance
+and dynamically reconstructs the local <span class="math inline">\(4
+\times 4\)</span> instance matrix:</p>
+<ol type="1">
+<li><strong>Scale Matrix (<span
+class="math inline">\(S\)</span>):</strong> Built from the
+<code>VEC3</code> scale vector along the diagonal.</li>
+<li><strong>Rotation Matrix (<span
+class="math inline">\(R\)</span>):</strong> Converted directly from the
+unit quaternion vector.</li>
+<li><strong>Translation Matrix (<span
+class="math inline">\(T\)</span>):</strong> Built from the
+<code>VEC3</code> position vector in the fourth column.</li>
+</ol>
+<p>The complete instance transform matrix is computed on the GPU via
+matrix multiplication (<span class="math inline">\(M_{\text{instance}} =
+T \times R \times S\)</span>) and is then multiplied by the node’s
+global transform matrix to place each instance into world space.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Shape Morphing for Facial Animation Blending - gltf</title>
+    <meta name="description" content="This article explores how the glTF (GL Transmission Format) 2.0 specification enables dynamic facial animations through morph target blending. By defining additive vertex attribute deltas alongside the base geometry, glTF allows game engines and 3D runtim">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-shape-morphing-for-facial-animation-blending">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Shape Morphing for Facial Animation Blending - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-shape-morphing-for-facial-animation-blending" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores how the glTF (GL Transmission Format) 2.0 specification enables dynamic facial animations through morph target blending. By defining additive vertex attribute deltas alongside the base geometry, glTF allows game engines and 3D runtim" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-shape-morphing-for-facial-animation-blending">glTF Shape
+Morphing for Facial Animation Blending</h1>
+<p>This article explores how the glTF (GL Transmission Format) 2.0
+specification enables dynamic facial animations through morph target
+blending. By defining additive vertex attribute deltas alongside the
+base geometry, glTF allows game engines and 3D runtimes to smoothly
+transition and combine complex facial expressions in real time. Readers
+will learn the underlying data structure of morph targets in glTF, how
+animation tracks drive target weights, and how hardware-accelerated
+vertex processing facilitates natural, responsive facial
+articulation.</p>
+<h3 id="understanding-morph-targets-in-gltf">Understanding Morph Targets
+in glTF</h3>
+<p>In glTF, morphing (often called blend shapes or shape keys in digital
+content creation tools) is defined at the mesh primitive level. Rather
+than storing entire duplicate meshes for every facial expression, glTF
+primitives store a single base mesh and an array of target attribute
+deltas.</p>
+<p>Each morph target consists of displacement vectors for specific
+vertex attributes:</p>
+<ul>
+<li><strong><code>POSITION</code></strong>: The vector displacement
+added to each base vertex position.</li>
+<li><strong><code>NORMAL</code></strong>: The angular displacement to
+adjust vertex normals for correct lighting as the surface deforms.</li>
+<li><strong><code>TANGENT</code></strong>: Surface tangent adjustments
+used in normal mapping to prevent shading artifacts during extreme
+facial movements.</li>
+</ul>
+<p>These deltas are stored as separate accessor arrays. Because an
+expression like an eyebrow raise only modifies a localized section of
+the face, glTF supports sparse accessors. This allows the file to store
+data exclusively for vertices that move, drastically reducing file size
+and memory bandwidth.</p>
+<h3 id="the-weight-based-blending-formula">The Weight-Based Blending
+Formula</h3>
+<p>To blend multiple shapes dynamically, glTF uses a scalar
+<code>weights</code> array assigned to a mesh or node. Each weight
+determines the influence of a corresponding morph target, calculated
+as:</p>
+<p><span class="math display">\[\mathbf{V}_{\text{final}} =
+\mathbf{V}_{\text{base}} + \sum_{i=0}^{n-1} (w_i \times
+\Delta\mathbf{V}_i)\]</span></p>
+<p>Where:</p>
+<ul>
+<li><span class="math inline">\(\mathbf{V}_{\text{base}}\)</span> is the
+base vertex position.</li>
+<li><span class="math inline">\(w_i\)</span> is the weight of target
+<span class="math inline">\(i\)</span> (typically clamped between <span
+class="math inline">\(0.0\)</span> and <span
+class="math inline">\(1.0\)</span>).</li>
+<li><span class="math inline">\(\Delta\mathbf{V}_i\)</span> is the
+displacement delta for target <span
+class="math inline">\(i\)</span>.</li>
+</ul>
+<p>Because the deformation is strictly additive, multiple facial
+features—such as blinking, sneering, and phoneme shapes for speech—can
+be active simultaneously without interfering with one another, provided
+the modeler sculpted orthogonal deformation deltas.</p>
+<h3 id="driving-blend-shapes-with-gltf-animations">Driving Blend Shapes
+with glTF Animations</h3>
+<p>glTF incorporates morph targets into its primary animation system. An
+animation sampler defines time stamps (inputs) and weight values
+(outputs), while an animation channel links the sampler to a specific
+scene node:</p>
+<ul>
+<li><strong>Target Node</strong>: Identifies the entity displaying the
+facial mesh.</li>
+<li><strong>Target Path</strong>: Explicitly set to
+<code>"weights"</code>.</li>
+<li><strong>Interpolation</strong>: Supported modes include
+<code>LINEAR</code>, <code>STEP</code>, and <code>CUBICSPLINE</code>.
+<code>CUBICSPLINE</code> provides smooth transitions that mimic organic
+muscle acceleration and deceleration.</li>
+</ul>
+<p>A single animation clip can animate all facial weights simultaneously
+or isolate sub-tracks (such as speech synchronization tracks independent
+of procedural eye-blink tracks).</p>
+<h3 id="real-time-runtime-execution">Real-Time Runtime Execution</h3>
+<p>When processed by rendering engines (like WebGL, WebGPU, Vulkan, or
+DirectX implementations), glTF morph blending is executed directly on
+the GPU.</p>
+<ol type="1">
+<li><strong>Vertex Shader Uniforms/Textures</strong>: Modern engines
+upload morph target deltas either as vertex attributes or pack them into
+2D/3D texture arrays (texture-based vertex morphing).</li>
+<li><strong>Dynamic Weight Uniforms</strong>: The engine passes the
+current weights as a uniform buffer to the vertex shader.</li>
+<li><strong>Hardware Summation</strong>: The vertex shader accumulates
+the weighted deltas in parallel, providing high-framerate deformation
+without CPU overhead.</li>
+</ol>
+<p>This native hardware alignment makes glTF's dynamic morph targeting a
+standard approach for real-time digital humans, virtual avatars, and
+procedural lip-sync systems across the web and mobile platforms.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

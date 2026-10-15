@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Streaming: Loading Assets by Camera Proximity - gltf</title>
+    <meta name="description" content="Streaming glTF engines manage vast 3D scenes by dynamically loading and unloading assets according to the viewer&#39;s camera position. By evaluating spatial proximity, screen-space metrics, and hierarchical data structures, these engines ensure that high-res">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-streaming-loading-assets-by-camera-proximity">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Streaming: Loading Assets by Camera Proximity - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-streaming-loading-assets-by-camera-proximity" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Streaming glTF engines manage vast 3D scenes by dynamically loading and unloading assets according to the viewer&#39;s camera position. By evaluating spatial proximity, screen-space metrics, and hierarchical data structures, these engines ensure that high-res" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-streaming-loading-assets-by-camera-proximity">glTF
+Streaming: Loading Assets by Camera Proximity</h1>
+<p>Streaming glTF engines manage vast 3D scenes by dynamically loading
+and unloading assets according to the viewer's camera position. By
+evaluating spatial proximity, screen-space metrics, and hierarchical
+data structures, these engines ensure that high-resolution meshes and
+textures are loaded only when visible and close to the camera, while
+distant or out-of-view objects are swapped for lower-detail proxies or
+purged from memory entirely. This dynamic pipeline preserves memory
+budgets, minimizes network bandwidth, and maintains smooth frame rates
+across diverse hardware.</p>
+<h3 id="spatial-partitioning-and-bounding-volumes">Spatial Partitioning
+and Bounding Volumes</h3>
+<p>To rapidly evaluate proximity without checking thousands of objects
+individually each frame, engines organize the 3D scene into spatial data
+structures such as octrees, bounding volume hierarchies (BVH), or
+geospatial grids like 3D Tiles.</p>
+<p>Each glTF node or external chunk is wrapped in a simplified
+mathematical boundary, typically an axis-aligned bounding box (AABB) or
+a bounding sphere. At runtime, the engine calculates the distance
+between the camera position vector and the closest point on each
+bounding volume. If a bounding volume falls completely outside the
+camera's view frustum, it is culled immediately from proximity
+calculations, saving processing cycles.</p>
+<h3 id="distance-metrics-and-screen-space-error-sse">Distance Metrics
+and Screen Space Error (SSE)</h3>
+<p>Engines typically use one of two methods to determine when to trigger
+asset state changes:</p>
+<ol type="1">
+<li><strong>Euclidean Distance:</strong> The straight-line distance
+between the camera and the object's origin or bounding center. If the
+distance falls below a defined threshold (<span
+class="math inline">\(d_{load}\)</span>), the asset is queued for
+download and rendering.</li>
+<li><strong>Screen Space Error (SSE):</strong> A more advanced metric
+that factors in camera field-of-view (FOV), viewport resolution, and
+distance. SSE estimates the geometric deviation between a simplified
+model and the full-resolution model in terms of screen pixels. When the
+estimated error exceeds a defined pixel threshold, the engine requests a
+higher-fidelity asset.</li>
+</ol>
+<h3 id="levels-of-detail-lod-and-gltf-extensions">Levels of Detail (LOD)
+and glTF Extensions</h3>
+<p>Streaming implementations rarely load an asset from zero to full
+resolution in a single step. Instead, they rely on hierarchical Levels
+of Detail (HLOD).</p>
+<p>glTF supports LOD setups natively through vendor extensions like
+<code>MSFT_lod</code> or via composite specifications such as OGC 3D
+Tiles (which uses glTF as its payload format). As the camera approaches
+an object, the engine requests increasingly detailed glTF files or
+buffers:</p>
+<ul>
+<li><strong>Far Distance:</strong> Lightweight bounding boxes,
+single-triangle billboards, or heavily decimated meshes with minimal
+texture maps.</li>
+<li><strong>Mid Distance:</strong> Simplified geometry with downsampled
+or compressed textures (e.g., Basis Universal / KTX2 format).</li>
+<li><strong>Near Distance:</strong> Full-fidelity geometry with complex
+PBR material maps and normal buffers.</li>
+</ul>
+<h3 id="asynchronous-fetching-and-gpu-uploading">Asynchronous Fetching
+and GPU Uploading</h3>
+<p>Loading assets synchronously freezes the render thread, causing frame
+drops. Modern streaming engines handle glTF retrieval through a
+non-blocking asynchronous pipeline:</p>
+<ol type="1">
+<li><strong>Network Fetch:</strong> Binary glTF chunks
+(<code>.glb</code> or external <code>.bin</code> and image files) are
+retrieved using background network requests.</li>
+<li><strong>Worker Decoding:</strong> Web Workers or secondary CPU
+threads parse the JSON hierarchy, unpack Draco or Meshopt compressed
+geometry, and decode texture data.</li>
+<li><strong>Staged GPU Ingestion:</strong> Once decoded, buffers are
+transferred to the GPU using asynchronous memory staging (such as
+<code>createImageBitmap</code> and asynchronous buffer uploads in
+WebGL/WebGPU) over several frames to prevent visual stutter.</li>
+</ol>
+<h3 id="unloading-mechanisms-and-thrashing-prevention">Unloading
+Mechanisms and Thrashing Prevention</h3>
+<p>When the camera retreats beyond an object's threshold, the engine
+marks the asset for eviction to prevent memory overflow. To handle
+unloading efficiently, engines implement two key strategies:</p>
+<ul>
+<li><strong>Hysteresis Margins:</strong> To prevent "thrashing"—a rapid
+loop of loading and unloading when a camera hovers near an activation
+boundary—engines use different thresholds for loading and unloading. For
+instance, an asset might load at 50 meters from the camera but only
+unload when the camera retreats past 65 meters.</li>
+<li><strong>Least Recently Used (LRU) Cache:</strong> Assets flagged for
+eviction are often kept in a memory cache rather than immediately
+destroyed. If the camera returns quickly, the engine retrieves the asset
+from cache without re-downloading. When the total memory budget is
+reached, the least recently viewed assets are permanently disposed of,
+destroying their GPU buffers, textures, and shader programs.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

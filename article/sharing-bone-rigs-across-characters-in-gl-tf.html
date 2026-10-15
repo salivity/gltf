@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sharing Bone Rigs Across Characters in glTF - gltf</title>
+    <meta name="description" content="Reusing bone rigs across multiple animated characters in a single glTF file is an effective way to optimize 3D asset workflows and minimize file size. This guide outlines how the glTF 2.0 specification handles skeletal sharing, explaining how multiple mes">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/sharing-bone-rigs-across-characters-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Sharing Bone Rigs Across Characters in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/sharing-bone-rigs-across-characters-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Reusing bone rigs across multiple animated characters in a single glTF file is an effective way to optimize 3D asset workflows and minimize file size. This guide outlines how the glTF 2.0 specification handles skeletal sharing, explaining how multiple mes" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="sharing-bone-rigs-across-characters-in-gltf">Sharing Bone Rigs
+Across Characters in glTF</h1>
+<p>Reusing bone rigs across multiple animated characters in a single
+glTF file is an effective way to optimize 3D asset workflows and
+minimize file size. This guide outlines how the glTF 2.0 specification
+handles skeletal sharing, explaining how multiple meshes bind to a
+unified joint hierarchy, how data accessors are reused, and how
+animations interact with shared skeletal nodes.</p>
+<h3 id="understanding-the-gltf-skinning-architecture">Understanding the
+glTF Skinning Architecture</h3>
+<p>In the glTF specification, skeletal animation relies on three primary
+components:</p>
+<ol type="1">
+<li><strong>Nodes</strong>: Represent the transformation hierarchy of
+the scene, including individual skeleton joints.</li>
+<li><strong>Skins</strong>: Define collections of joint nodes, an
+optional skeleton root node, and an accessor pointing to the
+<code>inverseBindMatrices</code>.</li>
+<li><strong>Meshes</strong>: Contain primitive geometry with vertex
+attributes for joint indices (<code>JOINTS_0</code>) and bone weights
+(<code>WEIGHTS_0</code>).</li>
+</ol>
+<p>Because a mesh node explicitly declares its associated skin via a
+<code>skin</code> property index, multiple nodes can point to the same
+skin definition or share underlying data buffers.</p>
+<h3 id="method-1-binding-multiple-meshes-to-a-single-rig">Method 1:
+Binding Multiple Meshes to a Single Rig</h3>
+<p>If the objective is to display multiple characters or modular parts
+(such as clothing, armor, or swappable body parts) moving in perfect
+synchronization, multiple mesh nodes can reference the exact same
+<code>skin</code> instance.</p>
+<p>In the glTF JSON structure:</p>
+<ul>
+<li>Define the joint hierarchy once under the <code>nodes</code>
+array.</li>
+<li>Create a single entry in the <code>skins</code> array containing the
+list of joint node indices.</li>
+<li>Create multiple character nodes, assign each character its distinct
+<code>mesh</code> index, and set the <code>skin</code> property on all
+of them to the same skin index:</li>
+</ul>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;nodes&quot;</span><span class="er">:</span> <span class="ot">[</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">{</span> <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;Character_A&quot;</span><span class="fu">,</span> <span class="dt">&quot;mesh&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span> <span class="dt">&quot;skin&quot;</span><span class="fu">:</span> <span class="dv">0</span> <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">{</span> <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;Character_B&quot;</span><span class="fu">,</span> <span class="dt">&quot;mesh&quot;</span><span class="fu">:</span> <span class="dv">1</span><span class="fu">,</span> <span class="dt">&quot;skin&quot;</span><span class="fu">:</span> <span class="dv">0</span> <span class="fu">}</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ot">]</span></span></code></pre></div>
+<p>Every mesh referencing <code>skin: 0</code> will evaluate its vertex
+positions against the transforms of that single joint hierarchy.
+Transforming the bones will deform all attached characters
+simultaneously.</p>
+<h3 id="method-2-independent-characters-reusing-rig-data">Method 2:
+Independent Characters Reusing Rig Data</h3>
+<p>Because glTF animation channels target specific node indices
+directly, two independently moving characters cannot share the exact
+same joint nodes inside a single scene. If character instances must move
+independently within the same glTF file, each requires its own set of
+joint nodes.</p>
+<p>However, you can still share the structural data across characters to
+save memory:</p>
+<ul>
+<li><strong>Shared Inverse Bind Matrices</strong>: Multiple
+<code>skin</code> objects can reference the same <code>accessor</code>
+index for their <code>inverseBindMatrices</code>. As long as the rest
+poses and bone counts are identical, this large matrix array does not
+need duplication.</li>
+<li><strong>Shared Keyframe Samplers</strong>: If characters perform
+identical animations at different times or offsets,
+<code>animation.channels</code> can target the separate joint nodes
+while their <code>sampler</code> properties point to the same input
+(timestamps) and output (TRS values) accessors.</li>
+</ul>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;skins&quot;</span><span class="er">:</span> <span class="ot">[</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">{</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;inverseBindMatrices&quot;</span><span class="fu">:</span> <span class="dv">4</span><span class="fu">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;joints&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="dv">10</span><span class="ot">,</span> <span class="dv">11</span><span class="ot">,</span> <span class="dv">12</span><span class="ot">]</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">{</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;inverseBindMatrices&quot;</span><span class="fu">:</span> <span class="dv">4</span><span class="fu">,</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;joints&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="dv">20</span><span class="ot">,</span> <span class="dv">21</span><span class="ot">,</span> <span class="dv">22</span><span class="ot">]</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="ot">]</span></span></code></pre></div>
+<h3 id="best-practices-for-implementation">Best Practices for
+Implementation</h3>
+<ul>
+<li><strong>Standardize Joint Indices</strong>: Ensure that all shared
+meshes use the exact same bone index mapping in their
+<code>JOINTS_0</code> vertex attributes so they align with the shared
+<code>joints</code> array order.</li>
+<li><strong>Root Node Offsets</strong>: When binding several full
+characters to one rig for synchronized display, use local vertex offsets
+in the mesh primitives rather than node transforms, as skinning
+overrides normal node-level translation.</li>
+<li><strong>Runtime Retargeting</strong>: For game engines (such as
+Three.js, Babylon.js, or Godot), the most efficient setup is often
+exporting the rig and animation once, exporting character meshes
+separately, and cloning or retargeting the skeleton dynamically at
+runtime.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

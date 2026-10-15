@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why glTF Joint Nodes Reside in the Node Graph - gltf</title>
+    <meta name="description" content="In glTF (GL Transmission Format), skeletal joints are defined directly within the standard nodes array rather than in a separate, dedicated structure. This article breaks down the architectural choices behind this design, highlighting how a unified node g">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/why-gl-tf-joint-nodes-reside-in-the-node-graph">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Why glTF Joint Nodes Reside in the Node Graph - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/why-gl-tf-joint-nodes-reside-in-the-node-graph" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In glTF (GL Transmission Format), skeletal joints are defined directly within the standard nodes array rather than in a separate, dedicated structure. This article breaks down the architectural choices behind this design, highlighting how a unified node g" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="why-gltf-joint-nodes-reside-in-the-node-graph">Why glTF Joint
+Nodes Reside in the Node Graph</h1>
+<p>In glTF (GL Transmission Format), skeletal joints are defined
+directly within the standard <code>nodes</code> array rather than in a
+separate, dedicated structure. This article breaks down the
+architectural choices behind this design, highlighting how a unified
+node graph simplifies transform hierarchies, unifies the animation
+pipeline, streamlines prop attachments, and keeps runtime engines
+efficient.</p>
+<h3 id="unified-scene-hierarchy">Unified Scene Hierarchy</h3>
+<p>In real-time 3D applications, skeletal rigs do not exist in
+isolation. A character's skeleton often interacts with the rest of the
+scene: a root bone might be parented to an animated vehicle node, or a
+weapon might be parented to a character's hand bone.</p>
+<p>By placing joints in the standard node graph, glTF eliminates the
+need for synchronization between two separate hierarchies. Traversal for
+computing world-space transformation matrices works identically across
+the entire scene, requiring only a single tree traversal mechanism.</p>
+<h3 id="shared-node-architecture">Shared Node Architecture</h3>
+<p>From a data perspective, a joint requires the same geometric
+attributes as any other scene node:</p>
+<ul>
+<li>Translation, Rotation, and Scale (TRS) or a 4x4 Transformation
+Matrix</li>
+<li>Hierarchical parent-child relationships via a <code>children</code>
+array</li>
+<li>Optional names and extensions</li>
+</ul>
+<p>Introducing an isolated <code>joints</code> array would duplicate the
+schema definitions and force runtime parsers to maintain parallel data
+structures for identical concepts.</p>
+<h3 id="universal-animation-pipelines">Universal Animation
+Pipelines</h3>
+<p>glTF handles animation by targeting node properties over time. An
+animation channel simply specifies a target node index and an attribute
+path (such as <code>translation</code> or <code>rotation</code>).</p>
+<p>Because joints are nodes, the same animation system can evaluate both
+skeletal animations and standard rigid-body animations. There is no need
+for separate channel targets, special bone samplers, or distinct
+evaluation logic. A single animation player handles skinned characters,
+rotating wheels, and moving cameras without branching code paths.</p>
+<h3 id="effortless-prop-and-socket-attachment">Effortless Prop and
+Socket Attachment</h3>
+<p>In game development and 3D visualization, attaching external objects
+to a moving skeleton (such as gear, weapons, or particle emitters) is a
+common requirement. When joints are standard nodes, adding an attachment
+simply involves adding the prop’s node index to the joint node's
+<code>children</code> array. The prop automatically inherits the
+skeletal motion during the standard forward kinematics pass, without
+needing complex "socket" systems or manual matrix copying per frame.</p>
+<h3 id="decoupling-skinned-meshes-via-the-skin-object">Decoupling
+Skinned Meshes via the Skin Object</h3>
+<p>Rather than enforcing joint-specific nodes, glTF uses the
+<code>skin</code> element to define skinning logic independently:</p>
+<ol type="1">
+<li><strong><code>joints</code> Array</strong>: A list of indices
+pointing to existing nodes in the main <code>nodes</code> array that act
+as bones.</li>
+<li><strong><code>inverseBindMatrices</code></strong>: An accessor
+providing the base poses for those joints.</li>
+<li><strong><code>skeleton</code> (Optional)</strong>: A reference to
+the root node of the skeletal hierarchy.</li>
+</ol>
+<p>This separation of concerns allows nodes to remain lightweight and
+general-purpose while giving the <code>skin</code> definition full
+control over which nodes influence the vertices of a mesh.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

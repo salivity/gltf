@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KHR_materials_volume: Absorption and Thickness in glTF - gltf</title>
+    <meta name="description" content="The KHRmaterialsvolume extension in glTF enables realistic rendering of transparent and translucent objects by turning a polygonal shell into a virtual solid volume. This article examines how the extension defines physical thickness and light absorption,">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/khr-materials-volume-absorption-and-thickness-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="KHR_materials_volume: Absorption and Thickness in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/khr-materials-volume-absorption-and-thickness-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The KHRmaterialsvolume extension in glTF enables realistic rendering of transparent and translucent objects by turning a polygonal shell into a virtual solid volume. This article examines how the extension defines physical thickness and light absorption," />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1
+id="khr_materials_volume-absorption-and-thickness-in-gltf">KHR_materials_volume:
+Absorption and Thickness in glTF</h1>
+<p>The <code>KHR_materials_volume</code> extension in glTF enables
+realistic rendering of transparent and translucent objects by turning a
+polygonal shell into a virtual solid volume. This article examines how
+the extension defines physical thickness and light absorption, detailing
+the parameters used to calculate ray travel distance and the exponential
+decay of light through tinted media such as colored glass, liquids, and
+gems.</p>
+<h2 id="thickness-in-khr_materials_volume">Thickness in
+KHR_materials_volume</h2>
+<p>In traditional real-time rendering, transmissive surfaces (enabled
+via <code>KHR_materials_transmission</code>) are treated as infinitely
+thin planes. The <code>KHR_materials_volume</code> extension addresses
+this by assigning physical depth to surfaces using two key
+properties:</p>
+<ul>
+<li><strong><code>thicknessFactor</code></strong>: A scalar
+floating-point value that defines the thickness of the volume in the
+mesh's local coordinate space (measured in meters). A value of
+<code>0.0</code> represents an infinitely thin boundary, which disables
+volumetric calculations.</li>
+<li><strong><code>thicknessTexture</code></strong>: A 2D texture map
+where thickness variations are stored (typically in the green channel).
+When provided, the sampled texture value is multiplied by the
+<code>thicknessFactor</code> to allow localized variations across the
+surface, such as the thin rim and thick base of a wine glass.</li>
+</ul>
+<p>During rendering, this thickness parameter approximates the distance
+a refracted light ray travels through the object along the surface
+normal. When combined with the index of refraction (defined in
+<code>KHR_materials_ior</code>), shaders can calculate the actual path
+length of light through the interior without requiring multi-pass
+depth-peeling or complex ray marching.</p>
+<h2 id="absorption-and-attenuation-properties">Absorption and
+Attenuation Properties</h2>
+<p>Once light enters a volume, its intensity and spectrum change
+depending on the interior medium. <code>KHR_materials_volume</code>
+models this behavior via the Beer-Lambert law, which dictates that light
+absorbs exponentially relative to the distance traveled. The absorption
+profile is parameterized through two attributes:</p>
+<ul>
+<li><strong><code>attenuationColor</code></strong>: An RGB vector
+representing the linear color of light after it has traveled a specific
+distance through the volume. The default value is
+<code>[1.0, 1.0, 1.0]</code>, indicating no color tint or selective
+wavelength absorption.</li>
+<li><strong><code>attenuationDistance</code></strong>: A positive
+floating-point value indicating the distance (in meters) light must
+travel through the material for its color to reach the exact value
+defined by <code>attenuationColor</code>. If set to infinity (or left
+unspecified as <code>+Infinity</code>), light passes through without any
+absorption.</li>
+</ul>
+<p>From these parameters, renderers compute the volumetric absorption
+coefficient (<span class="math inline">\(\sigma_a\)</span>) per color
+channel:</p>
+<p><span class="math display">\[\sigma_a =
+-\frac{\ln(\text{attenuationColor})}{\text{attenuationDistance}}\]</span></p>
+<h2 id="combining-thickness-and-absorption">Combining Thickness and
+Absorption</h2>
+<p>To render the final transmitted color, the engine determines the path
+length (<span class="math inline">\(d\)</span>) of the light ray through
+the volume, scaled by the surface thickness and refracted angle. The
+transmitted light intensity (<span class="math inline">\(I\)</span>) is
+then derived exponentially:</p>
+<p><span class="math display">\[I = I_0 \cdot e^{-\sigma_a \cdot
+d}\]</span></p>
+<p>Thicker regions of a mesh naturally absorb more light and exhibit a
+deeper, more saturated tint, while thinner edges appear clearer and
+closer to the original light source color. By decoupling the absolute
+color (<code>attenuationColor</code>) from the scale of the object
+(<code>attenuationDistance</code>), the extension ensures physically
+accurate and scale-consistent results across different lighting
+environments.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

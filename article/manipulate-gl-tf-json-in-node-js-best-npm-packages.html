@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manipulate glTF JSON in Node.js: Best NPM Packages - gltf</title>
+    <meta name="description" content="Manipulating glTF (GL Transmission Format) files programmatically is a common requirement for 3D asset pipelines, scene optimization, dynamic material swapping, and automated metadata insertion. This article reviews the primary npm packages available for">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/manipulate-gl-tf-json-in-node-js-best-npm-packages">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Manipulate glTF JSON in Node.js: Best NPM Packages - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/manipulate-gl-tf-json-in-node-js-best-npm-packages" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Manipulating glTF (GL Transmission Format) files programmatically is a common requirement for 3D asset pipelines, scene optimization, dynamic material swapping, and automated metadata insertion. This article reviews the primary npm packages available for" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="manipulate-gltf-json-in-nodejs-best-npm-packages">Manipulate
+glTF JSON in Node.js: Best NPM Packages</h1>
+<p>Manipulating glTF (GL Transmission Format) files programmatically is
+a common requirement for 3D asset pipelines, scene optimization, dynamic
+material swapping, and automated metadata insertion. This article
+reviews the primary npm packages available for Node.js to read, modify,
+and serialize glTF JSON structures efficiently, ranging from high-level
+graph-based abstractions to low-level JSON and buffer utilities.</p>
+<h3 id="1-gltf-transformcore">1. <code>@gltf-transform/core</code></h3>
+<p><code>@gltf-transform/core</code> is part of the modular
+glTF-Transform library and is the standard modern tool for reading,
+editing, and writing glTF 2.0 and GLB files in Node.js.</p>
+<ul>
+<li><strong>How it works:</strong> It parses files into an in-memory
+graph structure called a <code>Document</code>. Instead of forcing
+developers to manage raw array indices and buffer byte offsets manually,
+it models nodes, meshes, materials, and textures as interrelated
+JavaScript objects.</li>
+<li><strong>Why use it:</strong> When you modify the structure (e.g.,
+adding attributes or removing materials), the library automatically
+handles buffer reorganizations, accessor alignment, and index re-mapping
+when saving back to JSON or GLB.</li>
+<li><strong>Installation:</strong>
+<code>npm install @gltf-transform/core</code></li>
+</ul>
+<h3 id="2-gltf-pipeline">2. <code>gltf-pipeline</code></h3>
+<p>Developed by Cesium, <code>gltf-pipeline</code> provides a dedicated
+Node.js API and command-line interface for deep content manipulation and
+optimization.</p>
+<ul>
+<li><strong>How it works:</strong> It processes glTF and GLB assets
+through modular stages. You can load a glTF file into an internal JSON
+representation alongside a dictionary of binary buffers.</li>
+<li><strong>Key capabilities:</strong> It excels at structural
+conversions—such as embedding binary data directly into JSON data URIs,
+extracting binary buffers into separate <code>.bin</code> files, and
+converting freely between <code>.gltf</code> and <code>.glb</code>.</li>
+<li><strong>Why use it:</strong> It is ideal for stage-based pipeline
+operations where you need to toggle between self-contained files and
+separate assets while applying automated structural changes.</li>
+<li><strong>Installation:</strong>
+<code>npm install gltf-pipeline</code></li>
+</ul>
+<h3 id="3-loadersglgltf">3. <code>@loaders.gl/gltf</code></h3>
+<p>Part of the Vis.gl framework ecosystem, <code>@loaders.gl/gltf</code>
+provides high-performance parsing and encoding for glTF and GLB
+formats.</p>
+<ul>
+<li><strong>How it works:</strong> It exposes functions such as
+<code>parse</code> and <code>encode</code> that handle both the JSON
+chunk and the binary chunks.</li>
+<li><strong>Key capabilities:</strong> For <code>.glb</code> files, it
+cleanly separates the JSON header chunk from binary chunks into a simple
+JavaScript object structure. This allows developers to read the JSON
+chunk, modify properties (like node hierarchies or extras objects), and
+repackage the chunks without decompressing or re-encoding geometric
+data.</li>
+<li><strong>Why use it:</strong> Best for applications already using the
+loaders.gl or deck.gl ecosystem, or for lightweight chunk-level
+inspection and manipulation.</li>
+<li><strong>Installation:</strong>
+<code>npm install @loaders.gl/gltf @loaders.gl/core</code></li>
+</ul>
+<h3 id="4-native-fs-with-jsonparse-direct-json-editing">4. Native
+<code>fs</code> with <code>JSON.parse</code> (Direct JSON Editing)</h3>
+<p>For non-binary <code>.gltf</code> files where the geometry is stored
+externally in separate <code>.bin</code> files, third-party libraries
+are not strictly necessary.</p>
+<ul>
+<li><strong>How it works:</strong> A <code>.gltf</code> file is a valid
+JSON document. You can read the file using Node’s native
+<code>node:fs/promises</code>, parse it with <code>JSON.parse()</code>,
+alter the data, and write it back using
+<code>JSON.stringify()</code>.</li>
+<li><strong>Use case:</strong> This approach works well for simple
+edits, such as modifying the <code>asset.extras</code> field, renaming
+nodes, updating material hex colors, or changing texture paths.</li>
+<li><strong>Limitation:</strong> It is not recommended for structural
+operations that alter buffer lengths, accessors, or index arrays, as
+doing so requires manually recalculating byte offsets and lengths.</li>
+</ul>
+<h3 id="choosing-the-right-package">Choosing the Right Package</h3>
+<ul>
+<li>Choose <strong><code>@gltf-transform/core</code></strong> for full
+asset manipulation, structural edits, and robust handling of both
+geometry buffers and JSON relationships.</li>
+<li>Choose <strong><code>gltf-pipeline</code></strong> for converting
+between glTF and GLB formats and managing file-embedding
+strategies.</li>
+<li>Choose <strong><code>@loaders.gl/gltf</code></strong> for fast
+chunk-level parsing and repackaging.</li>
+<li>Choose <strong>Native JSON parsing</strong> only for minor metadata
+edits on plain-text <code>.gltf</code> files.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

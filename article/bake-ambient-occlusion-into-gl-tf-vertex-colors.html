@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bake Ambient Occlusion into glTF Vertex Colors - gltf</title>
+    <meta name="description" content="Baking ambient occlusion directly into vertex colors is an efficient optimization technique that enhances depth perception while eliminating the memory overhead and draw calls of dedicated ambient occlusion texture maps. In glTF 2.0 models, this process r">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/bake-ambient-occlusion-into-gl-tf-vertex-colors">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Bake Ambient Occlusion into glTF Vertex Colors - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/bake-ambient-occlusion-into-gl-tf-vertex-colors" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Baking ambient occlusion directly into vertex colors is an efficient optimization technique that enhances depth perception while eliminating the memory overhead and draw calls of dedicated ambient occlusion texture maps. In glTF 2.0 models, this process r" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="bake-ambient-occlusion-into-gltf-vertex-colors">Bake Ambient
+Occlusion into glTF Vertex Colors</h1>
+<p>Baking ambient occlusion directly into vertex colors is an efficient
+optimization technique that enhances depth perception while eliminating
+the memory overhead and draw calls of dedicated ambient occlusion
+texture maps. In glTF 2.0 models, this process relies on computing
+surface shading per vertex and mapping the resulting occlusion values to
+the mesh's primary color attribute. This guide outlines the essential
+tools, processing workflows, and specification requirements for
+embedding vertex-level ambient occlusion into glTF assets.</p>
+<h3 id="how-gltf-handles-vertex-colors">How glTF Handles Vertex
+Colors</h3>
+<p>The glTF 2.0 specification natively supports vertex colors through
+the <code>COLOR_0</code> attribute on mesh primitives. By default in the
+standard PBR metallic-roughness workflow, the values in
+<code>COLOR_0</code> act as a linear multiplier for the material's
+<code>baseColorFactor</code> and <code>baseColorTexture</code>.</p>
+<p>Because glTF does not define a dedicated vertex-level occlusion
+channel, baking ambient occlusion into <code>COLOR_0</code> works by
+storing the grayscale occlusion value directly in the RGB channels. When
+rendered, this darkens crevices and contact points without requiring an
+<code>occlusionTexture</code>.</p>
+<h3 id="baking-via-dcc-software-blender-workflow">Baking via DCC
+Software (Blender Workflow)</h3>
+<p>Digital content creation tools provide built-in solutions for baking
+occlusion directly to mesh geometry:</p>
+<ol type="1">
+<li><strong>Dirty Vertex Colors (Approximation):</strong> In Blender's
+Vertex Paint mode, selecting <strong>Paint &gt; Dirty Vertex
+Colors</strong> calculates an ambient occlusion approximation based on
+surface curvature and angle. This method is fast and requires no ray
+tracing, though it works best on high-density meshes.</li>
+<li><strong>Ray-Traced Cycles Bake:</strong> For higher accuracy, assign
+an <strong>Ambient Occlusion</strong> input node to a material, create a
+new Color Attribute (set to <code>Color</code> and
+<code>Byte Color</code> or <code>Float Color</code>), and use Blender's
+bake panel set to bake the material to the active Color Attribute.</li>
+<li><strong>glTF Export:</strong> When exporting to <code>.gltf</code>
+or <code>.glb</code>, ensure that <strong>Data &gt; Mesh &gt; Vertex
+Colors</strong> (or <strong>Attributes</strong>) is checked. The
+exporter will package the active color layer as the <code>COLOR_0</code>
+accessor.</li>
+</ol>
+<h3 id="baking-via-mesh-processing-tools-and-cli">Baking via Mesh
+Processing Tools and CLI</h3>
+<p>Automated pipelines and programmatic pipelines offer scalable ways to
+inject ambient occlusion without manual 3D suite workflows:</p>
+<ul>
+<li><strong>MeshLab:</strong> The <strong>Filters &gt; Color Creation
+and Processing &gt; Ambient Occlusion per Vertex</strong> filter casts
+rays over a hemisphere from each vertex to compute exact line-of-sight
+occlusion, storing the result directly as vertex colors.</li>
+<li><strong>Houdini:</strong> Using an <code>Attribute VOP</code> or an
+<code>Occlusion</code> node, occlusion values can be computed per-point
+and mapped to the standard <code>Cd</code> (diffuse color) attribute
+before passing through the glTF ROP exporter.</li>
+<li><strong>Custom Ray Tracing Scripts:</strong> Using libraries such as
+Trimesh or Embree in Python/C++, you can shoot hemisphere rays from
+vertex positions along vertex normals to calculate accessibility factors
+(0.0 to 1.0) and write them directly into a glTF binary buffer mapped to
+<code>COLOR_0</code>.</li>
+</ul>
+<h3 id="best-practices-for-density-and-quantization">Best Practices for
+Density and Quantization</h3>
+<ul>
+<li><strong>Mesh Density:</strong> Vertex-baked ambient occlusion
+depends entirely on polygon density. Low-poly flat surfaces cannot
+capture fine contact shadows; the technique is most effective on
+stylized assets, organic shapes, or geometry with uniformly distributed
+vertices.</li>
+<li><strong>Data Types and Compression:</strong> To keep file sizes
+small, encode <code>COLOR_0</code> as <code>UNSIGNED_BYTE</code>
+normalized integers (<code>5121</code>) rather than 32-bit floats.</li>
+<li><strong>Color Space Management:</strong> Ambient occlusion is linear
+data. Ensure baking tools write linear RGB values to avoid double-gamma
+correction when glTF engines interpret <code>COLOR_0</code> according to
+the sRGB/Linear standards defined by the glTF specification.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

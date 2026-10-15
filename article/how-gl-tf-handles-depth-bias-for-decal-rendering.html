@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How glTF Handles Depth Bias for Decal Rendering - gltf</title>
+    <meta name="description" content="The core glTF 2.0 specification does not natively include depth bias, polygon offset, or decal-specific pipeline parameters. Because glTF is designed as a portable, API-agnostic transmission format rather than a complete rendering engine state descriptor,">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-gl-tf-handles-depth-bias-for-decal-rendering">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How glTF Handles Depth Bias for Decal Rendering - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-gl-tf-handles-depth-bias-for-decal-rendering" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The core glTF 2.0 specification does not natively include depth bias, polygon offset, or decal-specific pipeline parameters. Because glTF is designed as a portable, API-agnostic transmission format rather than a complete rendering engine state descriptor," />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-gltf-handles-depth-bias-for-decal-rendering">How glTF
+Handles Depth Bias for Decal Rendering</h1>
+<p>The core glTF 2.0 specification does not natively include depth bias,
+polygon offset, or decal-specific pipeline parameters. Because glTF is
+designed as a portable, API-agnostic transmission format rather than a
+complete rendering engine state descriptor, hardware-level rasterization
+states are intentionally omitted. Consequently, handling depth bias and
+z-fighting for decals when using glTF requires a combination of custom
+metadata, engine-level configurations, or alternative geometry and
+shader techniques.</p>
+<h3 id="why-core-gltf-excludes-polygon-offset">Why Core glTF Excludes
+Polygon Offset</h3>
+<p>The glTF standard intentionally abstracts away platform-dependent
+graphics states such as depth testing modes, stencil operations, and
+depth bias (<code>glPolygonOffset</code> in OpenGL/WebGL or depth bias
+in Direct3D and Vulkan). Including these parameters would tie the asset
+format directly to specific rasterization pipelines, creating
+inconsistencies across different rendering engines, deferred renderers,
+and ray tracing implementations. As a result, a standard glTF material
+definition cannot dictate whether a surface should be offset during the
+depth test pass.</p>
+<h3 id="using-the-extras-field-for-metadata">Using the
+<code>extras</code> Field for Metadata</h3>
+<p>The most common way to carry depth bias parameters through glTF is by
+utilizing the standard <code>extras</code> object on materials or nodes.
+Digital content creation (DCC) tools and custom exporters can write
+pipeline hints directly into the glTF JSON:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;materials&quot;</span><span class="er">:</span> <span class="ot">[</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">{</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;Decal_Graffiti&quot;</span><span class="fu">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;extras&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;depthBias&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;enabled&quot;</span><span class="fu">:</span> <span class="kw">true</span><span class="fu">,</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;factor&quot;</span><span class="fu">:</span> <span class="fl">-1.0</span><span class="fu">,</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;units&quot;</span><span class="fu">:</span> <span class="fl">-4.0</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">}</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">},</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;pbrMetallicRoughness&quot;</span><span class="fu">:</span> <span class="fu">{</span> <span class="er">...</span> <span class="fu">}</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="ot">]</span></span></code></pre></div>
+<p>When importing the model into an engine such as Three.js or
+Babylon.js, the loader script reads these properties and applies them
+directly to the active material instance (for example, setting
+<code>material.polygonOffset = true</code>,
+<code>material.polygonOffsetFactor = -1</code>, and
+<code>material.polygonOffsetUnits = -4</code>).</p>
+<h3 id="geometric-offset-in-the-mesh">Geometric Offset in the Mesh</h3>
+<p>When relying on custom engine parsers is not an option, content
+creators often resolve decal z-fighting directly within the mesh
+geometry. In this workflow:</p>
+<ul>
+<li>The decal mesh is modeled as a separate surface conforming closely
+to the base geometry.</li>
+<li>The vertices of the decal mesh are physically displaced along their
+vertex normals by a small fraction of a unit (e.g., 0.1 mm to 1
+mm).</li>
+</ul>
+<p>While this method functions in any standard glTF viewer without
+custom code, it has notable trade-offs. The offset can introduce visible
+gaps when viewed from oblique angles, fail at steep grazing angles, or
+cause silhouette separation.</p>
+<h3 id="screen-space-and-projected-decals">Screen-Space and Projected
+Decals</h3>
+<p>Modern real-time engines increasingly bypass mesh-level polygon
+offsets entirely in favor of screen-space decals or projected decal
+volumes. In this architecture:</p>
+<ul>
+<li>The glTF file does not contain a pre-conformed surface mesh with
+depth bias.</li>
+<li>Instead, glTF nodes can represent simple bounding box volumes or
+custom null objects marking decal positions, orientations, and
+scales.</li>
+<li>The host rendering engine takes the decal textures from the glTF
+file and projects them onto the scene depth buffer during the deferred
+or forward-plus shading pass.</li>
+</ul>
+<p>This approach completely eliminates z-fighting and the need for
+polygon offset parameters, though it requires support directly from the
+host engine's rendering architecture rather than the glTF file format
+itself.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

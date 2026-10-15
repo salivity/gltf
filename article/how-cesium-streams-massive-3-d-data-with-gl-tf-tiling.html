@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Cesium Streams Massive 3D Data with glTF Tiling - gltf</title>
+    <meta name="description" content="Rendering terabyte-scale city models in a web browser requires an architecture that avoids loading entire datasets into memory at once. Cesium achieves this through 3D Tiles, an open spatial data structure that hierarchically partitions massive geospatial">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-cesium-streams-massive-3-d-data-with-gl-tf-tiling">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Cesium Streams Massive 3D Data with glTF Tiling - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-cesium-streams-massive-3-d-data-with-gl-tf-tiling" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Rendering terabyte-scale city models in a web browser requires an architecture that avoids loading entire datasets into memory at once. Cesium achieves this through 3D Tiles, an open spatial data structure that hierarchically partitions massive geospatial" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-cesium-streams-massive-3d-data-with-gltf-tiling">How Cesium
+Streams Massive 3D Data with glTF Tiling</h1>
+<p>Rendering terabyte-scale city models in a web browser requires an
+architecture that avoids loading entire datasets into memory at once.
+Cesium achieves this through 3D Tiles, an open spatial data structure
+that hierarchically partitions massive geospatial datasets into
+streamable, GPU-ready glTF (Graphics Language Transmission Format)
+assets. By combining spatial indexing, hierarchical levels of detail
+(HLOD), and dynamic runtime evaluation, Cesium streams only the
+necessary geometry and texture data required for any given camera
+view.</p>
+<h3 id="spatial-partitioning-and-the-3d-tiles-hierarchy">Spatial
+Partitioning and the 3D Tiles Hierarchy</h3>
+<p>Cesium does not treat a city model as a single monolithic file.
+Instead, the dataset is indexed into a tree-based spatial data
+structure, such as an octree, quadtree, or k-d tree. The geographic
+volume of the entire dataset is wrapped in a root bounding volume (a
+box, sphere, or oriented bounding box).</p>
+<p>This root volume is recursively divided into smaller child bounding
+volumes covering progressively smaller geographic footprints. Each node
+in this hierarchical tree references a 3D payload containing the visual
+data for that specific bounding region.</p>
+<h3 id="gltf-as-the-core-data-payload">glTF as the Core Data
+Payload</h3>
+<p>In modern 3D Tiles (3D Tiles 1.1), the primary payload for each tile
+is standard glTF 2.0. glTF is specifically designed for the runtime
+transmission of 3D scenes. It packages geometry, materials, and textures
+directly into binary buffers (<code>.bin</code>) and compressed formats
+like Draco or meshopt for geometry, and KTX2 with Basis Universal for
+textures.</p>
+<p>Because glTF mirrors the memory layouts required by graphics APIs
+like WebGL and WebGPU, Cesium can upload the incoming tile payloads
+directly to the GPU without needing CPU-intensive parsing or mesh
+restructuring. In legacy implementations, this was achieved using the
+Batched 3D Model (<code>.b3dm</code>) container, which wrapped a glTF
+model alongside custom per-feature metadata tables.</p>
+<h3 id="hierarchical-level-of-detail-hlod">Hierarchical Level of Detail
+(HLOD)</h3>
+<p>The core mechanism allowing Cesium to handle terabytes of data is
+Hierarchical Level of Detail (HLOD). In this structure:</p>
+<ul>
+<li><strong>Root and upper-level nodes</strong> contain highly
+simplified, decimated versions of the geometry representing large
+geographical expanses.</li>
+<li><strong>Child and leaf nodes</strong> contain high-fidelity,
+photorealistic geometry representing individual buildings, city blocks,
+or street-level features.</li>
+</ul>
+<p>Each tile defines a metric called <code>geometricError</code>, which
+quantifies how much the tile's simplified model deviates from the
+real-world geometry it represents.</p>
+<h3 id="screen-space-error-and-dynamic-streaming">Screen Space Error and
+Dynamic Streaming</h3>
+<p>During every frame of execution, Cesium calculates the <strong>Screen
+Space Error (SSE)</strong> for tiles intersecting the camera view. The
+SSE formula factors in the tile’s predefined
+<code>geometricError</code>, the distance from the camera to the tile,
+and the display resolution:</p>
+<p><span class="math display">\[\text{SSE} = \frac{\text{geometricError}
+\times \text{screenHeight}}{2 \times \text{distance} \times
+\tan(\text{FOV} / 2)}\]</span></p>
+<p>If the calculated SSE exceeds a configurable threshold (typically 16
+pixels), the current tile's visual representation is considered too
+coarse, and Cesium requests its children from the server. Once the child
+tiles finish downloading, Cesium swaps out the parent mesh for the
+higher-resolution children. If the camera pulls away, the process
+reverses, swapping detailed children for coarser parent tiles.</p>
+<h3 id="culling-and-memory-management">Culling and Memory
+Management</h3>
+<p>To maintain steady 60 FPS performance without exceeding browser
+memory limits, Cesium applies several optimizations:</p>
+<ul>
+<li><strong>Frustum Culling:</strong> Bounding volumes falling outside
+the camera's view frustum are ignored, preventing requests for unseen
+glTF chunks.</li>
+<li><strong>Horizon and Occlusion Culling:</strong> Tiles hidden behind
+the curvature of the Earth or obscured by foreground geometry are
+omitted from the rendering queue.</li>
+<li><strong>Cache Eviction:</strong> Cesium maintains a strict memory
+budget (e.g., 512 MB to 1 GB of RAM). Tiles that fall out of the active
+view or are replaced by higher-level parents are tagged for garbage
+collection and purged from GPU and system memory using a Least Recently
+Used (LRU) eviction strategy.</li>
+</ul>
+<p>Through spatial indexing, glTF binary efficiency, and real-time SSE
+evaluation, Cesium visualizes terabyte-scale urban environments by
+rendering only the visible, resolution-appropriate fraction of the data
+at any given moment.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

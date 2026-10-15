@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Gaussian Splatting glTF Extensions Explained - gltf</title>
+    <meta name="description" content="This article explores the ongoing efforts and experimental extensions aimed at integrating 3D Gaussian Splatting (3DGS) data into the glTF (GL Transmission Format) ecosystem. While 3DGS traditionally relies on Stanford PLY files for storage and transmissi">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/3-d-gaussian-splatting-gl-tf-extensions-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="3D Gaussian Splatting glTF Extensions Explained - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/3-d-gaussian-splatting-gl-tf-extensions-explained" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores the ongoing efforts and experimental extensions aimed at integrating 3D Gaussian Splatting (3DGS) data into the glTF (GL Transmission Format) ecosystem. While 3DGS traditionally relies on Stanford PLY files for storage and transmissi" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="3d-gaussian-splatting-gltf-extensions-explained">3D Gaussian
+Splatting glTF Extensions Explained</h1>
+<p>This article explores the ongoing efforts and experimental extensions
+aimed at integrating 3D Gaussian Splatting (3DGS) data into the glTF (GL
+Transmission Format) ecosystem. While 3DGS traditionally relies on
+Stanford PLY files for storage and transmission, the Khronos Group and
+the wider open-source community are actively developing extensions—most
+notably the draft <code>KHR_gaussian_splatting</code> proposal and
+custom attribute-based schemas—to bring spatial hierarchy, compression,
+and universal rendering capabilities to volumetric radiance data.</p>
+<h3 id="the-problem-with-current-3dgs-delivery">The Problem with Current
+3DGS Delivery</h3>
+<p>The standard exchange format for 3D Gaussian Splatting has
+predominantly been the legacy <code>.ply</code> format. While easy to
+dump from machine learning training pipelines, PLY files are heavy, lack
+built-in compression, and do not natively support scene-graph
+hierarchies, coordinate transformations, materials, or lighting
+environments.</p>
+<p>Integrating 3DGS into glTF 2.0 solves these issues by enabling
+developers to treat splat clouds as first-class scene elements alongside
+conventional polygonal meshes, cameras, and animations.</p>
+<h3 id="the-proposed-khr_gaussian_splatting-extension">The Proposed
+<code>KHR_gaussian_splatting</code> Extension</h3>
+<p>The primary initiative is an experimental Khronos Group extension
+proposal typically referred to as <code>KHR_gaussian_splatting</code>.
+This official draft aims to define standard conventions for encoding 3D
+Gaussian primitives directly inside the glTF JSON structure and binary
+buffer payloads.</p>
+<p>Under this specification, splat parameters are mapped directly to
+binary accessors:</p>
+<ul>
+<li><strong>Centers (Positions):</strong> Stored using the standard glTF
+<code>POSITION</code> semantic.</li>
+<li><strong>Rotations:</strong> Stored as normalized quaternions using
+custom or extended attributes.</li>
+<li><strong>Scales:</strong> Stored as 3D vectors representing the
+anisotropic stretch along the principal axes.</li>
+<li><strong>Opacity/Alpha:</strong> Encoded linearly or via logit space
+into scalar accessors.</li>
+<li><strong>Spherical Harmonics (SH):</strong> Handled either as
+diffuse-only coefficients (degree 0) or higher-order directional
+coefficients (degrees 1–3), segmented into distinct accessor arrays to
+enable progressive level-of-detail loading.</li>
+</ul>
+<h3 id="community-and-vendor-approaches">Community and Vendor
+Approaches</h3>
+<p>Prior to broad ratification of a single unified extension, various
+engine developers and platforms have experimented with distinct
+packaging techniques:</p>
+<h4 id="1-custom-attribute-multiplexing-_feature-semantic">1. Custom
+Attribute Multiplexing (<code>_FEATURE</code> Semantic)</h4>
+<p>Early implementations—popularized in WebGL and WebGPU engines like
+PlayCanvas, Babylon.js, and Three.js—store Gaussian parameters using
+glTF's user-defined attribute system. By prefixing attributes with an
+underscore (such as <code>_ROTATION</code>, <code>_SCALE</code>, and
+<code>_EXTRA_SH</code>), runtimes can parse raw point clouds containing
+splat parameters without breaking compatibility with engines that ignore
+unrecognized attributes.</p>
+<h4 id="2-texture-encoded-splat-data">2. Texture-Encoded Splat Data</h4>
+<p>Some experimental pipelines serialize Gaussian properties into 2D
+data textures instead of point-cloud vertex buffers. By arranging
+position, covariance, and color data into image channels (often
+utilizing the <code>KHR_texture_basisu</code> extension for GPU-friendly
+texture compression), engines can sample splats in compute or fragment
+shaders. This approach benefits directly from standard image streaming
+and mipmapping infrastructures.</p>
+<h4 id="3-3d-tiles-integration-3dtiles_content_gltf">3. 3D Tiles
+Integration (<code>3DTILES_content_gltf</code>)</h4>
+<p>The Cesium community has introduced methods to stream massive,
+geospatial 3D Gaussian splat sets by encapsulating them within glTF
+assets served through the 3D Tiles 1.1 standard. This method relies on
+bounding volume hierarchies to load, cull, and unload partitioned glTF
+chunks containing splat primitives depending on the viewer's camera
+position.</p>
+<h3 id="compression-strategies-within-gltf">Compression Strategies
+Within glTF</h3>
+<p>Wrapping 3DGS in glTF allows experimental pipelines to leverage
+existing glTF compression extensions:</p>
+<ul>
+<li><strong><code>EXT_meshopt_compression</code>:</strong> Applied to
+point-cloud accessors to quantize quaternions, scale vectors, and color
+harmonics, drastically reducing transfer size with minimal decode
+overhead on the web.</li>
+<li><strong><code>KHR_draco_mesh_compression</code>:</strong> Used in
+experimental setups to compress point sets, though its decompression
+cost on the CPU can sometimes create a bottleneck for high-splat-count
+scenes.</li>
+</ul>
+<p>These experimental extensions represent a critical transition for 3D
+Gaussian Splatting, shifting it from an isolated research output into a
+standardized, web-ready asset format for real-time 3D graphics.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How glTF Prevents Gimbal Lock in Skeletal Skinning - gltf</title>
+    <meta name="description" content="This article examines how the glTF (GL Transmission Format) specification eliminates gimbal lock during complex character skinning and skeletal animation. By enforcing unit quaternions for rotational data instead of traditional Euler angles and combining">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-gl-tf-prevents-gimbal-lock-in-skeletal-skinning">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How glTF Prevents Gimbal Lock in Skeletal Skinning - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-gl-tf-prevents-gimbal-lock-in-skeletal-skinning" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article examines how the glTF (GL Transmission Format) specification eliminates gimbal lock during complex character skinning and skeletal animation. By enforcing unit quaternions for rotational data instead of traditional Euler angles and combining" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-gltf-prevents-gimbal-lock-in-skeletal-skinning">How glTF
+Prevents Gimbal Lock in Skeletal Skinning</h1>
+<p>This article examines how the glTF (GL Transmission Format)
+specification eliminates gimbal lock during complex character skinning
+and skeletal animation. By enforcing unit quaternions for rotational
+data instead of traditional Euler angles and combining them with
+matrix-based vertex skinning, glTF ensures continuous, artifact-free
+joint rotations across three dimensions.</p>
+<h3 id="the-problem-with-gimbal-lock">The Problem with Gimbal Lock</h3>
+<p>Gimbal lock occurs in 3D computer graphics when three-dimensional
+rotations are calculated using Euler angles (pitch, yaw, and roll).
+Because Euler rotations are applied sequentially along fixed axes,
+rotating one axis by 90 degrees can cause the remaining two axes to
+align. When this alignment happens, the system loses a degree of
+freedom, causing rotational interpolation to glitch, snap, or take
+unnatural paths during animation. For skinned character meshes—such as
+shoulders, hips, and wrists—this produces severe mesh tearing and
+collapsing.</p>
+<h3 id="mandatory-unit-quaternions-for-rotations">Mandatory Unit
+Quaternions for Rotations</h3>
+<p>glTF completely bypasses gimbal lock by prohibiting Euler angles in
+its core node transformation schema. In the glTF specification, a node's
+rotation property is defined strictly as a four-component unit
+quaternion <code>[x, y, z, w]</code>.</p>
+<p>Quaternions represent orientation as a single rotation around an
+arbitrary four-dimensional vector rather than a sequence of three
+independent, nested planar rotations. Because there is no sequential
+axis dependency, quaternions possess no mathematical singularities where
+degrees of freedom can be lost. Consequently, joints can rotate freely
+in any direction without the risk of axes collapsing into one
+another.</p>
+<h3 id="smooth-interpolation-in-animation-tracks">Smooth Interpolation
+in Animation Tracks</h3>
+<p>Complex deformations often fail during the interpolation between
+keyframes. glTF animation channels target the <code>rotation</code>
+property of joint nodes and evaluate rotations across time.</p>
+<p>Because the underlying data is stored as quaternions, runtime engines
+can interpolate keyframes using Spherical Linear Interpolation (slerp)
+or normalized linear interpolation (nlerp). Slerp calculates the
+shortest, constant-velocity path along the surface of a four-dimensional
+hypersphere. This guarantees that joint rotations between extreme
+poses—such as a character performing an acrobatic flip or a full
+twist—remain smooth, predictable, and mathematically stable.</p>
+<h3 id="the-joint-hierarchy-and-inverse-bind-matrices">The Joint
+Hierarchy and Inverse Bind Matrices</h3>
+<p>glTF structures skeletal systems through a <code>skin</code> element
+that indexes specific <code>node</code> elements to act as joints. The
+final transformation for any vertex attached to a skin is determined
+through matrix multiplication:</p>
+<ol type="1">
+<li><strong>Local Transforms:</strong> Each joint node resolves its
+local translation, quaternion rotation, and scale into a standard <span
+class="math inline">\(4 \times 4\)</span> local transformation
+matrix.</li>
+<li><strong>Global Transforms:</strong> Joint matrices are accumulated
+down the node hierarchy to compute the global model-space transform of
+each bone.</li>
+<li><strong>Inverse Bind Matrices:</strong> The global joint transform
+is multiplied by an inverse bind matrix (supplied via the skin's
+<code>inverseBindMatrices</code> accessor). This converts the mesh
+vertices from their original bind-pose space into the current animated
+joint space.</li>
+</ol>
+<p>Because the rotational input derived from the quaternion cannot
+undergo gimbal lock, the resulting <span class="math inline">\(4 \times
+4\)</span> transformation matrices passed to GPU vertex shaders remain
+mathematically valid under all deformation conditions. Linear blend
+skinning (LBS) on the GPU then weights these stable matrices across
+vertices, ensuring that complex, high-degree-of-freedom character
+movements deform accurately without collapsing.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

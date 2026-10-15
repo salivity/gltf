@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimizing glTF Texture Streaming and Memory Pooling - gltf</title>
+    <meta name="description" content="Streaming hundreds of glTF textures concurrently can quickly exhaust GPU and system memory due to texture memory pooling, redundant buffer retention, and uncompressed pixel caching. When runtime engines pool memory to avoid reallocation overhead, they oft">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/optimizing-gl-tf-texture-streaming-and-memory-pooling">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Optimizing glTF Texture Streaming and Memory Pooling - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/optimizing-gl-tf-texture-streaming-and-memory-pooling" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Streaming hundreds of glTF textures concurrently can quickly exhaust GPU and system memory due to texture memory pooling, redundant buffer retention, and uncompressed pixel caching. When runtime engines pool memory to avoid reallocation overhead, they oft" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="optimizing-gltf-texture-streaming-and-memory-pooling">Optimizing
+glTF Texture Streaming and Memory Pooling</h1>
+<p>Streaming hundreds of glTF textures concurrently can quickly exhaust
+GPU and system memory due to texture memory pooling, redundant buffer
+retention, and uncompressed pixel caching. When runtime engines pool
+memory to avoid reallocation overhead, they often retain stale texture
+allocations longer than necessary. Mitigating these memory bottlenecks
+requires a combination of hardware-native texture compression, dynamic
+mipmap streaming, immediate CPU buffer deallocation, and disciplined
+pool lifecycle management to maintain high rendering performance within
+strict memory limits.</p>
+<h2
+id="adopt-native-gpu-compression-with-ktx2-and-basis-universal">Adopt
+Native GPU Compression with KTX2 and Basis Universal</h2>
+<p>Standard glTF workflows often load PNG or JPEG assets that decode
+into raw RGBA32 bitmaps on the CPU before uploading to the GPU,
+multiplying memory consumption by four to eight times.</p>
+<ul>
+<li><strong>Use the <code>KHR_texture_basisu</code> Extension:</strong>
+Transcode textures directly into hardware-native formats (such as BCn,
+ETC2, or ASTC) at runtime.</li>
+<li><strong>VRAM Direct Upload:</strong> Basis Universal textures stay
+compressed in VRAM, eliminating massive uncompressed intermediate
+buffers.</li>
+<li><strong>Lower Pool Footprint:</strong> Because compressed textures
+occupy up to 75–85% less memory, memory pools allocate significantly
+smaller chunks, reducing overall pool fragmentation and waste.</li>
+</ul>
+<h2 id="implement-dynamic-mipmap-streaming">Implement Dynamic Mipmap
+Streaming</h2>
+<p>Allocating full mip chains for hundreds of streaming textures is one
+of the fastest ways to trigger excessive memory pooling.</p>
+<ul>
+<li><strong>Stream Coarse-to-Fine:</strong> Load only lower-resolution
+mip levels initially (e.g., base level down to 64x64) and request
+higher-resolution levels only when the camera approaches the asset.</li>
+<li><strong>Sparse Texture Binding:</strong> Use modern graphics APIs
+(DirectX 12, Vulkan, WebGPU) with sparse or virtual texturing features.
+This allows you to allocate physical GPU memory solely for visible tiles
+rather than the entire texture footprint.</li>
+<li><strong>Cap Maximum Resolution Dynamically:</strong> Set dynamic
+ceiling resolutions based on device memory tier or screen coverage,
+preventing distant objects from claiming 2K or 4K pool slots.</li>
+</ul>
+<h2 id="aggressively-release-cpu-side-buffers">Aggressively Release
+CPU-Side Buffers</h2>
+<p>Engines often retain decoded image data, <code>ArrayBuffers</code>,
+or <code>ImageBitmap</code> objects in memory after the texture is
+uploaded to the GPU, doubling the memory footprint and delaying garbage
+collection.</p>
+<ul>
+<li><strong>Revoke Source References:</strong> Immediately revoke object
+URLs (<code>URL.revokeObjectURL</code>) and set raw source buffers to
+<code>null</code> as soon as the GPU upload completes.</li>
+<li><strong>Transfer Ownership via Workers:</strong> Decode glTF binary
+buffers inside Web Workers or background threads using transferrable
+objects (<code>transferControlToOffscreen</code> or
+<code>postMessage</code> with transfer lists) to ensure memory is
+released from the main thread instantly.</li>
+<li><strong>Disable Engine-Level Texture Caching:</strong> WebGL/WebGPU
+engines (like Three.js or Babylon.js) maintain internal caches to
+prevent duplicate loads. When streaming unique, dynamically loaded glTF
+assets, disable this internal caching to prevent the engine from
+permanently pinning allocations in memory.</li>
+</ul>
+<h2
+id="implement-strict-least-recently-used-lru-pool-eviction">Implement
+Strict Least Recently Used (LRU) Pool Eviction</h2>
+<p>Default texture pools tend to expand infinitely, keeping idle
+allocations alive to prevent reallocation latency.</p>
+<ul>
+<li><strong>Enforce Hard Memory Budgets:</strong> Set an upper threshold
+on the pool size. When the budget is reached, force eviction before
+creating new texture bindings.</li>
+<li><strong>Trim Idle Allocations:</strong> Implement a time-to-live
+(TTL) tracker for pooled texture slots. If a pooled allocation remains
+unused for more than a few frames, destroy the underlying texture
+resource rather than keeping it pooled.</li>
+<li><strong>Slot-Based Bucketing:</strong> Standardize texture
+resolutions (e.g., strictly 512x512, 1024x1024) to ensure recycled slots
+fit incoming textures without creating odd-sized, fragmented memory
+islands in the pool.</li>
+</ul>
+<h2 id="texture-channel-packing-and-material-merging">Texture Channel
+Packing and Material Merging</h2>
+<p>Streaming hundreds of individual glTF files often introduces
+duplicate and fragmented texture requests.</p>
+<ul>
+<li><strong>Pack ORM Maps:</strong> Combine Occlusion, Roughness, and
+Metallic maps into a single three-channel texture (standard in the glTF
+2.0 PBR workflow) to reduce active texture sampler pools by 66%.</li>
+<li><strong>Consolidate Samplers:</strong> Share common textures across
+glTF instances using material instancing rather than allowing each glTF
+model to instantiate its own local texture pool.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

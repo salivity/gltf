@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Units for Spatial Dimensions and Distance - gltf</title>
+    <meta name="description" content="The GL Transmission Format (glTF), established by the Khronos Group, is an open-standard runtime asset format designed for the efficient delivery and loading of 3D content. To maintain consistency across various renderers, game engines, and platforms, the">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-units-for-spatial-dimensions-and-distance">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Units for Spatial Dimensions and Distance - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-units-for-spatial-dimensions-and-distance" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The GL Transmission Format (glTF), established by the Khronos Group, is an open-standard runtime asset format designed for the efficient delivery and loading of 3D content. To maintain consistency across various renderers, game engines, and platforms, the" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-units-for-spatial-dimensions-and-distance">glTF Units for
+Spatial Dimensions and Distance</h1>
+<p>The GL Transmission Format (glTF), established by the Khronos Group,
+is an open-standard runtime asset format designed for the efficient
+delivery and loading of 3D content. To maintain consistency across
+various renderers, game engines, and platforms, the glTF specification
+establishes strict conventions for real-world measurements. This article
+explains how glTF defines spatial dimensions, the rationale behind these
+standard units, and how scale translates across 3D applications and
+augmented reality environments.</p>
+<h3 id="the-standard-metric-unit">The Standard Metric Unit</h3>
+<p>According to the official glTF 2.0 specification, all spatial linear
+dimensions and distances are defined in <strong>meters</strong>. This
+means that a standard coordinate distance of <code>1.0</code> in a glTF
+asset represents exactly one meter in real-world physical space.</p>
+<p>By adhering to the International System of Units (SI), glTF
+eliminates ambiguity when exchanging assets between different tools. In
+addition to meters for distance, glTF standardizes:</p>
+<ul>
+<li><strong>Angles:</strong> Radians (for rotation in animations and
+camera definitions).</li>
+<li><strong>Time:</strong> Seconds (for animation timelines).</li>
+</ul>
+<h3 id="coordinate-system-orientation">Coordinate System
+Orientation</h3>
+<p>Spatial dimensions in glTF operate within a right-handed Cartesian
+coordinate system. In this layout:</p>
+<ul>
+<li><strong>+X</strong> points to the right.</li>
+<li><strong>+Y</strong> points up.</li>
+<li><strong>+Z</strong> points forward (toward the viewer in scene
+coordinates, while standard camera definitions view along the negative
+Z-axis).</li>
+</ul>
+<p>Distances measured along these axes directly correlate to metric
+displacement, providing a predictable orientation and scale for imported
+meshes.</p>
+<h3 id="handling-non-metric-dcc-tools">Handling Non-Metric DCC
+Tools</h3>
+<p>Many 3D Digital Content Creation (DCC) software tools, such as
+Autodesk Maya, 3ds Max, or Blender, allow artists to work in
+centimeters, inches, or arbitrary generic units.</p>
+<p>When exporting to glTF, exporters must apply appropriate scaling
+transformations so that the exported vertices conform to meters. For
+example, if a model is built in a workspace configured for centimeters,
+the exporter converts the values by a factor of 0.01. This conversion
+can happen either by baking the scale directly into the mesh geometry
+vertices or by applying a scale factor to the root node of the scene
+hierarchy.</p>
+<h3 id="impact-on-ar-and-physics-simulation">Impact on AR and Physics
+Simulation</h3>
+<p>Standardized units are crucial for real-time applications such as
+Augmented Reality (AR) and physics simulations. Frameworks like WebXR,
+Apple ARKit, and Google ARCore depend on meter-based scaling to place
+digital twins and virtual products accurately in real-world
+environments. Because glTF defines one unit as one meter, an asset
+representing a 0.5-meter chair displays at its precise physical size
+automatically without manual recalibration.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

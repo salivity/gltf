@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF in the Open Metaverse and Avatars - gltf</title>
+    <meta name="description" content="glTF (GL Transmission Format) serves as the foundational 3D asset standard enabling true interoperability and asset portability across the open-source metaverse. Often dubbed the &quot;JPEG of 3D,&quot; this royalty-free format developed by the Khronos Group provid">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-in-the-open-metaverse-and-avatars">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF in the Open Metaverse and Avatars - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-in-the-open-metaverse-and-avatars" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="glTF (GL Transmission Format) serves as the foundational 3D asset standard enabling true interoperability and asset portability across the open-source metaverse. Often dubbed the &quot;JPEG of 3D,&quot; this royalty-free format developed by the Khronos Group provid" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-in-the-open-metaverse-and-avatars">glTF in the Open
+Metaverse and Avatars</h1>
+<p>glTF (GL Transmission Format) serves as the foundational 3D asset
+standard enabling true interoperability and asset portability across the
+open-source metaverse. Often dubbed the "JPEG of 3D," this royalty-free
+format developed by the Khronos Group provides a lightweight, efficient
+runtime delivery mechanism for 3D content. By minimizing both the file
+size of 3D assets and the runtime processing required to unpack and
+render them, glTF removes proprietary friction, empowering users and
+developers to move virtual spaces and humanoid avatars across disparate
+engines, virtual worlds, and web applications seamlessly.</p>
+<h3 id="the-standard-for-runtime-efficiency">The Standard for Runtime
+Efficiency</h3>
+<p>Unlike authoring formats such as FBX or USD, which are designed for
+editing and contain heavy production metadata, glTF is purpose-built for
+efficient transmission and fast loading. It packs scene hierarchies,
+geometry, animations, and physically based rendering (PBR) materials
+into a compact JSON structure alongside binary payloads
+(<code>.glb</code>). For the open-source metaverse—which relies heavily
+on browser-based engines utilizing WebGL and WebGPU—glTF allows 3D
+environments and assets to load instantly over standard HTTP connections
+without requiring proprietary runtimes or intensive conversions.</p>
+<h3 id="driving-avatar-interoperability-via-vrm">Driving Avatar
+Interoperability via VRM</h3>
+<p>The most critical impact of glTF on digital identity is its role as
+the base architecture for VRM, the leading open standard for 3D humanoid
+avatars. Built directly on top of glTF 2.0 as an extension, VRM
+standardizes humanoid bone structures, blend shapes for facial
+expressions, first-person camera viewpoints, physics-based bone dynamics
+(such as hair and clothing movement), and avatar-specific usage
+rights.</p>
+<p>Because VRM is an extension of glTF, any platform that supports glTF
+can easily integrate VRM models. This enables a user to carry a single
+digital identity across independent virtual worlds, social VR platforms,
+streaming setups, and Web3 environments, breaking down the walled
+gardens of centralized virtual ecosystems.</p>
+<h3 id="engine-agnostic-cross-platform-portability">Engine-Agnostic
+Cross-Platform Portability</h3>
+<p>A core pillar of an open metaverse is neutrality regarding the
+underlying technology stack. glTF is supported natively or via robust
+plugins across major game engines (Unreal Engine, Unity, Godot) and
+web-first frameworks (Three.js, Babylon.js, A-Frame).</p>
+<p>This universal compatibility allows open-source metaverse platforms
+such as Mozilla Hubs, Vircadia, and Hyperfy to interact with the same
+asset repositories. Digital assets created in open-source tools like
+Blender can be exported directly to glTF and deployed across any of
+these environments with consistent geometry, textures, and skeletal
+animations.</p>
+<h3 id="extensibility-for-future-metaverse-needs">Extensibility for
+Future Metaverse Needs</h3>
+<p>glTF's modular architecture relies on extensions, allowing the format
+to evolve alongside emerging virtual reality and metaverse requirements
+without breaking backward compatibility. Through official Khronos
+extensions, glTF supports advanced material properties (such as
+transmission, clearcoat, and sheen), audio integration, and collision
+data. Open-source initiatives continue to draft extensions for
+interactive behaviors, metadata provenance, and decentralized storage
+integration.</p>
+<p>By establishing an open, lightweight, and universally adopted
+baseline for 3D objects and digital identity, glTF eliminates platform
+vendor lock-in and forms the technical backbone of an interconnected,
+user-owned metaverse.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why glTF Tangents Store Bitangent Sign in W - gltf</title>
+    <meta name="description" content="In the glTF specification, the tangent attribute is defined as a four-component vector (VEC4), where the first three components represent the XYZ tangent direction and the fourth component (w) is a sign indicator (+1.0 or -1.0). This article explains why">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/why-gl-tf-tangents-store-bitangent-sign-in-w">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Why glTF Tangents Store Bitangent Sign in W - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/why-gl-tf-tangents-store-bitangent-sign-in-w" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In the glTF specification, the tangent attribute is defined as a four-component vector (VEC4), where the first three components represent the XYZ tangent direction and the fourth component (w) is a sign indicator (+1.0 or -1.0). This article explains why" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="why-gltf-tangents-store-bitangent-sign-in-w">Why glTF Tangents
+Store Bitangent Sign in W</h1>
+<p>In the glTF specification, the tangent attribute is defined as a
+four-component vector (<code>VEC4</code>), where the first three
+components represent the XYZ tangent direction and the fourth component
+(<code>w</code>) is a sign indicator (+1.0 or -1.0). This article
+explains why the bitangent vector is represented this way, focusing on
+memory optimization, runtime derivation through the cross product, and
+the necessity of handling mirrored UV mapping coordinates.</p>
+<h3 id="memory-and-bandwidth-optimization">Memory and Bandwidth
+Optimization</h3>
+<p>To construct a tangent-space basis (the Tangent, Bitangent, Normal,
+or TBN matrix) for normal mapping, a vertex shader requires three
+orthogonal vectors: the normal (<span
+class="math inline">\(\mathbf{N}\)</span>), the tangent (<span
+class="math inline">\(\mathbf{T}\)</span>), and the bitangent (<span
+class="math inline">\(\mathbf{B}\)</span>).</p>
+<p>Storing the bitangent as a separate three-component vector
+(<code>vec3</code>) would require an additional 12 bytes of data per
+vertex using standard 32-bit floats. Because the tangent space vectors
+are mutually perpendicular, the bitangent can be computed at runtime
+rather than stored explicitly. Packing the sign of the bitangent into
+the fourth component (<span class="math inline">\(w\)</span>) of the
+tangent vector expands the tangent from a <code>vec3</code> to a
+<code>vec4</code>, adding only 4 bytes (or fewer if quantized) instead
+of the 12 bytes needed for a full vector. This reduction saves storage
+footprint and reduces GPU memory bandwidth.</p>
+<h3 id="mathematical-reconstruction-via-the-cross-product">Mathematical
+Reconstruction via the Cross Product</h3>
+<p>When the normal vector and tangent vector are known and normalized,
+their cross product yields a third vector that is perpendicular to
+both:</p>
+<p><span class="math display">\[\mathbf{B} = (\mathbf{N} \times
+\mathbf{T}) \cdot w\]</span></p>
+<p>The cross product inherently generates a right-handed orthogonal
+vector. However, texture mapping does not always follow a fixed
+right-handed coordinate system. Multiplying the result of the cross
+product by the <span class="math inline">\(w\)</span> scalar (+1.0 or
+-1.0) dynamically flips or preserves the direction of the reconstructed
+bitangent vector to match the source mesh's UV orientation.</p>
+<h3 id="preserving-uv-handedness-and-mirroring">Preserving UV Handedness
+and Mirroring</h3>
+<p>The primary functional reason for the sign vector is handling
+chirality (handedness) resulting from mirrored UV coordinates.</p>
+<p>In 3D asset workflows, artists frequently mirror UV maps across
+symmetrical geometry (such as characters' left and right sides) to
+maximize texture resolution and save texture space. When a UV island is
+mirrored, the coordinate space flips from a right-handed system to a
+left-handed system. Without the <span class="math inline">\(w\)</span>
+sign component:</p>
+<ul>
+<li>The standard cross product <span class="math inline">\(\mathbf{N}
+\times \mathbf{T}\)</span> would assume a fixed handedness.</li>
+<li>On mirrored geometry, the calculated bitangent would point in the
+opposite direction of the actual V-axis of the texture space.</li>
+<li>Normal maps would invert along the mirrored axis, making
+indentations appear as protrusions and distorting surface lighting.</li>
+</ul>
+<p>Encoding <span class="math inline">\(+1.0\)</span> for right-handed
+tangent spaces and <span class="math inline">\(-1.0\)</span> for
+left-handed (mirrored) tangent spaces ensures the fragment shader
+constructs the correct TBN matrix regardless of how the UV coordinates
+are aligned or transformed.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

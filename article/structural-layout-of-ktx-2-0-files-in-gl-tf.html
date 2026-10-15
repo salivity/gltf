@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Structural Layout of KTX 2.0 Files in glTF - gltf</title>
+    <meta name="description" content="This article provides a direct overview of the binary structure and layout of the Khronos Texture 2.0 (KTX 2.0) container format as used within glTF 2.0 assets via the KHRtexturebasisu extension. KTX 2.0 acts as the standardized packaging format for unive">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/structural-layout-of-ktx-2-0-files-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Structural Layout of KTX 2.0 Files in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/structural-layout-of-ktx-2-0-files-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a direct overview of the binary structure and layout of the Khronos Texture 2.0 (KTX 2.0) container format as used within glTF 2.0 assets via the KHRtexturebasisu extension. KTX 2.0 acts as the standardized packaging format for unive" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="structural-layout-of-ktx-20-files-in-gltf">Structural Layout of
+KTX 2.0 Files in glTF</h1>
+<p>This article provides a direct overview of the binary structure and
+layout of the Khronos Texture 2.0 (KTX 2.0) container format as used
+within glTF 2.0 assets via the <code>KHR_texture_basisu</code>
+extension. KTX 2.0 acts as the standardized packaging format for
+universal GPU texture compression technologies—specifically Basis
+Universal (ETC1S and UASTC)—allowing textures to be stored compactly and
+transcoded on the fly to a target device's native GPU format.</p>
+<h3 id="1-file-identifier-magic-number">1. File Identifier (Magic
+Number)</h3>
+<p>Every KTX 2.0 file begins with a fixed 12-byte sequence that
+identifies the file and ensures endianness validation:</p>
+<ul>
+<li><strong>Byte Sequence:</strong>
+<code>0xAB, 0x4B, 0x54, 0x58, 0x20, 0x32, 0x30, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A</code>
+(ASCII representation: <code>«KTX 20»\r\n\x1A\n</code>).</li>
+</ul>
+<h3 id="2-header">2. Header</h3>
+<p>Immediately following the identifier is a 68-byte fixed-size header
+composed of 17 contiguous 32-bit unsigned integers (little-endian):</p>
+<ul>
+<li><strong><code>vkFormat</code></strong>: The Vulkan format
+identifier. In glTF assets using <code>KHR_texture_basisu</code>, this
+value is set to <code>0</code> (<code>VK_FORMAT_UNDEFINED</code>),
+signaling that the payload uses Basis Universal compression rather than
+a fixed hardware format.</li>
+<li><strong><code>typeSize</code></strong>: Data type size in bytes (set
+to <code>1</code> when <code>vkFormat</code> is <code>0</code>).</li>
+<li><strong><code>pixelWidth</code></strong>: Width of the base level
+(level 0) in pixels.</li>
+<li><strong><code>pixelHeight</code></strong>: Height of the base level
+in pixels (must be <code>0</code> for 1D textures).</li>
+<li><strong><code>pixelDepth</code></strong>: Depth of the base level
+for 3D textures (must be <code>0</code> for 2D textures).</li>
+<li><strong><code>layerCount</code></strong>: Number of array layers
+(set to <code>0</code> or <code>1</code> for standard non-array
+textures).</li>
+<li><strong><code>faceCount</code></strong>: Number of cubemap faces
+(<code>6</code> for cubemaps, <code>1</code> for all other
+textures).</li>
+<li><strong><code>levelCount</code></strong>: Number of mipmap levels.
+Must be at least <code>1</code>.</li>
+<li><strong><code>supercompressionScheme</code></strong>: Identifies
+secondary compression. Common values in glTF include <code>1</code>
+(BasisLZ, typical for ETC1S) or <code>2</code> (Zstandard, often paired
+with UASTC).</li>
+<li><strong>Offsets and Lengths</strong>: Five pairs of 32-bit values
+define the locations and sizes of subsequent metadata blocks:
+<ul>
+<li><code>dfdByteOffset</code> and <code>dfdByteLength</code></li>
+<li><code>kvdByteOffset</code> and <code>kvdByteLength</code></li>
+<li><code>sgdByteOffset</code> and <code>sgdByteLength</code></li>
+</ul></li>
+</ul>
+<h3 id="3-level-index">3. Level Index</h3>
+<p>Located immediately after the header, the level index consists of an
+array of records for each mip level specified by
+<code>levelCount</code>. Each record is 24 bytes long and contains three
+64-bit unsigned integers:</p>
+<ul>
+<li><strong><code>byteOffset</code></strong>: Byte offset from the start
+of the file to the start of the image data for that level.</li>
+<li><strong><code>byteLength</code></strong>: Length of the compressed
+image data in bytes.</li>
+<li><strong><code>uncompressedByteLength</code></strong>: Size of the
+uncompressed data in bytes (used for supercompression decoding).</li>
+</ul>
+<p>Levels are indexed from <code>0</code> (base level, highest
+resolution) to <code>levelCount - 1</code> (smallest mip level).</p>
+<h3 id="4-data-format-descriptor-dfd">4. Data Format Descriptor
+(DFD)</h3>
+<p>The DFD block defines color channels, color spaces, and transfer
+functions according to the Khronos Data Format Specification. For glTF
+KTX 2.0 textures:</p>
+<ul>
+<li>It specifies whether the texture is encoded in sRGB or linear color
+space (critical for differentiating base color maps from
+normal/roughness maps).</li>
+<li>It defines channel mapping (e.g., RGB, RGBA) and sample bit
+depths.</li>
+</ul>
+<h3 id="5-keyvalue-data-kvd">5. Key/Value Data (KVD)</h3>
+<p>This block stores arbitrary key-value metadata pairs. Each entry
+contains a length prefix, a null-terminated UTF-8 key string, and the
+associated value. In glTF workflows, common keys include:</p>
+<ul>
+<li><strong><code>KTXwriter</code></strong>: Software used to generate
+the file.</li>
+<li><strong><code>KTXglTF</code></strong>: Metadata indicating
+compatibility and usage flags inside glTF engines.</li>
+</ul>
+<h3 id="6-supercompression-global-data-sgd">6. Supercompression Global
+Data (SGD)</h3>
+<p>If the texture uses Basis Universal ETC1S
+(<code>supercompressionScheme = 1</code>), this section contains the
+global codebooks, endpoint tables, and selector tables required to
+reconstruct the mip level data. For UASTC with Zstandard or uncompressed
+files, this section is omitted and its length is set to
+<code>0</code>.</p>
+<h3 id="7-mip-level-array-data-payload">7. Mip Level Array Data
+(Payload)</h3>
+<p>The final section of the container holds the actual texture payload.
+The data for each mip level is stored at the location specified in the
+Level Index, typically ordered from the lowest resolution mip level up
+to the highest resolution (level 0). Each level must be aligned to a
+multiple of its element size or a minimum of 4 bytes. Inside glTF,
+runtime loaders transcode these compressed blocks directly into target
+hardware formats (such as BCn, ASTC, or ETC2).</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

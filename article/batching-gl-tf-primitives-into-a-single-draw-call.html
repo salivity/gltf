@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batching glTF Primitives into a Single Draw Call - gltf</title>
+    <meta name="description" content="Mesh batching optimizes real-time 3D rendering by consolidating multiple static glTF primitives into unified vertex and index buffers, drastically reducing CPU-to-GPU communication overhead. This article explains the technical mechanics of mesh batching i">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/batching-gl-tf-primitives-into-a-single-draw-call">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Batching glTF Primitives into a Single Draw Call - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/batching-gl-tf-primitives-into-a-single-draw-call" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Mesh batching optimizes real-time 3D rendering by consolidating multiple static glTF primitives into unified vertex and index buffers, drastically reducing CPU-to-GPU communication overhead. This article explains the technical mechanics of mesh batching i" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="batching-gltf-primitives-into-a-single-draw-call">Batching glTF
+Primitives into a Single Draw Call</h1>
+<p>Mesh batching optimizes real-time 3D rendering by consolidating
+multiple static glTF primitives into unified vertex and index buffers,
+drastically reducing CPU-to-GPU communication overhead. This article
+explains the technical mechanics of mesh batching in glTF environments,
+detailing how spatial transforms, attribute buffers, index arrays, and
+material states are combined to execute the rendering of multiple static
+geometries using a single GPU draw call.</p>
+<h3 id="1-baking-world-space-transforms">1. Baking World-Space
+Transforms</h3>
+<p>In a standard glTF hierarchy, individual static meshes exist under
+specific nodes that define their local translation, rotation, and scale
+(TRS). To combine these distinct objects into one coordinate space,
+their local transforms must be pre-multiplied. The batching process
+calculates the world matrix for each node and applies it directly to the
+vertex data:</p>
+<ul>
+<li><strong>Positions:</strong> Multiplied by the node's full <span
+class="math inline">\(4 \times 4\)</span> world transform matrix.</li>
+<li><strong>Normals and Tangents:</strong> Multiplied by the
+inverse-transpose of the world matrix to maintain accurate lighting
+directions under non-uniform scaling.</li>
+</ul>
+<p>By baking transforms directly into the vertex attributes, the GPU no
+longer needs separate uniform matrices or per-instance transformation
+pipelines during the draw command.</p>
+<h3 id="2-merging-vertex-attribute-buffers">2. Merging Vertex Attribute
+Buffers</h3>
+<p>A glTF primitive references vertex data through
+<code>accessors</code> that point to <code>bufferViews</code>. Batching
+requires merging identical attributes—such as <code>POSITION</code>,
+<code>NORMAL</code>, <code>TEXCOORD_0</code>, and
+<code>TANGENT</code>—into unified memory allocations:</p>
+<ul>
+<li><strong>Concatenation:</strong> The vertex arrays of identical types
+across all candidate primitives are appended together into a single
+contiguous array (or interleaved into one structured vertex
+format).</li>
+<li><strong>Format Normalization:</strong> All source primitives must
+share the same data types (e.g., <code>FLOAT</code> for positions,
+normalized <code>SHORT</code> or <code>FLOAT</code> for texture
+coordinates). If data layouts differ, they must be converted to a common
+format prior to concatenation.</li>
+</ul>
+<h3 id="3-re-indexing-and-offsetting-indices">3. Re-indexing and
+Offsetting Indices</h3>
+<p>glTF primitives generally define their geometry using indexed
+triangle lists via an <code>indices</code> accessor. Simply
+concatenating index buffers would cause subsequent meshes to erroneously
+point to the vertices of the first mesh.</p>
+<p>To stitch the index buffers together properly:</p>
+<ol type="1">
+<li>The batching pipeline reads the index array of the first primitive
+and writes it to the new global index buffer.</li>
+<li>For each subsequent primitive, an offset equal to the cumulative
+number of vertices processed so far is added to each index value.</li>
+<li>The adjusted index values are appended sequentially.</li>
+</ol>
+<p>This ensures every triangle points to its corresponding transformed
+vertices within the newly merged vertex buffer.</p>
+<h3 id="4-harmonizing-material-and-pipeline-state">4. Harmonizing
+Material and Pipeline State</h3>
+<p>A single GPU draw call requires a uniform render state, including
+shaders, blending modes, rasterization states, and bound texture
+descriptors. Multiple glTF primitives can only be combined into a single
+draw call if they fulfill one of the following conditions:</p>
+<ul>
+<li><strong>Identical Material References:</strong> The primitives
+already reference the exact same glTF <code>material</code> index.</li>
+<li><strong>Texture Atlasing:</strong> Distinct textures from different
+materials are packed into a single texture atlas. The primitives' UV
+coordinates are then re-scaled and offset to map to their respective
+regions within the atlas.</li>
+<li><strong>Texture Arrays or Bindless Textures:</strong> Textures are
+combined into a 2D texture array, and an additional vertex attribute
+(such as a material index or layer ID) is appended to each vertex to
+allow the fragment shader to sample the appropriate texture
+dynamically.</li>
+</ul>
+<h3 id="5-executing-the-unified-draw-command">5. Executing the Unified
+Draw Command</h3>
+<p>Once the vertex buffers, index buffers, and material configurations
+are harmonized, the original glTF node hierarchy for those static meshes
+is bypassed. The graphics engine binds the single merged vertex buffer,
+binds the combined index buffer, sets the shared pipeline state, and
+issues a single indexed draw call (such as <code>glDrawElements</code>
+in WebGL/OpenGL or <code>drawIndexed</code> in
+WebGPU/DirectX/Vulkan).</p>
+<p>This eliminates the CPU overhead of state changes, buffer bindings,
+and multiple draw API invocations, maximizing hardware utilization.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

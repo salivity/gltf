@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How glTF doubleSided Ensures Two-Sided Visibility - gltf</title>
+    <meta name="description" content="This article explains how the doubleSided property in the glTF (GL Transmission Format) 2.0 specification enables two-sided polygon rendering. It details the default behavior of 3D graphics pipelines regarding backface culling, how setting the doubleSided">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-gl-tf-double-sided-ensures-two-sided-visibility">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How glTF doubleSided Ensures Two-Sided Visibility - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-gl-tf-double-sided-ensures-two-sided-visibility" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how the doubleSided property in the glTF (GL Transmission Format) 2.0 specification enables two-sided polygon rendering. It details the default behavior of 3D graphics pipelines regarding backface culling, how setting the doubleSided" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-gltf-doublesided-ensures-two-sided-visibility">How glTF
+doubleSided Ensures Two-Sided Visibility</h1>
+<p>This article explains how the <code>doubleSided</code> property in
+the glTF (GL Transmission Format) 2.0 specification enables two-sided
+polygon rendering. It details the default behavior of 3D graphics
+pipelines regarding backface culling, how setting the
+<code>doubleSided</code> boolean alters this behavior, how real-time
+rendering engines handle lighting and normal orientation on back-facing
+surfaces, and the performance implications of enabling this feature.</p>
+<h3 id="the-default-behavior-backface-culling">The Default Behavior:
+Backface Culling</h3>
+<p>In standard real-time 3D rendering (such as WebGL, OpenGL, Vulkan,
+and DirectX), graphics hardware uses a process called backface culling
+to optimize performance. Triangles are defined by their vertex winding
+order—typically counter-clockwise for front-facing polygons. When a
+triangle faces away from the camera, the hardware automatically discards
+it before shading.</p>
+<p>In glTF, materials default to single-sided rendering where the
+<code>doubleSided</code> property is set to <code>false</code>. Under
+these conditions, viewing the back side of a polygon results in complete
+invisibility, creating transparency where a surface should logically
+exist.</p>
+<h3 id="the-role-of-the-doublesided-property">The Role of the
+<code>doubleSided</code> Property</h3>
+<p>The glTF specification allows materials to explicitly declare whether
+both sides of a surface should be rendered using the
+<code>doubleSided</code> boolean inside the <code>material</code>
+object:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;materials&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;Fabric&quot;</span><span class="fu">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;doubleSided&quot;</span><span class="fu">:</span> <span class="kw">true</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>When an engine parses a glTF file and encounters
+<code>"doubleSided": true</code>, it instructs the graphics API to
+disable backface culling for any mesh primitive referencing that
+material. As a result, rasterization occurs regardless of whether the
+triangle winds clockwise or counter-clockwise relative to the
+camera.</p>
+<h3 id="surface-normal-inversion-and-lighting">Surface Normal Inversion
+and Lighting</h3>
+<p>Disabling backface culling is only half of the requirement for
+correct visibility. In physically based rendering (PBR), surface normals
+dictate how light interacts with a mesh. If a backface simply used the
+original geometry's normal, light calculations would compute shading as
+if the light were striking the opposite side, resulting in incorrect
+dark patches or inverted specular highlights.</p>
+<p>To ensure visual accuracy, the glTF specification mandates that when
+<code>doubleSided</code> is <code>true</code>, renderers must negate
+(flip) the normal vector for back-facing fragments during shading:</p>
+<ul>
+<li>In GLSL-based pipelines, the shader checks the built-in boolean
+<code>gl_FrontFacing</code>.</li>
+<li>If <code>gl_FrontFacing</code> is false, the normal vector (<span
+class="math inline">\(N\)</span>) is multiplied by <span
+class="math inline">\(-1.0\)</span>.</li>
+<li>If tangent vectors and normal maps are present, the bitangent and
+tangent space calculations are similarly mirrored so normal map details
+render correctly on the reverse side.</li>
+</ul>
+<p>This conditional inversion allows both sides of thin geometry—such as
+leaves, paper, cloth, or chainlink fences—to receive proper diffuse and
+specular lighting based on their orientation relative to the light
+sources.</p>
+<h3 id="performance-considerations">Performance Considerations</h3>
+<p>While <code>doubleSided</code> is essential for flat geometry that
+lacks volume, it carries a performance cost:</p>
+<ul>
+<li><strong>Fragment Shader Load:</strong> The GPU must process
+fragments that would otherwise be discarded during rasterization.</li>
+<li><strong>Shader Branching:</strong> Determining whether a face is
+front- or back-facing introduces minor shader logic overhead.</li>
+<li><strong>Overdraw:</strong> If applied carelessly to closed,
+watertight meshes (such as characters or solid buildings), it wastes GPU
+cycles rendering hidden interior faces.</li>
+</ul>
+<p>Renderers conformant with the glTF 2.0 specification treat
+<code>doubleSided</code> strictly as a material-level instruction to
+disable face culling and dynamically invert back-facing normals,
+providing a standardized way to achieve two-sided visibility across
+disparate 3D software and runtime engines.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

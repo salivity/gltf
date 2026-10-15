@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Render Flat Decals on Curved glTF Surfaces - gltf</title>
+    <meta name="description" content="Rendering flat decals onto curved surfaces presents a common challenge in 3D graphics, particularly within the glTF format, which lacks a native, dynamic screen-space decal specification. Because placing a completely flat polygon onto a curved surface cau">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-to-render-flat-decals-on-curved-gl-tf-surfaces">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Render Flat Decals on Curved glTF Surfaces - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-to-render-flat-decals-on-curved-gl-tf-surfaces" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Rendering flat decals onto curved surfaces presents a common challenge in 3D graphics, particularly within the glTF format, which lacks a native, dynamic screen-space decal specification. Because placing a completely flat polygon onto a curved surface cau" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-render-flat-decals-on-curved-gltf-surfaces">How to Render
+Flat Decals on Curved glTF Surfaces</h1>
+<p>Rendering flat decals onto curved surfaces presents a common
+challenge in 3D graphics, particularly within the glTF format, which
+lacks a native, dynamic screen-space decal specification. Because
+placing a completely flat polygon onto a curved surface causes clipping
+and severe Z-fighting, technical artists and developers must rely on
+specialized workflows. This article explores practical workarounds for
+applying decals to curved glTF models, including conformant geometry
+modeling, multi-UV texture layering, texture baking, and runtime
+engine-level projection techniques.</p>
+<h3 id="1-conformed-decal-geometry-shrinkwrapping">1. Conformed Decal
+Geometry (Shrinkwrapping)</h3>
+<p>The most format-compliant way to deliver decals directly inside a
+standard <code>.gltf</code> or <code>.glb</code> container is to create
+conformant geometry. Instead of using a purely flat quad:</p>
+<ul>
+<li><strong>Mesh Extraction:</strong> In a 3D modeling tool like Blender
+or Maya, duplicate the faces of the curved target mesh where the decal
+will sit.</li>
+<li><strong>Shrinkwrap Modifier:</strong> Alternatively, project a flat
+subdivided plane onto the curved surface using a shrinkwrap modifier or
+surface constraint so the decal mesh matches the curvature
+precisely.</li>
+<li><strong>Normal Offset:</strong> Push the conformed vertices slightly
+outward along their surface normals (e.g., by 0.1mm to 1mm depending on
+scene scale) to prevent Z-fighting.</li>
+<li><strong>Alpha Transparency:</strong> Assign the decal material using
+an alpha-blended or alpha-masked glTF PBR material
+(<code>alphaMode: "BLEND"</code> or <code>"MASK"</code>).</li>
+</ul>
+<h3 id="2-utilizing-secondary-uv-channels-multi-uv-texturing">2.
+Utilizing Secondary UV Channels (Multi-UV Texturing)</h3>
+<p>The glTF 2.0 specification natively supports multiple UV sets
+(<code>TEXCOORD_0</code>, <code>TEXCOORD_1</code>). This allows you to
+apply a decal over an existing texture without altering the model's
+geometry:</p>
+<ul>
+<li>Keep the primary UV channel (<code>TEXCOORD_0</code>) mapped for the
+base material (albedo, roughness, metallic, normal).</li>
+<li>Create a secondary UV set (<code>TEXCOORD_1</code>) where only the
+target area is mapped to the decal texture, while the rest of the mesh
+UVs are collapsed to an empty/transparent pixel space.</li>
+<li>While vanilla glTF PBR does not allow complex node-based layer
+mixing inside a single material, you can combine textures using
+multi-material setups or engine-specific shader graphs that read glTF's
+secondary UV sets to blend the decal over the base maps.</li>
+</ul>
+<h3 id="3-pre-baking-decals-into-the-base-textures">3. Pre-Baking Decals
+into the Base Textures</h3>
+<p>If runtime flexibility is not required, baking is the cleanest and
+most performance-efficient approach:</p>
+<ul>
+<li>Project or place the decal onto the 3D model within your texturing
+software (such as Substance 3D Painter or Blender).</li>
+<li>Bake the decal directly into the base mesh's diffuse, normal, and
+roughness texture maps.</li>
+<li>Export the combined result as standard glTF textures.</li>
+</ul>
+<p>This completely eliminates extra draw calls, transparency sorting
+issues, and geometric Z-fighting, though it increases texture memory
+usage if unique textures are required across multiple assets.</p>
+<h3 id="4-runtime-decal-projection-engine-level-workaround">4. Runtime
+Decal Projection (Engine-Level Workaround)</h3>
+<p>If the glTF model is loaded into a WebGL engine like Three.js,
+Babylon.js, or a game engine like Godot, decal rendering is often best
+handled outside the glTF file itself:</p>
+<ul>
+<li><strong>Decal Projectors:</strong> Engines like Three.js provide a
+<code>DecalGeometry</code> helper that computes the intersection volume
+between a projection box and the target glTF mesh at runtime. This
+dynamically clips and generates a curved surface patch conforming to the
+underlying mesh.</li>
+<li><strong>Screen-Space Decals:</strong> Advanced runtime renderers
+draw decals as screen-space projections via deferred rendering passes.
+The decal volume projects textures onto the depth buffer of the glTF
+model, requiring no geometry modifications or custom UV channels on the
+asset itself.</li>
+</ul>
+<h3 id="5-depth-bias-and-polygon-offset">5. Depth Bias and Polygon
+Offset</h3>
+<p>When using conformed geometry within glTF viewers, tiny
+floating-point inaccuracies can still cause Z-fighting at steep viewing
+angles or long camera distances. If your runtime viewer allows material
+customization, enable <strong>polygon offset</strong> (or depth bias) on
+the decal material. This instructs the GPU rasterizer to artificially
+pull the decal's depth values closer to the camera, guaranteeing the
+decal renders cleanly over the underlying curved surface.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

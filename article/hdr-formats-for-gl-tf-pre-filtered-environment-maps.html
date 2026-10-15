@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HDR Formats for glTF Pre-Filtered Environment Maps - gltf</title>
+    <meta name="description" content="Generating pre-filtered environment maps for glTF physically based rendering (PBR) requires balancing high dynamic range fidelity with efficient runtime GPU performance. This article outlines the best HDR formats suited for authoring, pre-filtering, and d">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/hdr-formats-for-gl-tf-pre-filtered-environment-maps">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="HDR Formats for glTF Pre-Filtered Environment Maps - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/hdr-formats-for-gl-tf-pre-filtered-environment-maps" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Generating pre-filtered environment maps for glTF physically based rendering (PBR) requires balancing high dynamic range fidelity with efficient runtime GPU performance. This article outlines the best HDR formats suited for authoring, pre-filtering, and d" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="hdr-formats-for-gltf-pre-filtered-environment-maps">HDR Formats
+for glTF Pre-Filtered Environment Maps</h1>
+<p>Generating pre-filtered environment maps for glTF physically based
+rendering (PBR) requires balancing high dynamic range fidelity with
+efficient runtime GPU performance. This article outlines the best HDR
+formats suited for authoring, pre-filtering, and deploying image-based
+lighting (IBL) in glTF pipelines, focusing on OpenEXR, Radiance HDR, and
+GPU-ready container formats like KTX 2.0.</p>
+<h3 id="source-formats-for-pre-filtering">Source Formats for
+Pre-Filtering</h3>
+<p>Before packing lighting data for glTF delivery, environment assets
+must be pre-filtered into diffuse irradiance and specular reflection
+maps (typically roughness mip chains). Two primary formats dominate this
+generation phase:</p>
+<ul>
+<li><strong>OpenEXR (.exr):</strong> The industry standard for source
+map processing. It supports 16-bit half-float and 32-bit float precision
+per channel. Half-float OpenEXR is best suited for pre-filtering because
+it prevents color banding and precision loss in bright light sources
+(such as the sun) while maintaining reasonable file sizes. It also
+avoids artifacts commonly introduced by shared-exponent formats during
+mipmap downsampling.</li>
+<li><strong>Radiance HDR (.hdr):</strong> A legacy, widely supported
+format utilizing an RGBE (8 bits per channel plus an 8-bit shared
+exponent) layout. While Radiance HDR files are universally accepted by
+pre-filtering tools like Filament's <code>cmgen</code> or
+<code>glTF-IBL-Sampler</code>, RGBE encoding can produce visible
+stepping in extreme dynamic ranges and cannot be natively ingested by
+GPUs without CPU-side decoding.</li>
+</ul>
+<h3 id="runtime-target-formats-for-gltf">Runtime Target Formats for
+glTF</h3>
+<p>glTF assets do not typically embed raw <code>.exr</code> or
+<code>.hdr</code> files due to their massive memory footprints and lack
+of native GPU compression. Instead, the pre-filtered output is converted
+into runtime formats:</p>
+<ul>
+<li><strong>KTX 2.0 (.ktx2) with BC6H / ASTC HDR:</strong> This is the
+most optimal format for glTF runtime transmission, supported via the
+<code>KHR_texture_basisu</code> extension. BC6H (for desktop) and ASTC
+HDR (for mobile) are native GPU block-compression formats designed
+specifically for HDR data. They dramatically reduce VRAM utilization,
+eliminate runtime texture decompression overhead, and preserve
+high-contrast specular highlights.</li>
+<li><strong>RGBM / RGBD Encoded PNG or WebP:</strong> For environments
+targeting WebGL implementations without guaranteed float texture or
+hardware compression support, pre-filtered results can be packed into
+standard 8-bit channels using RGBM (RGB multiplied by a range multiplier
+in the alpha channel). While this sacrifices dynamic range accuracy and
+can introduce boundary artifacts, it serves as a lightweight,
+broad-compatibility fallback.</li>
+</ul>
+<h3 id="recommended-pipeline">Recommended Pipeline</h3>
+<p>For optimal quality and performance, author and pre-filter
+environment lighting using 16-bit float <strong>OpenEXR (.exr)</strong>,
+then compress the resulting filtered cubemaps or octahedral maps into
+<strong>KTX 2.0 (.ktx2)</strong> utilizing BC6H or ASTC HDR compression
+for deployment within the glTF ecosystem.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

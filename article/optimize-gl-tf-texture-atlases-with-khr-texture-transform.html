@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimize glTF Texture Atlases with KHR_texture_transform - gltf</title>
+    <meta name="description" content="The KHRtexturetransform extension is a fundamental tool in the glTF ecosystem that enables scale, offset, and rotation properties to be applied to UV coordinates at the material level. By decoupling texture coordinates from static vertex data, this extens">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/optimize-gl-tf-texture-atlases-with-khr-texture-transform">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Optimize glTF Texture Atlases with KHR_texture_transform - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/optimize-gl-tf-texture-atlases-with-khr-texture-transform" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The KHRtexturetransform extension is a fundamental tool in the glTF ecosystem that enables scale, offset, and rotation properties to be applied to UV coordinates at the material level. By decoupling texture coordinates from static vertex data, this extens" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1
+id="optimize-gltf-texture-atlases-with-khr_texture_transform">Optimize
+glTF Texture Atlases with KHR_texture_transform</h1>
+<p>The <code>KHR_texture_transform</code> extension is a fundamental
+tool in the glTF ecosystem that enables scale, offset, and rotation
+properties to be applied to UV coordinates at the material level. By
+decoupling texture coordinates from static vertex data, this extension
+allows developers to efficiently utilize shared texture atlases,
+drastically reduce 3D asset file sizes, optimize GPU memory usage, and
+maximize draw-call batching in real-time rendering pipelines.</p>
+<h3 id="the-limitation-of-base-gltf-with-texture-atlases">The Limitation
+of Base glTF with Texture Atlases</h3>
+<p>In standard glTF 2.0 without extensions, UV coordinates are baked
+directly into the geometry's vertex buffer attributes. When using a
+texture atlas—a single large image containing multiple
+sub-textures—every model must map its vertices to specific
+sub-rectangles within that image.</p>
+<p>This creates a significant architectural problem: if multiple objects
+share identical 3D geometry but need to display different sub-textures
+from the atlas, they cannot share the same vertex buffer. Instead, the
+geometry must be duplicated with unique baked UV coordinates for each
+variation. This redundancy balloons file sizes, increases memory
+bandwidth consumption, and prevents rendering engines from instancing
+identical meshes.</p>
+<h3 id="how-khr_texture_transform-solves-the-problem">How
+KHR_texture_transform Solves the Problem</h3>
+<p>The <code>KHR_texture_transform</code> extension resolves this
+limitation by shifting UV coordinate mapping from the vertex buffer to
+the material definition. It introduces three primary properties inside a
+material’s texture info block:</p>
+<ul>
+<li><strong><code>offset</code></strong>: Shifts the UV origin to target
+a specific sub-texture inside the atlas.</li>
+<li><strong><code>scale</code></strong>: Scales the UV coordinates down
+to match the dimensions of the sub-texture relative to the full
+atlas.</li>
+<li><strong><code>rotation</code></strong>: Rotates the texture
+coordinates, enabling better packing efficiency in non-square or
+oriented atlas layouts.</li>
+</ul>
+<p>Because these transformations happen in the shader during rendering
+rather than in the raw mesh data, the underlying 3D geometry can
+maintain a standardized 0-to-1 UV coordinate mapping.</p>
+<h3 id="key-performance-advantages">Key Performance Advantages</h3>
+<h4 id="1-geometry-instancing-and-mesh-reuse">1. Geometry Instancing and
+Mesh Reuse</h4>
+<p>Multiple scene nodes can reference the exact same mesh primitive
+while using different materials. Each material applies its own
+<code>offset</code> and <code>scale</code> to sample a unique portion of
+the shared atlas. This eliminates duplicate vertex streams and allows
+the graphics API to batch or instance the meshes, significantly reducing
+CPU draw calls.</p>
+<h4 id="2-reduced-file-size-and-transmission-bandwidth">2. Reduced File
+Size and Transmission Bandwidth</h4>
+<p>By removing redundant geometry buffers, overall <code>.gltf</code>
+and <code>.glb</code> file sizes shrink considerably. For web-based 3D
+applications, mobile games, and AR/VR experiences, smaller payloads lead
+to faster download times, reduced data usage, and quicker scene
+parsing.</p>
+<h4 id="3-efficient-texture-memory-vram-management">3. Efficient Texture
+Memory (VRAM) Management</h4>
+<p>Combining dozens or hundreds of individual textures into a single
+shared atlas eliminates runtime texture-swapping overhead on the GPU.
+When paired with <code>KHR_texture_transform</code>, the rendering
+engine binds a single large texture once and draws various
+unique-looking objects sequentially without triggering expensive
+pipeline state changes.</p>
+<h4 id="4-support-for-dynamic-tiling-and-animation">4. Support for
+Dynamic Tiling and Animation</h4>
+<p>Beyond basic sub-texture mapping, <code>KHR_texture_transform</code>
+allows sub-textures to tile across surfaces or animate over time (such
+as conveyor belts or flowing water) simply by updating material
+properties, rather than modifying or re-uploading vertex buffers.</p>
+<h3 id="conclusion">Conclusion</h3>
+<p>Using texture atlases without material-level UV transformation forces
+an undesirable trade-off between texture efficiency and geometric
+efficiency. The <code>KHR_texture_transform</code> extension bridges
+this gap, making texture atlasing truly viable by keeping geometry
+modular, reducing VRAM footprint, and maximizing runtime performance
+across all glTF-compatible engines.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Mobile glTF Uses Baked AO Over Dynamic Shadows - gltf</title>
+    <meta name="description" content="Mobile-first 3D pipelines utilizing glTF typically prioritize performance, power efficiency, and universal hardware compatibility over complex real-time lighting calculations. While dynamic shadow maps offer interactive realism, their computational overhe">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/why-mobile-gl-tf-uses-baked-ao-over-dynamic-shadows">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Why Mobile glTF Uses Baked AO Over Dynamic Shadows - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/why-mobile-gl-tf-uses-baked-ao-over-dynamic-shadows" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Mobile-first 3D pipelines utilizing glTF typically prioritize performance, power efficiency, and universal hardware compatibility over complex real-time lighting calculations. While dynamic shadow maps offer interactive realism, their computational overhe" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="why-mobile-gltf-uses-baked-ao-over-dynamic-shadows">Why Mobile
+glTF Uses Baked AO Over Dynamic Shadows</h1>
+<p>Mobile-first 3D pipelines utilizing glTF typically prioritize
+performance, power efficiency, and universal hardware compatibility over
+complex real-time lighting calculations. While dynamic shadow maps offer
+interactive realism, their computational overhead makes them problematic
+for resource-constrained mobile chipsets. By using baked ambient
+occlusion (AO) maps—natively supported within the standard glTF PBR
+material model—developers achieve soft, grounding visual depth while
+eliminating the massive performance bottlenecks associated with
+real-time shadow generation.</p>
+<h3 id="draw-call-and-render-pass-reductions">Draw Call and Render Pass
+Reductions</h3>
+<p>Dynamic shadow mapping requires the rendering engine to draw the
+scene's geometry multiple times per frame. At minimum, the scene must be
+rendered once from the perspective of each shadow-casting light to
+generate a depth buffer, and then rendered again from the camera's
+perspective.</p>
+<p>For mobile devices, this process rapidly exhausts limited CPU and GPU
+resources:</p>
+<ul>
+<li><strong>Doubled Draw Calls:</strong> Generating shadow passes often
+doubles or triples the total draw calls per frame, placing intense
+pressure on mobile CPU drivers.</li>
+<li><strong>glTF Native Efficiency:</strong> Baking AO into the glTF
+model stores occlusion data directly inside the texture channels
+(typically the red channel of the standard
+<code>occlusionRoughnessMetallic</code> texture). The engine evaluates
+lighting in a single render pass without rendering additional geometry
+to off-screen buffers.</li>
+</ul>
+<h3 id="memory-bandwidth-and-tbdr-architectures">Memory Bandwidth and
+TBDR Architectures</h3>
+<p>Most mobile GPUs utilize Tile-Based Deferred Rendering (TBDR)
+architectures. TBDR relies on high-speed on-chip memory to shade small
+screen tiles before writing final pixels back to system RAM.</p>
+<p>Dynamic shadow maps disrupt this architecture:</p>
+<ul>
+<li><strong>Context Switching:</strong> Generating dynamic depth maps
+forces the GPU to write large textures out to slow, battery-draining
+system memory and read them back during the main forward or deferred
+pass.</li>
+<li><strong>Texture Bandwidth:</strong> Filtering shadow maps (such as
+Percentage-Closer Filtering) requires multiple texture samples per
+fragment to reduce jagged edges, saturating limited mobile memory
+bandwidth.</li>
+<li>Baked AO textures are sampled alongside the base color and material
+properties in the same shading pass, fitting neatly into the GPU's
+texture cache.</li>
+</ul>
+<h3 id="thermal-throttling-and-battery-life">Thermal Throttling and
+Battery Life</h3>
+<p>Mobile devices operate without active cooling fans. Continuous,
+high-intensity GPU workloads induce thermal throttling, where the device
+forcibly lowers its clock speed to prevent overheating.</p>
+<p>Dynamic shadow mapping consumes significant continuous power, often
+causing an application that runs smoothly for thirty seconds to drop
+frames drastically after two minutes. Baked AO provides static rendering
+costs: a scene with baked AO consumes virtually the same amount of power
+whether the camera is stationary or moving, ensuring stable frame rates
+over extended sessions.</p>
+<h3 id="visual-quality-on-low-tier-hardware">Visual Quality on Low-Tier
+Hardware</h3>
+<p>Dynamic shadows on mobile platforms often require extreme compromises
+to run acceptably:</p>
+<ul>
+<li><strong>Artifacts:</strong> Developers must reduce shadow map
+resolutions (e.g., to 512x512 or 1024x1024), resulting in pixelation,
+shadow acne, and shimmering artifacts along edges.</li>
+<li><strong>Lack of Contact Shadows:</strong> Low-resolution dynamic
+shadows frequently fail to resolve fine contact details where objects
+touch the ground, leading to a floating visual effect.</li>
+</ul>
+<p>Baked ambient occlusion provides high-resolution, smooth, and
+physically plausible contact shadows without run-time degradation.
+Because the calculation is performed offline in 3D modeling suites or
+baking software, artists can use ray-traced accuracy that no mobile GPU
+could compute in real time.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

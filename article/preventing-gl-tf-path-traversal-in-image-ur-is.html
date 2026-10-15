@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preventing glTF Path Traversal in Image URIs - gltf</title>
+    <meta name="description" content="The glTF (GL Transmission Format) 2.0 specification allows 3D models to reference external texture assets through relative or absolute Uniform Resource Identifiers (URIs). While this modular approach optimizes asset reuse and streaming, it introduces crit">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/preventing-gl-tf-path-traversal-in-image-ur-is">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Preventing glTF Path Traversal in Image URIs - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/preventing-gl-tf-path-traversal-in-image-ur-is" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The glTF (GL Transmission Format) 2.0 specification allows 3D models to reference external texture assets through relative or absolute Uniform Resource Identifiers (URIs). While this modular approach optimizes asset reuse and streaming, it introduces crit" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="preventing-gltf-path-traversal-in-image-uris">Preventing glTF
+Path Traversal in Image URIs</h1>
+<p>The glTF (GL Transmission Format) 2.0 specification allows 3D models
+to reference external texture assets through relative or absolute
+Uniform Resource Identifiers (URIs). While this modular approach
+optimizes asset reuse and streaming, it introduces critical path
+traversal vulnerabilities if parsers fail to sanitize URI inputs,
+potentially exposing local file systems or internal network resources.
+Securing glTF runtimes requires a defense-in-depth approach centered on
+URI sanitization, canonical path validation, filesystem sandboxing, and
+protocol restrictions.</p>
+<h3 id="enforcing-strict-relative-path-restrictions">Enforcing Strict
+Relative Path Restrictions</h3>
+<p>By default, external texture URIs in a glTF file should only
+reference files relative to the model’s parent directory. Runtimes must
+implement strict path validation:</p>
+<ul>
+<li><strong>Disallow Absolute Paths:</strong> Reject URIs that begin
+with root designators such as <code>/</code>, <code>\</code>, or Windows
+drive letters (e.g., <code>C:\</code>).</li>
+<li><strong>Strip or Block Directory Traversal Sequences:</strong>
+Reject or sanitize paths containing <code>../</code> or <code>..\</code>
+sequences to prevent escaping the intended asset directory.</li>
+<li><strong>Handle URI Encoding Attacks:</strong> Decode
+percentage-encoded characters (such as <code>%2e%2e%2f</code> for
+<code>../</code>) before performing traversal checks, and avoid multiple
+decode passes that could lead to double-decoding vulnerabilities.</li>
+</ul>
+<h3 id="canonical-path-and-sandbox-verification">Canonical Path and
+Sandbox Verification</h3>
+<p>String-based path checks alone are often insufficient due to symbolic
+links, filesystem quirks, or alternate path representations.
+Applications must verify paths against the filesystem boundaries:</p>
+<ol type="1">
+<li><strong>Resolve the Real Path:</strong> Combine the base asset
+directory with the target URI and resolve the absolute, canonical path
+(e.g., using <code>realpath()</code> in POSIX or
+<code>GetFullPathName()</code> in Windows).</li>
+<li><strong>Boundary Check:</strong> Confirm that the resolved canonical
+path explicitly starts with the canonical path of the allowed base
+directory. If the resolved path lies outside this boundary, loading must
+fail immediately.</li>
+<li><strong>Disable Symlink Traversal:</strong> If the operating system
+permits, configure file loading routines to disallow traversing symbolic
+links or junction points that lead outside the asset directory.</li>
+</ol>
+<h3 id="scheme-and-protocol-whitelisting">Scheme and Protocol
+Whitelisting</h3>
+<p>External image URIs can reference remote network locations or
+alternative schemes. Parsers should tightly control permitted URI
+schemes:</p>
+<ul>
+<li><strong>Allowed Schemes:</strong> Restrict URIs strictly to relative
+paths and inline <code>data:</code> URIs (such as
+<code>data:image/png;base64,...</code>).</li>
+<li><strong>Block Dangerous Protocols:</strong> Prohibit sensitive or
+dangerous protocols, such as <code>file://</code>, <code>ftp://</code>,
+or internal network schemes, which can lead to local file inclusion
+(LFI) or Server-Side Request Forgery (SSRF) in server-side
+renderers.</li>
+<li><strong>Control Remote Fetching:</strong> If remote fetching
+(<code>http://</code> or <code>https://</code>) is supported, route
+requests through a safe HTTP client that blocks internal IP ranges (such
+as <code>127.0.0.1</code> and private RFC 1918 blocks) and enforces
+Cross-Origin Resource Sharing (CORS) policies.</li>
+</ul>
+<h3 id="alternative-architectural-defenses">Alternative Architectural
+Defenses</h3>
+<p>To eliminate filesystem traversal risks entirely, applications can
+adjust how assets are packaged and handled:</p>
+<ul>
+<li><strong>Adopt the Binary glTF Format (.glb):</strong> Pack textures
+directly into the binary container. GLB files store images inside
+internal binary buffers accessed via byte offsets rather than external
+filesystem lookups.</li>
+<li><strong>Virtual Filesystems (VFS):</strong> Mount glTF models inside
+an isolated in-memory or chrooted virtual filesystem so the parser lacks
+direct access to the host machine's broader file structure.</li>
+<li><strong>Least Privilege:</strong> Run glTF parsing and rendering
+pipelines under dedicated service accounts with minimal read-only
+permissions limited strictly to the active asset repository.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

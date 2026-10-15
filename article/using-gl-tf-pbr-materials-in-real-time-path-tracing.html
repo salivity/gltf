@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Using glTF PBR Materials in Real-Time Path Tracing - gltf</title>
+    <meta name="description" content="This article explains how real-time ray tracing and path tracing engines consume glTF 2.0 material parameters to evaluate physically based shading models. It covers the pipeline from parsing metallic-roughness texture channels and numeric factors on the h">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/using-gl-tf-pbr-materials-in-real-time-path-tracing">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Using glTF PBR Materials in Real-Time Path Tracing - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/using-gl-tf-pbr-materials-in-real-time-path-tracing" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explains how real-time ray tracing and path tracing engines consume glTF 2.0 material parameters to evaluate physically based shading models. It covers the pipeline from parsing metallic-roughness texture channels and numeric factors on the h" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="using-gltf-pbr-materials-in-real-time-path-tracing">Using glTF
+PBR Materials in Real-Time Path Tracing</h1>
+<p>This article explains how real-time ray tracing and path tracing
+engines consume glTF 2.0 material parameters to evaluate physically
+based shading models. It covers the pipeline from parsing
+metallic-roughness texture channels and numeric factors on the host to
+unpacking them in GPU shader storage buffers, mapping them to microfacet
+BSDF evaluations in closest-hit shaders, and handling advanced
+transmission and volume extensions.</p>
+<h3 id="the-gltf-20-pbr-material-model">The glTF 2.0 PBR Material
+Model</h3>
+<p>glTF 2.0 standardizes physically based rendering (PBR) using the
+Metallic-Roughness workflow. Its core specification defines a
+dielectric-conductor representation defined by:</p>
+<ul>
+<li><strong>Base Color (<code>baseColorFactor</code>,
+<code>baseColorTexture</code>):</strong> A linear or sRGB color value
+representing diffuse reflectance for dielectrics and specular
+reflectance (<span class="math inline">\(F_0\)</span>) for metals.</li>
+<li><strong>Metallic-Roughness (<code>metallicFactor</code>,
+<code>roughnessFactor</code>,
+<code>metallicRoughnessTexture</code>):</strong> A packed linear texture
+where the blue channel contains the metalness scalar and the green
+channel contains the perceptual roughness scalar.</li>
+<li><strong>Normal Map (<code>normalTexture</code>):</strong> A
+tangent-space normal vector used to perturb surface normals.</li>
+<li><strong>Emissive (<code>emissiveFactor</code>,
+<code>emissiveTexture</code>):</strong> Radiance emitted directly from
+the surface.</li>
+<li><strong>Occlusion (<code>occlusionTexture</code>):</strong> Baked
+ambient occlusion, typically bypassed or repurposed in path tracers
+since indirect visibility is calculated analytically via ray
+queries.</li>
+</ul>
+<p>Extensions under the <code>KHR_materials_*</code> namespace expand
+this foundation to support complex phenomena, including
+<code>KHR_materials_ior</code> (index of refraction),
+<code>KHR_materials_transmission</code> (thin-walled or volumetric
+glass), <code>KHR_materials_volume</code> (absorption and scattering),
+and <code>KHR_materials_clearcoat</code>.</p>
+<h3 id="host-side-ingestion-and-gpu-buffer-packing">Host-Side Ingestion
+and GPU Buffer Packing</h3>
+<p>Real-time ray tracers (built on APIs like DirectX Raytracing or
+Vulkan Ray Tracing) organize glTF assets into linear GPU buffers
+accessible via bindless descriptor sets or shader record tables
+(SRTs).</p>
+<ol type="1">
+<li><strong>Texture Loading and Color Spaces:</strong> The renderer
+uploads <code>baseColorTexture</code> and <code>emissiveTexture</code>
+as sRGB formats (e.g., <code>VK_FORMAT_R8G8B8A8_SRGB</code>), enabling
+hardware decompression to linear floating-point values upon sampling.
+The <code>metallicRoughnessTexture</code> and <code>normalTexture</code>
+are uploaded strictly as linear formats (e.g.,
+<code>VK_FORMAT_R8G8B8A8_UNORM</code>).</li>
+<li><strong>Material Data Structures:</strong> A unified
+<code>Material</code> struct is stored in a structured buffer. It
+packages scalar multipliers, texture array indices, UV transform
+matrices, and material flags:</li>
+</ol>
+<pre class="hlsl"><code>struct MaterialData {
+    float4 baseColorFactor;
+    float3 emissiveFactor;
+    float roughnessFactor;
+    float metallicFactor;
+    float ior;
+    float transmissionFactor;
+    
+    int baseColorIndex;
+    int metallicRoughnessIndex;
+    int normalIndex;
+    int emissiveIndex;
+    int transmissionIndex;
+};</code></pre>
+<p>When building Bottom-Level Acceleration Structures (BLAS), each
+geometry instance references a material index in its per-primitive or
+per-instance buffer.</p>
+<h3 id="closest-hit-shader-execution">Closest-Hit Shader Execution</h3>
+<p>When a ray intersects a surface, the ray tracing hardware executes
+the closest-hit shader. The shader computes the hit point, interpolates
+vertex attributes (UV coordinates, normals, tangents), and extracts the
+material parameters.</p>
+<h4 id="1-texture-unpacking">1. Texture Unpacking</h4>
+<p>The shader queries bindless texture descriptors:</p>
+<ul>
+<li><strong>Albedo and Metalness:</strong> The shader samples the base
+color and multiplies it by <code>baseColorFactor</code>. It then samples
+the metallic-roughness texture, multiplying the green channel by
+<code>roughnessFactor</code> and the blue channel by
+<code>metallicFactor</code>.</li>
+<li><strong>Normal Reconstruction:</strong> Tangent-space normals from
+the normal map are unpacked from <span class="math inline">\([0,
+1]\)</span> to <span class="math inline">\([-1, 1]\)</span>, scaled by
+<code>normalTexture.scale</code>, and transformed into world space using
+the geometric Tangent-Bitangent-Normal (TBN) matrix: <span
+class="math display">\[\mathbf{N}_{world} = \text{normalize}(\mathbf{T}
+\cdot n_x + \mathbf{B} \cdot n_y + \mathbf{N}_{geom} \cdot
+n_z)\]</span></li>
+</ul>
+<h4 id="2-deriving-physical-bsdf-parameters">2. Deriving Physical BSDF
+Parameters</h4>
+<p>Path tracers separate the material response into diffuse and specular
+Bidirectional Scattering Distribution Functions (BSDFs). The glTF
+parameters dictate this split:</p>
+<ul>
+<li><strong>Linear Roughness to Microfacet Roughness:</strong> glTF
+roughness (<span class="math inline">\(r\)</span>) is perceptual. Path
+tracers map this to the microfacet parameter <span
+class="math inline">\(\alpha = r^2\)</span>. For anisotropic extensions,
+<span class="math inline">\(\alpha\)</span> is split into <span
+class="math inline">\(\alpha_x\)</span> and <span
+class="math inline">\(\alpha_y\)</span>.</li>
+<li><strong>Dielectric vs. Conductor <span
+class="math inline">\(F_0\)</span>:</strong>
+<ul>
+<li>For pure dielectrics (<span class="math inline">\(\text{metallic} =
+0\)</span>), specular reflectance at normal incidence (<span
+class="math inline">\(F_0\)</span>) is derived from the index of
+refraction (<span class="math inline">\(\eta\)</span>). For glTF’s
+default IOR of 1.5: <span class="math display">\[F_0 = \left(\frac{\eta
+- 1}{\eta + 1}\right)^2 = \left(\frac{1.5 - 1}{1.5 + 1}\right)^2 \approx
+0.04\]</span></li>
+<li>For metals (<span class="math inline">\(\text{metallic} =
+1\)</span>), the surface has no diffuse reflection, and <span
+class="math inline">\(F_0\)</span> equals the base color.</li>
+<li>The shader blends between dielectric and conductor states: <span
+class="math display">\[\mathbf{F}_0 = \text{lerp}(0.04 \times
+\text{iorScalar}, \mathbf{C}_{base}, \text{metallic})\]</span> <span
+class="math display">\[\mathbf{C}_{diffuse} = \mathbf{C}_{base} \times
+(1.0 - \text{metallic})\]</span></li>
+</ul></li>
+</ul>
+<h3 id="microfacet-evaluation-and-importance-sampling">Microfacet
+Evaluation and Importance Sampling</h3>
+<p>With the physical parameters established, the path tracer executes
+Monte Carlo integration:</p>
+<ol type="1">
+<li><strong>Lobe Selection:</strong> The shader probabilistically
+chooses whether to evaluate a diffuse ray (Lambertian) or a specular ray
+(Cook-Torrance microfacet) based on the surface's Fresnel reflection and
+metallic-roughness properties.</li>
+<li><strong>Sampling the Normal Distribution Function (NDF):</strong>
+For specular reflections, the engine typically implements the
+Trowbridge-Reitz (GGX) distribution. The next ray direction is generated
+by importance sampling the Visible Normal Distribution Function (VNDF)
+parameterized by <span class="math inline">\(\alpha\)</span>.</li>
+<li><strong>Geometry Term:</strong> Real-time implementations compute
+shadowing-masking using the Smith formulation with height-correlated
+visibility: <span class="math display">\[G_2(\mathbf{v}, \mathbf{l}) =
+\frac{2 (\mathbf{n} \cdot \mathbf{v}) (\mathbf{n} \cdot
+\mathbf{l})}{(\mathbf{n} \cdot \mathbf{l})\sqrt{\alpha^2 +
+(1-\alpha^2)(\mathbf{n} \cdot \mathbf{v})^2} + (\mathbf{n} \cdot
+\mathbf{v})\sqrt{\alpha^2 + (1-\alpha^2)(\mathbf{n} \cdot
+\mathbf{l})^2}}\]</span></li>
+<li><strong>Fresnel Evaluation:</strong> The Schlick approximation
+calculates the ratio of light reflected versus refracted: <span
+class="math display">\[\mathbf{F}(\mathbf{v}, \mathbf{h}) = \mathbf{F}_0
++ (1.0 - \mathbf{F}_0)(1.0 - \mathbf{v} \cdot
+\mathbf{h})^5\]</span></li>
+</ol>
+<h3 id="handling-transmission-and-volumes">Handling Transmission and
+Volumes</h3>
+<p>When <code>KHR_materials_transmission</code> is present:</p>
+<ul>
+<li>A transmission factor blends the diffuse BRDF into a specular BTDF
+(Bidirectional Transmittance Distribution Function).</li>
+<li>Instead of terminating on a diffuse bounce, rays refract according
+to Snell's Law using the glTF <code>ior</code> value.</li>
+<li>If <code>KHR_materials_volume</code> is defined, rays traveling
+inside the object's interior evaluate Beer-Lambert attenuation using the
+specified <code>attenuationColor</code> and
+<code>attenuationDistance</code>: <span class="math display">\[T(d) =
+e^{-\sigma_a d} \quad \text{where} \quad \sigma_a =
+-\frac{\ln(\mathbf{C}_{attenuation})}{d_{attenuation}}\]</span></li>
+</ul>
+<p>By strictly mapping glTF metallic, roughness, base color, and volume
+extensions to microfacet distributions and transmittance equations,
+real-time path tracers produce physically accurate, vendor-neutral
+rendering matching offline production ground truths.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

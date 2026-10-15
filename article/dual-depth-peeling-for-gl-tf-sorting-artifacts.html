@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dual-Depth Peeling for glTF Sorting Artifacts - gltf</title>
+    <meta name="description" content="Dual-depth peeling is an order-independent transparency (OIT) technique that eliminates visual sorting artifacts in complex glTF scenes by extracting both the nearest and furthest depth layers simultaneously in each render pass. By managing multiple rende">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/dual-depth-peeling-for-gl-tf-sorting-artifacts">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Dual-Depth Peeling for glTF Sorting Artifacts - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/dual-depth-peeling-for-gl-tf-sorting-artifacts" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Dual-depth peeling is an order-independent transparency (OIT) technique that eliminates visual sorting artifacts in complex glTF scenes by extracting both the nearest and furthest depth layers simultaneously in each render pass. By managing multiple rende" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="dual-depth-peeling-for-gltf-sorting-artifacts">Dual-Depth
+Peeling for glTF Sorting Artifacts</h1>
+<p>Dual-depth peeling is an order-independent transparency (OIT)
+technique that eliminates visual sorting artifacts in complex glTF
+scenes by extracting both the nearest and furthest depth layers
+simultaneously in each render pass. By managing multiple render targets
+and performing depth comparisons directly within the fragment shader,
+graphics engines can accurately blend transparent surfaces without
+requiring CPU-side polygon sorting. This article explores how fragment
+shaders implement dual-depth peeling to resolve overlapping
+alpha-blended geometry in glTF models.</p>
+<h3 id="the-transparency-challenge-in-gltf">The Transparency Challenge
+in glTF</h3>
+<p>The glTF format uses an alpha-blending model where transparent
+surfaces rely on standard <code>BLEND</code> modes. When complex,
+concave, or self-intersecting meshes overlap, standard primitive-level
+or object-level sorting fails. Fragments are rendered out of order,
+leading to missing surfaces, halos, or inverted depth relationships.
+Because traditional depth buffering (<code>Z-buffering</code>) only
+retains the single closest fragment, it cannot natively handle multiple
+overlapping translucent layers without specialized techniques.</p>
+<h3 id="dual-depth-peeling-mechanics">Dual-Depth Peeling Mechanics</h3>
+<p>Traditional depth peeling strips away one transparent layer per
+rendering pass from front to back. Dual-depth peeling halves the number
+of required geometry passes by peeling two layers concurrently: the
+outermost (minimum depth) and the innermost (maximum depth).</p>
+<p>The algorithm requires an initialization pass followed by several
+iterative peeling passes:</p>
+<ol type="1">
+<li><strong>Initialization:</strong> Finds the global minimum and
+maximum depth bounds of the translucent glTF fragments.</li>
+<li><strong>Peeling Passes:</strong> Discards fragments already captured
+in previous passes, discovers the next inner minimum and maximum depths,
+and accumulates the colors.</li>
+<li><strong>Composition:</strong> Merges the front-accumulated and
+back-accumulated color targets onto the opaque background.</li>
+</ol>
+<h3 id="fragment-shader-handling-during-peeling">Fragment Shader
+Handling During Peeling</h3>
+<p>The core logic of dual-depth peeling resides in the fragment shaders
+used during the peeling passes. These shaders use Multiple Render
+Targets (MRT) and depth textures from previous passes to control
+fragment processing.</p>
+<h4 id="1-depth-comparison-and-discarding">1. Depth Comparison and
+Discarding</h4>
+<p>In each peeling iteration, the fragment shader receives the depth
+boundaries resolved in the previous pass via depth/bounding textures
+(<code>prevMinDepth</code>, <code>prevMaxDepth</code>). The fragment
+shader samples its current screen-space depth using
+<code>gl_FragCoord.z</code> and applies boundary checks:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode glsl"><code class="sourceCode glsl"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">// Discard fragments outside the current working boundary</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">if</span> <span class="op">(</span>fragDepth <span class="op">&lt;=</span> prevMinDepth <span class="op">||</span> fragDepth <span class="op">&gt;=</span> prevMaxDepth<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">discard</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Any fragment falling outside these bounds has already been peeled and
+blended, ensuring that the shader only processes fragments that lie
+strictly between the previous layers.</p>
+<h4 id="2-resolving-new-min-max-bounds">2. Resolving New Min-Max
+Bounds</h4>
+<p>Using hardware blending equations or manual clamping, the shader
+writes to two depth channels (often mapped to an MRT setup such as
+<code>vec2</code> or separate render targets):</p>
+<ul>
+<li>A negative depth target (or min-blend target) to capture the closest
+remaining layer inside the boundaries.</li>
+<li>A positive depth target (or max-blend target) to capture the
+furthest remaining layer inside the boundaries.</li>
+</ul>
+<h4 id="3-color-accumulation">3. Color Accumulation</h4>
+<p>The fragment shader separates color processing into two blending
+schemes:</p>
+<ul>
+<li><strong>Front Layer (Under-blending):</strong> Fragments matching
+the newly resolved minimum depth are blended front-to-back into a
+front-color accumulator. Front-to-back blending maintains premultiplied
+alpha to ensure correct attenuation of underlying surfaces.</li>
+<li><strong>Back Layer (Over-blending):</strong> Fragments matching the
+newly resolved maximum depth are blended back-to-front into a back-color
+accumulator using standard over-blending equations.</li>
+</ul>
+<h3 id="final-blending-and-output">Final Blending and Output</h3>
+<p>Once the desired number of peeling iterations is reached (typically 4
+to 8 passes for typical glTF models), a final composite fragment shader
+merges the accumulated front colors, the back-blended colors, and the
+opaque background texture into the primary framebuffer.</p>
+<p>By offloading depth evaluation to per-fragment operations within the
+shader, dual-depth peeling guarantees mathematically correct blending of
+transparent glTF surfaces regardless of geometry orientation, topology,
+or camera angle.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Base Color Texture Color Space Conversion - gltf</title>
+    <meta name="description" content="When sampling base color textures from a glTF 2.0 asset, rendering engines must convert the color data from the non-linear sRGB color space to a linear color space prior to performing lighting calculations. This article explains the exact color space requ">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-base-color-texture-color-space-conversion">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Base Color Texture Color Space Conversion - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-base-color-texture-color-space-conversion" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When sampling base color textures from a glTF 2.0 asset, rendering engines must convert the color data from the non-linear sRGB color space to a linear color space prior to performing lighting calculations. This article explains the exact color space requ" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-base-color-texture-color-space-conversion">glTF Base Color
+Texture Color Space Conversion</h1>
+<p>When sampling base color textures from a glTF 2.0 asset, rendering
+engines must convert the color data from the non-linear sRGB color space
+to a linear color space prior to performing lighting calculations. This
+article explains the exact color space requirements defined by the glTF
+specification, distinguishes between how color and alpha channels are
+handled, and details the standard methods for executing this conversion
+in real-time graphics pipelines.</p>
+<h3 id="the-gltf-color-space-specification">The glTF Color Space
+Specification</h3>
+<p>The glTF 2.0 specification strictly mandates that color data intended
+for display—such as the base color texture
+(<code>baseColorTexture</code>) and emissive texture
+(<code>emissiveTexture</code>)—must be encoded in the sRGB color
+space.</p>
+<p>However, physically based rendering (PBR) equations and lighting
+calculations require input values to represent linear physical light
+intensity. Sampling an sRGB texture directly without transformation
+distorts the math, resulting in washed-out highlights, harsh shadow
+transitions, and incorrect color blending.</p>
+<h3 id="channel-specific-requirements">Channel-Specific
+Requirements</h3>
+<p>Base color textures are packed as four-channel RGBA images, but the
+color space conversion applies selectively:</p>
+<ul>
+<li><strong>RGB Channels (Color):</strong> Stored using the sRGB
+transfer function. These three channels must be converted from sRGB to
+Linear space upon sampling.</li>
+<li><strong>Alpha Channel (Coverage/Opacity):</strong> Stored linearly.
+The alpha channel must <strong>not</strong> undergo sRGB-to-linear
+conversion. It represents linear opacity factors directly.</li>
+</ul>
+<h3 id="conversion-methods">Conversion Methods</h3>
+<p>There are two primary ways to handle the sRGB-to-linear conversion in
+a rendering pipeline:</p>
+<h4 id="1-hardware-accelerated-conversion-recommended">1.
+Hardware-Accelerated Conversion (Recommended)</h4>
+<p>Modern graphics APIs (Direct3D, OpenGL, Vulkan, Metal, WebGL 2)
+provide dedicated hardware support for sRGB textures. When creating the
+texture resource, specifying an sRGB format ensures that the GPU
+automatically decodes the RGB channels to linear space during the
+texture fetch, leaving the alpha channel linear, with zero runtime
+performance cost.</p>
+<p>Common API formats include:</p>
+<ul>
+<li><strong>Vulkan:</strong> <code>VK_FORMAT_R8G8B8A8_SRGB</code></li>
+<li><strong>DirectX:</strong>
+<code>DXGI_FORMAT_R8G8B8A8_UNORM_SRGB</code></li>
+<li><strong>OpenGL / WebGL 2:</strong> <code>GL_SRGB8_ALPHA8</code></li>
+</ul>
+<h4 id="2-manual-shader-decoding">2. Manual Shader Decoding</h4>
+<p>If an sRGB texture format cannot be utilized and the texture is
+instead uploaded as a standard linear unorm format, the conversion must
+be performed manually within the fragment shader after sampling.</p>
+<p>The precise standard sRGB to linear conversion formula defined by the
+IEC 61966-2-1 standard is:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode glsl"><code class="sourceCode glsl"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dt">vec3</span> <span class="fu">sRGBToLinear</span><span class="op">(</span><span class="dt">vec3</span> srgb<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="dt">bvec3</span> cutoff <span class="op">=</span> <span class="bu">lessThanEqual</span><span class="op">(</span>srgb<span class="op">,</span> <span class="dt">vec3</span><span class="op">(</span><span class="fl">0.04045</span><span class="op">));</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">vec3</span> lower <span class="op">=</span> srgb <span class="op">/</span> <span class="fl">12.92</span><span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">vec3</span> higher <span class="op">=</span> <span class="bu">pow</span><span class="op">((</span>srgb <span class="op">+</span> <span class="fl">0.055</span><span class="op">)</span> <span class="op">/</span> <span class="fl">1.055</span><span class="op">,</span> <span class="dt">vec3</span><span class="op">(</span><span class="fl">2.4</span><span class="op">));</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> <span class="bu">mix</span><span class="op">(</span>higher<span class="op">,</span> lower<span class="op">,</span> cutoff<span class="op">);</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>For performance-constrained mobile environments where exact
+compliance is secondary to cycle count, a gamma 2.2 power approximation
+is frequently used:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode glsl"><code class="sourceCode glsl"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="dt">vec3</span> <span class="fu">sRGBToLinearApprox</span><span class="op">(</span><span class="dt">vec3</span> srgb<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> <span class="bu">pow</span><span class="op">(</span>srgb<span class="op">,</span> <span class="dt">vec3</span><span class="op">(</span><span class="fl">2.2</span><span class="op">));</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<h3 id="summary-of-execution">Summary of Execution</h3>
+<ol type="1">
+<li>Load the glTF <code>baseColorTexture</code> using an sRGB-aware
+format or mark it for manual decoding.</li>
+<li>Sample the texture inside the shader.</li>
+<li>Transform the <code>rgb</code> components to linear space
+(automatically via texture sampler or manually via math).</li>
+<li>Keep the <code>a</code> (alpha) component unchanged.</li>
+<li>Multiply the resulting linear RGBA value by the glTF material's
+<code>baseColorFactor</code> (which is already defined in linear space)
+before feeding the values into the PBR BRDF functions.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

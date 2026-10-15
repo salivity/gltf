@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Mesh Entity Base Definition Explained - gltf</title>
+    <meta name="description" content="In the glTF (GL Transmission Format) 2.0 specification, a mesh defines the geometric shape of a 3D object through an array of renderable components known as primitives. This article explains the base structural definition of a glTF mesh entity, breaking d">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-mesh-entity-base-definition-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Mesh Entity Base Definition Explained - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-mesh-entity-base-definition-explained" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In the glTF (GL Transmission Format) 2.0 specification, a mesh defines the geometric shape of a 3D object through an array of renderable components known as primitives. This article explains the base structural definition of a glTF mesh entity, breaking d" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-mesh-entity-base-definition-explained">glTF Mesh Entity
+Base Definition Explained</h1>
+<p>In the glTF (GL Transmission Format) 2.0 specification, a mesh
+defines the geometric shape of a 3D object through an array of
+renderable components known as primitives. This article explains the
+base structural definition of a glTF mesh entity, breaking down its
+top-level schema, the role of mesh primitives, mandatory vertex
+attributes, and how geometric data connects to the broader scene
+hierarchy.</p>
+<h3 id="the-top-level-mesh-object">The Top-Level Mesh Object</h3>
+<p>In glTF, meshes are stored in the root <code>meshes</code> array. A
+single mesh entity is defined as a JSON object containing the following
+primary properties:</p>
+<ul>
+<li><strong><code>primitives</code> (Required):</strong> An array of one
+or more <code>mesh.primitive</code> objects. Each primitive represents a
+discrete set of geometry that can be rendered in a single draw
+call.</li>
+<li><strong><code>weights</code> (Optional):</strong> An array of
+floating-point numbers that specify the default weights for morph
+targets defined across the primitives.</li>
+<li><strong><code>name</code> (Optional):</strong> A user-defined string
+identifier for the mesh.</li>
+<li><strong><code>extensions</code> and <code>extras</code>
+(Optional):</strong> Application-specific or standard extensions and
+user metadata.</li>
+</ul>
+<h3 id="the-mesh-primitive">The Mesh Primitive</h3>
+<p>The core geometric and rendering information of a mesh resides inside
+its <code>primitives</code> array. A primitive is not a standalone node;
+rather, it encapsulates how vertex data and surface properties are
+assembled on the GPU.</p>
+<p>A base primitive object contains:</p>
+<ul>
+<li><strong><code>attributes</code> (Required):</strong> A dictionary
+mapping semantic attribute names (such as <code>POSITION</code>,
+<code>NORMAL</code>, and <code>TEXCOORD_0</code>) to the indices of
+<code>accessor</code> objects. Accessors decode raw binary arrays stored
+in <code>bufferViews</code> and <code>buffers</code>.</li>
+<li><strong><code>indices</code> (Optional):</strong> An accessor index
+referencing an array of vertex indices. When present, the primitive uses
+indexed rendering (such as <code>glDrawElements</code>). When omitted,
+non-indexed rendering (such as <code>glDrawArrays</code>) is used.</li>
+<li><strong><code>material</code> (Optional):</strong> An index pointing
+to a <code>material</code> entity in the root <code>materials</code>
+array. If omitted, the runtime applies a default fallback material.</li>
+<li><strong><code>mode</code> (Optional):</strong> An integer specifying
+the rendering topology (WebGL primitive type). The values range from 0
+to 6 (<code>POINTS</code>, <code>LINES</code>, <code>LINE_LOOP</code>,
+<code>LINE_STRIP</code>, <code>TRIANGLES</code>,
+<code>TRIANGLE_STRIP</code>, <code>TRIANGLE_FAN</code>). If not defined,
+<code>mode</code> defaults to <code>4</code>
+(<code>TRIANGLES</code>).</li>
+<li><strong><code>targets</code> (Optional):</strong> An array of morph
+target attribute dictionaries used for shape-key animations.</li>
+</ul>
+<h3 id="required-geometric-attributes">Required Geometric
+Attributes</h3>
+<p>To constitute a valid primitive under the glTF specification, the
+<code>attributes</code> dictionary must include at least the
+<code>POSITION</code> attribute:</p>
+<ul>
+<li><strong><code>POSITION</code>:</strong> Must reference an accessor
+with type <code>VEC3</code> and component type <code>FLOAT</code>
+(<code>5126</code>). This attribute also requires <code>min</code> and
+<code>max</code> bounding properties within the referenced accessor to
+define the local bounding box of the geometry.</li>
+</ul>
+<p>Other common attributes, such as <code>NORMAL</code>
+(<code>VEC3</code>), <code>TANGENT</code> (<code>VEC4</code>),
+<code>TEXCOORD_n</code> (<code>VEC2</code>), and <code>COLOR_n</code>
+(<code>VEC3</code> or <code>VEC4</code>), are optional and depend on the
+rendering needs and material configurations of the model.</p>
+<h3 id="mesh-instantiation-in-the-scene-graph">Mesh Instantiation in the
+Scene Graph</h3>
+<p>A mesh definition in glTF is purely an asset description and does not
+render by itself. To appear in the 3D scene, a mesh must be instantiated
+by a node in the scene graph. A <code>node</code> object references a
+mesh using the <code>mesh</code> property, pointing to the zero-based
+index of the mesh in the root <code>meshes</code> array. A single mesh
+entity can be referenced by multiple nodes to facilitate efficient
+hardware instancing with different local transforms.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

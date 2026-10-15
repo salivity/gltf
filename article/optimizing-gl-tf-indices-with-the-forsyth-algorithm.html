@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimizing glTF Indices with the Forsyth Algorithm - gltf</title>
+    <meta name="description" content="This article explores the critical role Tom Forsyth’s algorithm plays in optimizing glTF 3D model assets for real-time rendering. By restructuring a mesh&#39;s index buffer, the algorithm maximizes the efficiency of the modern GPU post-transform vertex cache,">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/optimizing-gl-tf-indices-with-the-forsyth-algorithm">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Optimizing glTF Indices with the Forsyth Algorithm - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/optimizing-gl-tf-indices-with-the-forsyth-algorithm" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores the critical role Tom Forsyth’s algorithm plays in optimizing glTF 3D model assets for real-time rendering. By restructuring a mesh&#39;s index buffer, the algorithm maximizes the efficiency of the modern GPU post-transform vertex cache," />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="optimizing-gltf-indices-with-the-forsyth-algorithm">Optimizing
+glTF Indices with the Forsyth Algorithm</h1>
+<p>This article explores the critical role Tom Forsyth’s algorithm plays
+in optimizing glTF 3D model assets for real-time rendering. By
+restructuring a mesh's index buffer, the algorithm maximizes the
+efficiency of the modern GPU post-transform vertex cache, reducing
+redundant vertex shader invocations. You will learn how the GPU
+post-transform cache functions, how Forsyth’s scoring heuristic
+systematically orders triangle indices, and how this optimization
+directly improves runtime rendering performance and compression in the
+glTF ecosystem.</p>
+<h3 id="the-post-transform-vertex-cache-challenge">The Post-Transform
+Vertex Cache Challenge</h3>
+<p>When a modern GPU renders indexed triangle meshes—the standard
+representation in glTF assets—it processes vertices via the vertex
+shader before assembling them into primitives. To prevent redundant
+computation when multiple triangles share the same vertex, the GPU
+stores recently processed vertex results in a small hardware buffer
+known as the post-transform vertex cache (commonly modeled as a
+First-In, First-Out [FIFO] or Least Recently Used [LRU] cache, typically
+holding 16 to 64 vertices).</p>
+<p>If a glTF file’s triangle indices are arranged randomly or naively,
+the GPU repeatedly evicts and recalculates identical vertices across
+neighboring triangles. This inefficiency raises the Average Cache Miss
+Ratio (ACMR)—the ratio of processed vertices to rendered triangles. An
+unoptimized mesh can approach an ACMR of 3.0 (meaning every vertex of
+every triangle is shaded from scratch), severely bottlenecking the GPU’s
+vertex pipeline.</p>
+<h3 id="how-the-forsyth-algorithm-works">How the Forsyth Algorithm
+Works</h3>
+<p>Published by Tom Forsyth, the algorithm is a fast, linear-time
+heuristic designed to reorder triangle draw order so that vertices stay
+resident in the post-transform cache for as long as possible. The
+algorithm calculates a dynamic score for each vertex using two primary
+metrics:</p>
+<ol type="1">
+<li><strong>Cache Score:</strong> Based on the vertex's current position
+within a simulated LRU cache. Vertices currently residing near the top
+of the cache receive a high score, encouraging the immediate rendering
+of adjacent triangles before those vertices are evicted.</li>
+<li><strong>Valence Score:</strong> Based on the number of unrendered
+triangles that still share that vertex. Vertices belonging to fewer
+remaining triangles receive higher scores, prioritizing triangles that
+consume "dying" vertices and completely remove them from
+consideration.</li>
+</ol>
+<p>For each step, the algorithm computes a composite score for
+unrendered triangles by summing the scores of their three corner
+vertices. It outputs the highest-scoring triangle to the new index
+buffer, updates the simulated cache state and remaining valences, and
+repeats the process until all indices are reordered.</p>
+<h3 id="role-of-the-algorithm-in-gltf-optimization">Role of the
+Algorithm in glTF Optimization</h3>
+<p>In the glTF asset pipeline, the Forsyth algorithm operates directly
+on primitive index accessors (<code>indices</code>). Its implementation
+serves several vital functions:</p>
+<ul>
+<li><strong>Minimizing Vertex Shader Load:</strong> By reordering the
+index stream prior to runtime, the algorithm lowers the ACMR toward the
+theoretical limit (typically between 0.5 and 0.7 for manifold geometry).
+This yields a 2x to 3x reduction in vertex shader workload with zero
+loss in visual fidelity.</li>
+<li><strong>Pre-computation Over Runtime Cost:</strong> glTF is designed
+as a transmission format for runtime efficiency. Applying Forsyth's
+algorithm during offline asset preparation (via tools such as
+<code>meshoptimizer</code> or <code>gltf-transform</code>) ensures the
+client application incurs no CPU overhead for optimization upon loading
+the model.</li>
+<li><strong>Enabling Overfetch and Pre-Transform Optimization:</strong>
+Once indices are reordered for post-transform cache locality, the glTF
+vertex buffer itself can be reordered to match the first-appearance
+order in the index stream. This optimizes the <em>pre-transform</em>
+cache (the memory cache reading raw vertex data), minimizing memory
+bandwidth usage and cache thrashing across GPU memory buses.</li>
+<li><strong>Enhancing Downstream Compression:</strong> Reordering
+triangles into a localized, continuous spatial flow causes the numerical
+differences between adjacent indices to become smaller and more
+predictable. This significantly improves the compression ratios achieved
+by glTF extensions like <code>KHR_mesh_quantization</code> and
+<code>EXT_meshopt_compression</code>.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

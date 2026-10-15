@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generating glTF Files Dynamically in the Browser - gltf</title>
+    <meta name="description" content="Dynamic programmatic generation of glTF (GL Transmission Format) files directly in the browser allows web applications to create, manipulate, and export 3D models on the client side without relying on server-side rendering pipelines. By leveraging modern">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/generating-gl-tf-files-dynamically-in-the-browser">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Generating glTF Files Dynamically in the Browser - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/generating-gl-tf-files-dynamically-in-the-browser" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Dynamic programmatic generation of glTF (GL Transmission Format) files directly in the browser allows web applications to create, manipulate, and export 3D models on the client side without relying on server-side rendering pipelines. By leveraging modern" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="generating-gltf-files-dynamically-in-the-browser">Generating
+glTF Files Dynamically in the Browser</h1>
+<p>Dynamic programmatic generation of glTF (GL Transmission Format)
+files directly in the browser allows web applications to create,
+manipulate, and export 3D models on the client side without relying on
+server-side rendering pipelines. By leveraging modern browser APIs such
+as TypedArrays, ArrayBuffers, and the Blob API alongside specialized
+JavaScript libraries or native WebAssembly modules, developers can
+procedurally synthesize 3D geometry, assemble valid glTF or GLB
+structures, and deliver them instantly to users for preview or
+download.</p>
+<h2 id="1-high-level-engine-exporters">1. High-Level Engine
+Exporters</h2>
+<p>The most straightforward way to generate glTF files is by using
+established 3D WebGL/WebGPU engines like Three.js or Babylon.js. These
+frameworks provide built-in abstraction layers that convert live scene
+graphs into valid glTF or binary GLB formats.</p>
+<ul>
+<li><strong>Three.js (<code>GLTFExporter</code>):</strong> You can
+programmatically define a <code>Mesh</code> with a
+<code>BufferGeometry</code> (specifying custom attributes like
+<code>position</code>, <code>normal</code>, and <code>uv</code>) and a
+<code>Material</code>. The <code>GLTFExporter</code> module serializes
+the mesh into either a JSON glTF object or a binary GLB
+<code>ArrayBuffer</code>.</li>
+<li><strong>Babylon.js (<code>GLTF2Export</code>):</strong> Babylon.js
+offers a dedicated serializer that converts its internal mesh
+structures, materials, and animations directly into glTF/GLB files via
+<code>GLTF2Export.GLBAsync()</code>.</li>
+</ul>
+<p>This method is ideal when the application already uses a 3D engine
+for rendering and interaction, as it requires minimal low-level binary
+manipulation.</p>
+<h2 id="2-low-level-manual-glb-construction">2. Low-Level Manual GLB
+Construction</h2>
+<p>For lightweight applications that want to avoid the overhead of a
+full 3D rendering engine, glTF files—specifically binary
+<code>.glb</code> files—can be constructed from scratch using native
+JavaScript binary manipulation tools.</p>
+<p>A standard GLB container consists of:</p>
+<ol type="1">
+<li><strong>A 12-byte header:</strong> Magic number
+(<code>0x46546C67</code>), version (<code>2</code>), and total file
+length.</li>
+<li><strong>Chunk 0 (JSON):</strong> Contains the structural
+definition—scenes, nodes, meshes, accessors, and buffer views.</li>
+<li><strong>Chunk 1 (BIN):</strong> The raw binary data containing
+vertex positions, indices, normals, colors, and textures.</li>
+</ol>
+<p>To build this manually:</p>
+<ul>
+<li>Use <code>Float32Array</code> to define vertex positions, normals,
+and texture coordinates.</li>
+<li>Use <code>Uint16Array</code> or <code>Uint32Array</code> for face
+indices.</li>
+<li>Concatenate these arrays into a single contiguous
+<code>ArrayBuffer</code>.</li>
+<li>Build the JSON metadata defining how <code>bufferViews</code> slice
+the buffer and how <code>accessors</code> interpret the data types
+(e.g., <code>VEC3</code>, <code>SCALAR</code>).</li>
+<li>Package the chunks together using <code>DataView</code> to write the
+appropriate binary chunk headers and byte-alignment padding (4-byte
+alignment).</li>
+</ul>
+<h2 id="3-specialized-headless-gltf-libraries">3. Specialized Headless
+glTF Libraries</h2>
+<p>When manual byte manipulation is too complex but a full rendering
+engine is too heavy, developers turn to specialized headless libraries
+designed strictly for glTF generation and mutation:</p>
+<ul>
+<li><strong>glTF-Transform:</strong> A modular TypeScript/JavaScript
+library that runs in the browser. It allows you to create a
+<code>Document</code>, append <code>Node</code>, <code>Mesh</code>,
+<code>Primitive</code>, and <code>Accessor</code> instances, and export
+the document directly to a binary GLB array without needing WebGL
+context.</li>
+<li><strong>Minimal GLB Packagers:</strong> Small utility packages or
+custom micro-scripts that simply wrap raw geometry data into the formal
+GLB structure, keeping bundle sizes under a few kilobytes.</li>
+</ul>
+<h2 id="4-webassembly-wasm-pipelines">4. WebAssembly (Wasm)
+Pipelines</h2>
+<p>For computationally heavy procedural generation—such as Marching
+Cubes, CAD-style boolean operations (CSG), or procedural terrain
+synthesis—JavaScript can become a performance bottleneck.</p>
+<p>Developers can compile languages like Rust, C++, or Go into
+WebAssembly to handle geometric calculations. Libraries such as
+<code>gltf-rs</code> (Rust) or <code>tinygltf</code> (C++) can run
+inside the browser thread or a Web Worker, compute the mesh, serialize
+it directly into a glTF/GLB byte array, and return the pointer or buffer
+to JavaScript.</p>
+<h2 id="5-in-browser-output-and-persistence">5. In-Browser Output and
+Persistence</h2>
+<p>Once the glTF/GLB data is produced as an <code>ArrayBuffer</code> or
+a JSON string:</p>
+<ul>
+<li><strong>Blob Creation:</strong> Wrap the binary data in a
+<code>Blob</code> with the MIME type <code>model/gltf-binary</code> (for
+GLB) or <code>model/gltf+json</code> (for glTF).</li>
+<li><strong>Object URLs:</strong> Generate an ephemeral URL using
+<code>URL.createObjectURL(blob)</code> to feed the generated file into a
+standard <code>&lt;model-viewer&gt;</code> component or trigger an
+immediate user download via an anchor tag
+(<code>&lt;a download="..."&gt;</code>).</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

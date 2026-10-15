@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optical Properties of glTF KHR_materials_specular - gltf</title>
+    <meta name="description" content="The KHRmaterialsspecular extension expands the standard glTF 2.0 physically based rendering (PBR) workflow by reintroducing fine-grained specular controls that were intentionally simplified in the core specification. By decoupling specular reflection from">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/optical-properties-of-gl-tf-khr-materials-specular">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Optical Properties of glTF KHR_materials_specular - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/optical-properties-of-gl-tf-khr-materials-specular" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The KHRmaterialsspecular extension expands the standard glTF 2.0 physically based rendering (PBR) workflow by reintroducing fine-grained specular controls that were intentionally simplified in the core specification. By decoupling specular reflection from" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="optical-properties-of-gltf-khr_materials_specular">Optical
+Properties of glTF KHR_materials_specular</h1>
+<p>The <code>KHR_materials_specular</code> extension expands the
+standard glTF 2.0 physically based rendering (PBR) workflow by
+reintroducing fine-grained specular controls that were intentionally
+simplified in the core specification. By decoupling specular reflection
+from the strict metallic-roughness model, this extension allows 3D
+artists and real-time engines to define custom specular reflectance
+intensity and chromatic specular highlights on dielectric (non-metallic)
+surfaces.</p>
+<h3
+id="configurable-dielectric-reflectance-intensity-f0-scaling">Configurable
+Dielectric Reflectance Intensity (F0 Scaling)</h3>
+<p>In baseline glTF 2.0, non-metallic surfaces are hardcoded to a fixed
+specular reflectance at normal incidence (<span
+class="math inline">\(F_0\)</span>) of 4% (linear 0.04), which
+represents an index of refraction (IOR) of approximately 1.5. While this
+value works well for common materials like basic plastics and matte
+surfaces, it fails to represent materials with lower or higher
+refractive properties.</p>
+<p><code>KHR_materials_specular</code> reintroduces the ability to scale
+this reflectance value using the <code>specularFactor</code> and
+<code>specularTexture</code> parameters. This allows accurate simulation
+of:</p>
+<ul>
+<li><strong>Low-reflectance dielectrics:</strong> Materials such as
+water (<span class="math inline">\(F_0 \approx 2\%\)</span>) or
+velvet.</li>
+<li><strong>High-reflectance dielectrics:</strong> Gemstones, diamonds
+(<span class="math inline">\(F_0 \approx 17\%\)</span>), and crystalline
+structures that exhibit sharp, strong reflections without behaving like
+metals.</li>
+</ul>
+<h3 id="chromatic-specular-reflections-specular-color">Chromatic
+Specular Reflections (Specular Color)</h3>
+<p>Under the core metallic-roughness workflow, only metals can have
+colored reflections, while all dielectrics are constrained to perfectly
+achromatic (white) highlights. This limitation prevents the realistic
+representation of many complex, non-conductive real-world materials.</p>
+<p>Through the <code>specularColorFactor</code> and
+<code>specularColorTexture</code> inputs, the extension restores colored
+specular highlights for dielectrics. This enables:</p>
+<ul>
+<li><strong>Tinted glazes and plastics:</strong> Clear or
+semi-translucent coatings that shift the color of reflected light.</li>
+<li><strong>Complex organic surfaces:</strong> Materials like peacock
+feathers, beetle shells, and certain iridescent minerals where thin-film
+or microscopic structures tint the specular reflection while preserving
+the underlying diffuse color.</li>
+</ul>
+<h3 id="independent-specular-masking">Independent Specular Masking</h3>
+<p>In real-time rendering, roughness describes the microfacet scattering
+of light, whereas specular intensity describes the actual quantity of
+reflected light. Without specular control, artists often misuse the
+roughness map or metallic map to fake variations in reflectivity, which
+produces physically incorrect results.</p>
+<p><code>KHR_materials_specular</code> reintroduces independent spatial
+modulation via texture maps. This allows technical artists to map
+variations in surface contaminants—such as subtle oily residue, water
+spots, or dust layers—by altering the surface reflection intensity
+directly, leaving the roughness channel strictly responsible for
+blurriness.</p>
+<h3 id="interaction-with-the-index-of-refraction">Interaction with the
+Index of Refraction</h3>
+<p>When combined with the <code>KHR_materials_ior</code> extension,
+<code>KHR_materials_specular</code> modifies the dielectric Fresnel
+equation directly. The standard <span class="math inline">\(F_0\)</span>
+derived from the defined IOR can be modulated or tinted, providing
+complete physical fidelity for advanced real-time rendering pipelines
+without abandoning the simplicity and efficiency of glTF's underlying
+PBR framework.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

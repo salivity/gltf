@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Understanding glTF Nodes and Coordinate Spaces - gltf</title>
+    <meta name="description" content="In the glTF (GL Transmission Format) specification, scenes are structured as hierarchical trees where nodes define the spatial positioning, orientation, and scale of elements. This article explains how glTF nodes establish local coordinate spaces and how">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/understanding-gl-tf-nodes-and-coordinate-spaces">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Understanding glTF Nodes and Coordinate Spaces - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/understanding-gl-tf-nodes-and-coordinate-spaces" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In the glTF (GL Transmission Format) specification, scenes are structured as hierarchical trees where nodes define the spatial positioning, orientation, and scale of elements. This article explains how glTF nodes establish local coordinate spaces and how" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="understanding-gltf-nodes-and-coordinate-spaces">Understanding
+glTF Nodes and Coordinate Spaces</h1>
+<p>In the glTF (GL Transmission Format) specification, scenes are
+structured as hierarchical trees where nodes define the spatial
+positioning, orientation, and scale of elements. This article explains
+how glTF nodes establish local coordinate spaces and how those spaces
+are concatenated through the scene graph hierarchy to resolve objects
+into a unified world coordinate space.</p>
+<h3 id="the-hierarchical-node-structure">The Hierarchical Node
+Structure</h3>
+<p>A glTF asset organizes visual elements—such as meshes, cameras,
+lights, and skinning joints—within a scene graph. The scene object
+points to an array of root nodes, and each node can optionally contain
+an array of indices pointing to its children.</p>
+<p>This parent-child relationship creates a directed tree structure.
+Nodes themselves do not contain geometry directly; instead, they
+reference visual components (like a mesh index) and attach them to a
+specific point within the hierarchy.</p>
+<h3 id="defining-local-coordinate-space">Defining Local Coordinate
+Space</h3>
+<p>Every node defines its own <strong>local coordinate space</strong>
+(also known as object space) relative directly to its immediate parent
+node. If a node is a root node, its local space is relative directly to
+the scene origin <code>(0, 0, 0)</code>.</p>
+<p>A node's transformation within its local space is defined using
+either:</p>
+<ol type="1">
+<li><strong>TRS Properties:</strong> Separate vectors for translation
+(<code>translation</code>), rotation represented as a unit quaternion
+(<code>rotation</code>), and scale factors (<code>scale</code>).</li>
+<li><strong>A 4x4 Transformation Matrix:</strong> A 16-element
+column-major matrix (<code>matrix</code>) that encapsulates translation,
+rotation, and scale simultaneously.</li>
+</ol>
+<p>According to the glTF specification, if TRS properties are used, the
+local transform matrix <span
+class="math inline">\(M_{\text{local}}\)</span> is computed in the fixed
+order of scale first, followed by rotation, and finally translation:</p>
+<p><span class="math display">\[M_{\text{local}} = T \times R \times
+S\]</span></p>
+<p>If neither TRS nor a matrix is defined on a node, its local
+transformation defaults to an identity matrix, matching its parent's
+coordinate space directly.</p>
+<h3
+id="transitioning-from-local-to-world-coordinate-space">Transitioning
+from Local to World Coordinate Space</h3>
+<p><strong>World coordinate space</strong> represents the common, global
+reference frame of the entire scene. To determine an object's absolute
+position and orientation in world space, the local transformation of its
+node must be combined with the transformations of all its ancestor
+nodes.</p>
+<p>This is achieved through matrix multiplication (concatenation)
+traversing from the root node down to the target node:</p>
+<p><span class="math display">\[M_{\text{world}} = M_{\text{root}}
+\times \dots \times M_{\text{parent}} \times
+M_{\text{local}}\]</span></p>
+<p>Because matrix multiplication is non-commutative, child nodes inherit
+every translation, rotation, and scaling applied to their parents. For
+example, moving or rotating a parent node automatically shifts the
+entire sub-tree beneath it while preserving the relative distances and
+orientations among the child nodes in their respective local spaces.</p>
+<h3 id="coordinate-system-conventions">Coordinate System
+Conventions</h3>
+<p>glTF standardizes on a right-handed coordinate system:</p>
+<ul>
+<li><strong>+X</strong> points to the right.</li>
+<li><strong>+Y</strong> points up.</li>
+<li><strong>+Z</strong> points outward toward the viewer (forward in a
+right-handed view).</li>
+</ul>
+<p>Front-facing cameras and lights in glTF look along the negative
+Z-axis by default (<code>-Z</code>). Units for translation are defined
+in meters, angles are measured in radians, and scale factors are
+unitless multipliers.</p>
+<h3 id="role-in-skeletal-animation-skinning">Role in Skeletal Animation
+(Skinning)</h3>
+<p>The node-driven coordinate space model is critical for glTF skinning
+and skeletal animation. Bones or joints are represented as standard
+nodes arranged in a hierarchy.</p>
+<p>To deform a skinned mesh:</p>
+<ol type="1">
+<li>Each joint node tracks its dynamic world transform as animations
+play.</li>
+<li>The runtime multiplies the joint's world matrix by an
+<code>inverseBindMatrix</code> associated with that joint.</li>
+<li>This transforms the mesh vertices from their original bind pose
+(local mesh space) into the coordinate space of the joint, and then into
+the animated world space, allowing smooth vertex blending across
+multiple moving nodes.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

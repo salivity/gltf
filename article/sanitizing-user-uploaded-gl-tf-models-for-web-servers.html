@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sanitizing User-Uploaded glTF Models for Web Servers - gltf</title>
+    <meta name="description" content="Serving user-uploaded 3D assets like glTF (GL Transmission Format) and GLB files introduces significant security risks, ranging from path traversal and cross-site scripting (XSS) to denial-of-service (DoS) via decompression bombs. To safeguard your infras">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/sanitizing-user-uploaded-gl-tf-models-for-web-servers">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Sanitizing User-Uploaded glTF Models for Web Servers - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/sanitizing-user-uploaded-gl-tf-models-for-web-servers" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Serving user-uploaded 3D assets like glTF (GL Transmission Format) and GLB files introduces significant security risks, ranging from path traversal and cross-site scripting (XSS) to denial-of-service (DoS) via decompression bombs. To safeguard your infras" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="sanitizing-user-uploaded-gltf-models-for-web-servers">Sanitizing
+User-Uploaded glTF Models for Web Servers</h1>
+<p>Serving user-uploaded 3D assets like glTF (GL Transmission Format)
+and GLB files introduces significant security risks, ranging from path
+traversal and cross-site scripting (XSS) to denial-of-service (DoS) via
+decompression bombs. To safeguard your infrastructure and client
+browsers, web servers must systematically validate file structure, strip
+unapproved URIs, enforce resource limits, and sanitize metadata before
+distributing models to end users.</p>
+<h3 id="prefer-and-enforce-self-contained-glb">Prefer and Enforce
+Self-Contained GLB</h3>
+<p>glTF files can be distributed either as standalone JSON
+(<code>.gltf</code>) pointing to external bin/texture files, or as
+single, self-contained binary files (<code>.glb</code>).</p>
+<ul>
+<li><strong>Restrict uploads to GLB:</strong> Whenever possible, mandate
+the binary format (<code>.glb</code>). This avoids complex multi-file
+upload management, prevents external asset references, and confines all
+data chunks to a single stream.</li>
+<li><strong>Validate the GLB container header:</strong> Verify that the
+12-byte header begins with the correct magic number
+(<code>0x46546C67</code> for <code>glTF</code>), specifies version
+<code>2</code>, and that the declared total length matches the exact
+byte length of the uploaded file.</li>
+</ul>
+<h3 id="schema-and-structural-validation">Schema and Structural
+Validation</h3>
+<p>Do not rely solely on MIME types or file extensions, as they are
+trivially spoofed.</p>
+<ul>
+<li><strong>Khronos Schema Validation:</strong> Parse the internal JSON
+manifest and validate it strictly against the official Khronos glTF 2.0
+JSON schema. Reject any files that fail structural compliance.</li>
+<li><strong>Chunk Order and Alignment:</strong> In GLB files, verify
+that the first chunk is strictly the <code>JSON</code> chunk
+(<code>0x4E4F534A</code>) and the optional second chunk is strictly the
+binary buffer (<code>BIN\x00</code> / <code>0x004E4942</code>). Discard
+files with unexpected trailing data or unaligned byte padding.</li>
+</ul>
+<h3 id="uri-and-path-traversal-neutralization">URI and Path Traversal
+Neutralization</h3>
+<p>When processing standard <code>.gltf</code> files or GLBs with
+image/buffer references:</p>
+<ul>
+<li><strong>Ban Local File Schemes:</strong> Explicitly disallow
+protocols like <code>file://</code>, <code>blob:</code>,
+<code>javascript:</code>, or absolute operating system paths.</li>
+<li><strong>Disallow External URIs:</strong> Strip or reject references
+to remote domains (<code>http://</code>, <code>https://</code>) to
+prevent your servers or users' browsers from being used for Server-Side
+Request Forgery (SSRF) or unauthorized outbound tracking.</li>
+<li><strong>Neutralize Path Traversal:</strong> If external assets are
+supported, normalize all relative paths and explicitly block directory
+traversal sequences (such as <code>../</code> and <code>..\</code>). All
+referenced assets must resolve strictly within the designated temporary
+upload sandbox.</li>
+<li><strong>Data URI Sanitization:</strong> If <code>data:</code> URIs
+are permitted for textures, restrict them strictly to safe,
+non-executable MIME types (<code>image/png</code>,
+<code>image/jpeg</code>, <code>image/webp</code>).</li>
+</ul>
+<h3 id="extension-whitelisting-and-metadata-stripping">Extension
+Whitelisting and Metadata Stripping</h3>
+<p>glTF supports arbitrary extensions (<code>extensionsUsed</code>,
+<code>extensionsRequired</code>) and custom metadata dictionaries
+(<code>extras</code>).</p>
+<ul>
+<li><strong>Whitelist Extensions:</strong> glTF allows custom extensions
+that may trigger unhandled parser behaviors. Compare all declared
+extensions against an explicit whitelist of supported Khronos/vendor
+extensions (such as <code>KHR_materials_unlit</code> or
+<code>KHR_draco_mesh_compression</code>). Reject files declaring unknown
+entries under <code>extensionsRequired</code>.</li>
+<li><strong>Sanitize <code>extras</code> Objects:</strong> The
+<code>extras</code> property can contain arbitrary JSON, which could be
+reflected into the client DOM and lead to Cross-Site Scripting (XSS).
+Recursively scrub HTML tags, script constructs, and control characters
+from string values, or completely drop <code>extras</code> if
+application-specific metadata is not required.</li>
+</ul>
+<h3 id="resource-limits-and-decompression-bomb-mitigation">Resource
+Limits and Decompression Bomb Mitigation</h3>
+<p>Malicious models can easily freeze the user's browser, crash WebGL
+contexts, or exhaust server RAM.</p>
+<ul>
+<li><strong>Limit Geometry Complexity:</strong> Set hard ceilings on
+total triangle counts, vertex counts, and mesh primitive counts based on
+your target platform's performance thresholds.</li>
+<li><strong>Prevent Buffer Overlaps:</strong> Validate that buffer views
+(<code>bufferViews</code>) and accessors (<code>accessors</code>)
+reference non-overlapping, in-bounds memory ranges within the binary
+chunk to avoid out-of-bounds read vulnerabilities.</li>
+<li><strong>Inspect Texture Dimensions:</strong> Extract and inspect
+image headers without fully decompressing them into memory. Enforce
+limits on texture dimensions (e.g., maximum 4096×4096) and total texture
+count to prevent WebGL memory crashes.</li>
+<li><strong>Guard Against Draco Decompression Bombs:</strong> If Draco
+mesh compression is enabled, enforce an uncompressed size threshold
+before decoding to prevent zip-bomb-style CPU and memory
+exhaustion.</li>
+</ul>
+<h3 id="normalization-and-pipeline-re-encoding">Normalization and
+Pipeline Re-encoding</h3>
+<p>The most robust sanitization strategy is to re-encode the file using
+a headless, isolated processor (such as
+<code>@gltf-transform/core</code>).</p>
+<ul>
+<li>Run the file through an automated headless pipeline in an isolated,
+short-lived container.</li>
+<li>Unpack the model, validate components programmatically, discard
+unapproved nodes and attributes, and serialize the model into a freshly
+generated GLB file.</li>
+<li>Discard the original uploaded binary entirely, ensuring that
+malformed payloads or exploit attempts targeting WebGL parsers are
+neutralized during the transformation step.</li>
+</ul>
+<h3 id="safe-web-server-delivery">Safe Web Server Delivery</h3>
+<p>Once the model is cleaned and stored, configure your delivery
+infrastructure defensively:</p>
+<ul>
+<li><strong>Content-Type Headers:</strong> Serve <code>.glb</code> files
+with <code>model/gltf-binary</code> and <code>.gltf</code> files with
+<code>model/gltf+json</code>.</li>
+<li><strong>Security Headers:</strong> Enforce
+<code>X-Content-Type-Options: nosniff</code> to stop browsers from
+interpreting JSON or binary chunks as executable HTML or
+JavaScript.</li>
+<li><strong>Isolated Origins:</strong> Host user-generated models on a
+separate, dedicated media domain (e.g.,
+<code>user-assets.example.com</code>) without session cookies.</li>
+<li><strong>Content Security Policy (CSP):</strong> Ensure the rendering
+environment's CSP restricts connect-src and img-src to prevent
+client-side WebGL loaders from making unapproved outbound network
+requests.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

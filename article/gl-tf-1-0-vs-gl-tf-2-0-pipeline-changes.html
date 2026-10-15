@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF 1.0 vs glTF 2.0 Pipeline Changes - gltf</title>
+    <meta name="description" content="The transition from glTF 1.0 to glTF 2.0 marked a fundamental evolution in 3D asset delivery, shifting the format from a WebGL-dependent representation into a universally compatible, runtime-ready standard. This article breaks down the major rendering and">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-1-0-vs-gl-tf-2-0-pipeline-changes">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF 1.0 vs glTF 2.0 Pipeline Changes - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-1-0-vs-gl-tf-2-0-pipeline-changes" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The transition from glTF 1.0 to glTF 2.0 marked a fundamental evolution in 3D asset delivery, shifting the format from a WebGL-dependent representation into a universally compatible, runtime-ready standard. This article breaks down the major rendering and" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-10-vs-gltf-20-pipeline-changes">glTF 1.0 vs glTF 2.0
+Pipeline Changes</h1>
+<p>The transition from glTF 1.0 to glTF 2.0 marked a fundamental
+evolution in 3D asset delivery, shifting the format from a
+WebGL-dependent representation into a universally compatible,
+runtime-ready standard. This article breaks down the major rendering and
+data pipeline changes between the two versions, specifically focusing on
+the elimination of custom GLSL shaders, the adoption of physically based
+rendering (PBR), enhanced animation workflows, and standardized binary
+packing.</p>
+<h3 id="1-shift-from-custom-shaders-to-standardized-pbr">1. Shift from
+Custom Shaders to Standardized PBR</h3>
+<p>In glTF 1.0, materials were defined using WebGL-specific concepts
+like <code>techniques</code>, <code>programs</code>, and embedded or
+referenced GLSL shader source code. The default lighting model relied on
+traditional, unstandardized Blinn-Phong shading. This design created
+severe bottlenecks for rendering pipelines:</p>
+<ul>
+<li>Assets were tightly coupled to WebGL and OpenGL ES, requiring
+engines using DirectX, Metal, or Vulkan to translate or rewrite the
+incoming GLSL shaders.</li>
+<li>Visual output varied drastically across different runtimes because
+lighting equations and material implementations were left to the
+discretion of arbitrary shader code.</li>
+</ul>
+<p>glTF 2.0 removed raw GLSL shaders and runtime-specific techniques
+from the core specification entirely. Instead, it introduced a
+standardized Metallic-Roughness Physically Based Rendering (PBR) model.
+By defining clear material parameters (such as base color, metallic
+factor, roughness factor, and occlusion) rather than execution logic,
+glTF 2.0 allows target rendering engines to compile their own optimal
+native shaders while ensuring consistent, portable visual results across
+all modern graphics APIs.</p>
+<h3 id="2-elimination-of-webgl-centric-runtime-dependencies">2.
+Elimination of WebGL-Centric Runtime Dependencies</h3>
+<p>Because glTF 1.0 stored explicit WebGL state states (such as blend
+modes, depth testing parameters, and uniform bindings), importing an
+asset required reproducing that exact WebGL pipeline state.</p>
+<p>glTF 2.0 stripped away low-level graphics API state management. The
+runtime pipeline is no longer dictated by the asset; instead, the asset
+specifies raw scene data, geometry, and uniform material values, leaving
+resource allocation, pipeline state management, and command buffer
+generation to the host engine.</p>
+<h3 id="3-native-support-for-morph-targets-and-blend-shapes">3. Native
+Support for Morph Targets and Blend Shapes</h3>
+<p>glTF 1.0 supported skeletal animation (skinning) and node transform
+hierarchies, but it lacked a native solution for blend shapes.
+Developers needing facial animation or fine organic deformations had to
+rely on non-standard vendor extensions.</p>
+<p>glTF 2.0 integrated morph targets directly into the core
+specification:</p>
+<ul>
+<li><strong>Sparse Accessors:</strong> Introduced to store only the
+vertex displacements that deviate from the base mesh, drastically
+reducing file size and bandwidth requirements.</li>
+<li><strong>Weights Animation:</strong> Morph target weights can be
+directly targeted and sampled by animation channels alongside
+translation, rotation, and scale channels.</li>
+</ul>
+<h3 id="4-animation-interpolation-improvements">4. Animation
+Interpolation Improvements</h3>
+<p>Animation pipelines in glTF 1.0 supported linear and step
+interpolation. glTF 2.0 introduced cubic spline interpolation
+(<code>CUBICSPLINE</code>), allowing exporters to serialize tangent data
+directly alongside keyframe values. This enabled smooth, complex curves
+with significantly fewer keyframes, reducing CPU evaluation overhead and
+payload size.</p>
+<h3 id="5-official-core-standardization-of-binary-gltf-glb">5. Official
+Core Standardization of Binary glTF (.glb)</h3>
+<p>In glTF 1.0, the binary container format (<code>.glb</code>) was an
+experimental extension (<code>KHR_binary_glTF</code>). Assets typically
+required multiple files: a <code>.gltf</code> JSON manifest, an external
+<code>.bin</code> buffer, and separate texture files.</p>
+<p>glTF 2.0 made the <code>.glb</code> format an official part of the
+core specification. It standardized a chunk-based binary container
+(structured into JSON and BIN chunks) that packs the scene graph,
+buffers, and image assets into a single streamable file, simplifying
+asset ingestion and content delivery networks.</p>
+<h3 id="6-consistent-normal-mapping-and-tangent-spaces">6. Consistent
+Normal Mapping and Tangent Spaces</h3>
+<p>glTF 1.0 lacked strict guidelines for tangent space calculations,
+leading to common normal-mapping artifacts across different engines.
+glTF 2.0 established clear mathematical rules for normal mapping,
+explicitly adopting the MikkTSpace standard for calculating tangents
+when explicit vertex tangents are omitted from the geometry buffers.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

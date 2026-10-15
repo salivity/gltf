@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khronos 3D Commerce glTF Asset Validation Guide - gltf</title>
+    <meta name="description" content="The Khronos 3D Commerce Asset Checklist establishes standardized criteria to ensure 3D models display predictably, render consistently, and perform efficiently across various e-commerce platforms and augmented reality (AR) viewers. This article details ho">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/khronos-3-d-commerce-gl-tf-asset-validation-guide">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Khronos 3D Commerce glTF Asset Validation Guide - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/khronos-3-d-commerce-gl-tf-asset-validation-guide" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Khronos 3D Commerce Asset Checklist establishes standardized criteria to ensure 3D models display predictably, render consistently, and perform efficiently across various e-commerce platforms and augmented reality (AR) viewers. This article details ho" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="khronos-3d-commerce-gltf-asset-validation-guide">Khronos 3D
+Commerce glTF Asset Validation Guide</h1>
+<p>The Khronos 3D Commerce Asset Checklist establishes standardized
+criteria to ensure 3D models display predictably, render consistently,
+and perform efficiently across various e-commerce platforms and
+augmented reality (AR) viewers. This article details how the checklist
+validates real-world scale, pivot point placement, and PBR texture
+configurations within glTF (GL Transmission Format) assets to streamline
+3D commerce deployment.</p>
+<h3 id="scale-validation">Scale Validation</h3>
+<p>In the glTF specification, one unit is defined strictly as one
+physical meter. The 3D Commerce checklist verifies scale by evaluating
+the asset's bounding box and transform hierarchies:</p>
+<ul>
+<li><strong>Real-World Proportions:</strong> Automated tools calculate
+the minimum and maximum boundaries along the X, Y, and Z axes to
+generate the object’s physical bounding box. These dimensions are
+checked against real-world product specifications to ensure a 1:1
+match.</li>
+<li><strong>Transform Normalization:</strong> The checklist ensures that
+the root node and any child mesh nodes do not have non-uniform or
+unapplied scale values. Scale transformations should ideally be baked
+directly into the vertex data or defined uniformly as
+<code>[1, 1, 1]</code> at the node level. Negative scale values are
+flagged as errors because they invert face normals and disrupt lighting
+calculations.</li>
+</ul>
+<h3 id="pivot-point-and-origin-validation">Pivot Point and Origin
+Validation</h3>
+<p>The placement of the origin point (0, 0, 0) dictates how the 3D model
+spawns, aligns, and interacts within WebGL viewers and mobile AR
+environments:</p>
+<ul>
+<li><strong>Floor and Tabletop Assets:</strong> For free-standing
+products like furniture, shoes, or appliances, the checklist validates
+that the origin is situated at the bottom-center of the asset. The
+lowest vertices must align precisely with the ground plane (<span
+class="math inline">\(Y = 0\)</span>), with the horizontal centroid
+aligned to <span class="math inline">\(X = 0\)</span> and <span
+class="math inline">\(Z = 0\)</span>. This prevents models from hovering
+above surfaces or clipping through the floor in AR tracking.</li>
+<li><strong>Wall and Ceiling Assets:</strong> For wall-mounted objects
+(e.g., mirrors or artwork), the pivot must be aligned with the rear
+contact surface at <span class="math inline">\(Z = 0\)</span>. For
+ceiling-mounted fixtures (e.g., lamps), the origin must sit at the top
+contact point.</li>
+<li><strong>Transform Hygiene:</strong> The asset is validated to ensure
+that rotations and translations are applied cleanly, avoiding unintended
+coordinate offsets that would throw off camera-framing algorithms.</li>
+</ul>
+<h3 id="texture-validation">Texture Validation</h3>
+<p>Texture validation focuses on memory footprint, performance budgets,
+and fidelity within Physically Based Rendering (PBR) pipelines:</p>
+<ul>
+<li><strong>Dimension and Resolution:</strong> Textures are inspected to
+verify they are power-of-two (POT) dimensions (such as 1024x1024 or
+2048x2048), which ensures compatibility with GPU mipmapping. The
+checklist enforces resolution caps—typically a maximum of 2048x2048 or
+4096x4096 depending on platform performance tiers—to prevent excessive
+runtime VRAM usage.</li>
+<li><strong>Color Space Encoding:</strong> The checklist validates that
+textures conform to strict color space standards. Base color (albedo)
+and emissive maps must be encoded in the sRGB color space. Data-driven
+maps, including normal maps and the combined
+metallic-roughness-occlusion maps, must be strictly linear to prevent
+incorrect surface reflections and lighting errors.</li>
+<li><strong>Channel Packing (ORM):</strong> To reduce HTTP requests and
+GPU texture memory, glTF mandates the packing of PBR properties into a
+single texture:
+<ul>
+<li><strong>Red channel:</strong> Ambient Occlusion</li>
+<li><strong>Green channel:</strong> Roughness</li>
+<li><strong>Blue channel:</strong> Metallic Validation tools check that
+individual channels contain the expected data ranges and that roughness
+and metallic values are physically plausible.</li>
+</ul></li>
+<li><strong>Compression and File Types:</strong> Standard assets are
+checked for valid baseline image formats (PNG or JPEG). Advanced
+delivery targets are validated for KTX 2.0 containers using Basis
+Universal compression (UASTC or ETC1S) to optimize transmission size and
+runtime decoding speed.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

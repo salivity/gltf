@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulating Leaves in glTF with Diffuse Transmission - gltf</title>
+    <meta name="description" content="The KHRmaterialsdiffusetransmission extension in glTF enables realistic rendering of thin, translucent objects by simulating diffuse light passing through surfaces. In 3D vegetation rendering, it resolves the visual limitations of traditional opaque Physi">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/simulating-leaves-in-gl-tf-with-diffuse-transmission">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Simulating Leaves in glTF with Diffuse Transmission - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/simulating-leaves-in-gl-tf-with-diffuse-transmission" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The KHRmaterialsdiffusetransmission extension in glTF enables realistic rendering of thin, translucent objects by simulating diffuse light passing through surfaces. In 3D vegetation rendering, it resolves the visual limitations of traditional opaque Physi" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="simulating-leaves-in-gltf-with-diffuse-transmission">Simulating
+Leaves in glTF with Diffuse Transmission</h1>
+<p>The <code>KHR_materials_diffuse_transmission</code> extension in glTF
+enables realistic rendering of thin, translucent objects by simulating
+diffuse light passing through surfaces. In 3D vegetation rendering, it
+resolves the visual limitations of traditional opaque Physically Based
+Rendering (PBR), allowing sunlight to penetrate leaves and illuminate
+their undersides. This article explains the technical mechanics of the
+extension, its role in accurately depicting foliage, and how it improves
+visual fidelity in real-time graphics engines.</p>
+<h2 id="the-limitation-of-standard-pbr-for-foliage">The Limitation of
+Standard PBR for Foliage</h2>
+<p>Standard glTF materials rely on opaque surface reflection models
+defined by the core <code>pbrMetallicRoughness</code> specification.
+Under standard lighting, when light strikes an opaque surface, it either
+reflects specularly or scatters diffusely from the same side it
+arrived.</p>
+<p>For leaves, this approach produces unnatural results. Plant leaves
+are thin biological membranes containing chlorophyll and cell structures
+that scatter light internally. When viewed from beneath a backlit
+canopy, standard PBR leaves appear completely dark and in shadow because
+light does not pass through to the opposite face. Artists historically
+worked around this by artificially boosting ambient light, using unlit
+materials, or baking fake translucency into textures, all of which break
+dynamic lighting consistency.</p>
+<h2 id="the-role-of-diffuse-transmission">The Role of Diffuse
+Transmission</h2>
+<p>The <code>KHR_materials_diffuse_transmission</code> extension models
+the transmission of light through thin, translucent surfaces where the
+light is scattered randomly rather than refracted along a clean
+path.</p>
+<p>When applied to leaf geometry, the extension takes light reaching the
+illuminated side (such as direct sunlight on the top of a canopy) and
+transmits a portion of it to the back face as diffuse illumination. This
+produces the characteristic "glow" of backlit leaves, correctly
+conveying their natural translucency and thinness in dynamic lighting
+environments.</p>
+<p>Unlike <code>KHR_materials_transmission</code>—which models specular
+transmission for clear, refractive media like glass, clean water, or
+clear plastics—diffuse transmission scatters light thoroughly. This
+diffuse scattering is physically appropriate for organic materials like
+leaves, petals, paper, and thin fabric.</p>
+<h2 id="core-parameters-for-simulating-leaves">Core Parameters for
+Simulating Leaves</h2>
+<p>The extension introduces properties that allow technical artists to
+fine-tune foliage behavior:</p>
+<ul>
+<li><strong>diffuseTransmissionFactor:</strong> A scalar value (0.0 to
+1.0) defining the proportion of diffuse light transmitted through the
+material. A value of 0.0 behaves like standard opaque PBR, while higher
+values simulate thinner or more translucent leaves.</li>
+<li><strong>diffuseTransmissionTexture:</strong> A grayscale texture map
+used to vary transmission across the surface. This is critical for
+leaves, where thick central veins transmit significantly less light than
+the thinner, outer blade of the leaf.</li>
+<li><strong>diffuseTransmissionColorFactor:</strong> A color multiplier
+that tints the transmitted light. Light filtering through a leaf absorbs
+blue and red wavelengths while passing green and yellow tones, creating
+a vibrant subsurface color distinct from the surface reflectance.</li>
+<li><strong>diffuseTransmissionColorTexture:</strong> A color map
+defining spatial variations in transmission color, useful for modeling
+autumn leaves, disease spots, or variegated foliage.</li>
+</ul>
+<h2 id="performance-and-workflow-advantages">Performance and Workflow
+Advantages</h2>
+<p>Simulating full volumetric subsurface scattering (SSS) is
+computationally expensive and generally impractical for rendering
+thousands of foliage instances in real-time applications such as games
+or web-based 3D viewers.</p>
+<p><code>KHR_materials_diffuse_transmission</code> provides a
+thin-surface approximation that adds minimal shader overhead. Because it
+computes transmission directly within standard lighting loops, real-time
+renderers can evaluate leaf translucency efficiently without requiring
+multi-pass screen-space blur techniques or complex volume raymarching.
+Combined with double-sided rendering (<code>doubleSided: true</code>),
+it allows single-polygon leaf meshes to respond accurately to light from
+any angle.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

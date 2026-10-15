@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How KHR_texture_basisu Works in glTF - gltf</title>
+    <meta name="description" content="The KHRtexturebasisu extension enables glTF 2.0 assets to utilize Basis Universal compressed textures stored in KTX v2 (.ktx2) containers. By replacing standard PNG and JPEG formats, this extension dramatically reduces both download sizes over the network">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-khr-texture-basisu-works-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How KHR_texture_basisu Works in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-khr-texture-basisu-works-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The KHRtexturebasisu extension enables glTF 2.0 assets to utilize Basis Universal compressed textures stored in KTX v2 (.ktx2) containers. By replacing standard PNG and JPEG formats, this extension dramatically reduces both download sizes over the network" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-khr_texture_basisu-works-in-gltf">How KHR_texture_basisu
+Works in glTF</h1>
+<p>The <code>KHR_texture_basisu</code> extension enables glTF 2.0 assets
+to utilize Basis Universal compressed textures stored in KTX v2 (.ktx2)
+containers. By replacing standard PNG and JPEG formats, this extension
+dramatically reduces both download sizes over the network and VRAM
+consumption on target hardware. It achieves this by packaging textures
+into intermediate, universal formats that the client engine transcodes
+at runtime directly into the native compression formats supported by the
+host GPU.</p>
+<h3 id="the-problem-with-traditional-gltf-textures">The Problem with
+Traditional glTF Textures</h3>
+<p>Standard glTF 2.0 relies primarily on PNG and JPEG files. While these
+formats provide reasonable compression for file transfers over the web,
+GPUs cannot render them directly. The device must decompress a PNG or
+JPEG entirely into raw RGBA data in system memory before uploading it to
+the GPU. A standard 2048x2048 PNG image might only take a few megabytes
+on disk, but it expands to roughly 16 megabytes of uncompressed VRAM. In
+complex 3D scenes with multiple PBR material textures, this quickly
+leads to high memory overhead, frame drops, and mobile browser
+crashes.</p>
+<h3 id="the-basis-universal-solution">The Basis Universal Solution</h3>
+<p>Basis Universal, developed by Binomial, solves this problem by using
+an intermediate texture representation that can be quickly transcoded
+into native GPU compression formats—such as BC1–BC7 on desktop, ASTC on
+modern mobile devices, and ETC2 on Android—without decompressing to raw
+RGBA.</p>
+<p>Basis Universal supports two modes:</p>
+<ul>
+<li><strong>ETC1S:</strong> Offers extremely high compression ratios,
+making it ideal for base color maps, diffuse textures, and
+bandwidth-constrained web applications.</li>
+<li><strong>UASTC:</strong> Focuses on high visual fidelity, making it
+suitable for normal maps, metallic-roughness maps, and high-frequency
+details where compression artifacts must be minimized.</li>
+</ul>
+<h3 id="gltf-integration-mechanism">glTF Integration Mechanism</h3>
+<p>The <code>KHR_texture_basisu</code> extension integrates this
+technology into the glTF document structure by extending the standard
+<code>textures</code> array.</p>
+<ol type="1">
+<li><strong>The Extension Declaration:</strong> The glTF root declares
+the extension in the <code>extensionsUsed</code> array. If the model
+strictly relies on these textures to render, it is also added to
+<code>extensionsRequired</code>.</li>
+<li><strong>KTX2 Image Reference:</strong> The <code>.ktx2</code> file
+containing the Basis Universal data is listed in the top-level
+<code>images</code> array, referenced either by a URI or as a
+<code>bufferView</code>.</li>
+<li><strong>Texture Object Mapping:</strong> In the standard glTF
+<code>textures</code> object, the <code>extensions</code> dictionary
+specifies <code>KHR_texture_basisu</code>, which points directly to the
+index of the KTX2 image via a local <code>source</code> property.</li>
+</ol>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;extensionsUsed&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;KHR_texture_basisu&quot;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;images&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;uri&quot;</span><span class="fu">:</span> <span class="st">&quot;texture_compressed.ktx2&quot;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;uri&quot;</span><span class="fu">:</span> <span class="st">&quot;fallback.png&quot;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;textures&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;source&quot;</span><span class="fu">:</span> <span class="dv">1</span><span class="fu">,</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;extensions&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;KHR_texture_basisu&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;source&quot;</span><span class="fu">:</span> <span class="dv">0</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>        <span class="fu">}</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>      <span class="fu">}</span></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="runtime-transcoding-and-fallbacks">Runtime Transcoding and
+Fallbacks</h3>
+<p>When a 3D engine loads a glTF file using
+<code>KHR_texture_basisu</code>, the runtime engine reads the KTX2
+container and queries the local graphics API (WebGL, WebGPU, Vulkan,
+Metal, or DirectX) for available texture formats. A small WebAssembly
+(Wasm) or native transcoder converts the ETC1S or UASTC data directly
+into the best available hardware-supported format.</p>
+<p>If the extension is declared in <code>extensionsUsed</code> rather
+than <code>extensionsRequired</code>, engines that do not support the
+extension can ignore the <code>KHR_texture_basisu</code> block and fall
+back to the standard <code>source</code> property pointing to a regular
+PNG or JPEG image. This ensures backward compatibility while providing
+optimized performance for modern runtimes.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

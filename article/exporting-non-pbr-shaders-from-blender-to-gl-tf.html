@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exporting Non-PBR Shaders from Blender to glTF - gltf</title>
+    <meta name="description" content="Exporting non-PBR shader node trees from Blender to the glTF format results in stripped node data, missing material attributes, or flat fallback colors because glTF strictly adheres to a standardized Physically Based Rendering (PBR) specification. Because">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/exporting-non-pbr-shaders-from-blender-to-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Exporting Non-PBR Shaders from Blender to glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/exporting-non-pbr-shaders-from-blender-to-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Exporting non-PBR shader node trees from Blender to the glTF format results in stripped node data, missing material attributes, or flat fallback colors because glTF strictly adheres to a standardized Physically Based Rendering (PBR) specification. Because" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="exporting-non-pbr-shaders-from-blender-to-gltf">Exporting
+Non-PBR Shaders from Blender to glTF</h1>
+<p>Exporting non-PBR shader node trees from Blender to the glTF format
+results in stripped node data, missing material attributes, or flat
+fallback colors because glTF strictly adheres to a standardized
+Physically Based Rendering (PBR) specification. Because the Blender glTF
+exporter only recognizes specific, predetermined node
+combinations—primarily built around the Principled BSDF node—any
+unsupported nodes, procedural textures, or custom math operations are
+silently ignored during export. To preserve the intended look of a
+non-PBR or procedural material in glTF, developers must bake their node
+trees into standard 2D image maps or manually rebuild the material to
+conform to glTF-supported PBR parameters.</p>
+<h3 id="why-gltf-rejects-non-pbr-nodes">Why glTF Rejects Non-PBR
+Nodes</h3>
+<p>The glTF (GL Transmission Format) standard is designed for fast,
+efficient runtime delivery in real-time engines and WebGL renderers. It
+defines a rigid material model based on metallic-roughness PBR
+workflows.</p>
+<p>Blender’s shader system allows arbitrary node routing, procedural
+math, and render-engine-specific shaders (such as Cycles or EEVEE nodes
+like Diffuse BSDF, Glossy BSDF, or Shader to RGB). The Blender glTF
+exporter does not compile arbitrary node graphs into runtime shaders.
+Instead, it parses the node tree, looks for specific patterns connected
+to a Material Output node, and serializes only the recognized inputs
+into standard glTF 2.0 material properties.</p>
+<h3 id="what-happens-to-common-non-pbr-elements">What Happens to Common
+Non-PBR Elements</h3>
+<ul>
+<li><strong>Procedural Textures and Math Nodes:</strong> Nodes such as
+Noise Texture, Voronoi Texture, Musgrave, ColorRamp, Math, and Vector
+Math are ignored. glTF cannot calculate procedural math at runtime. If a
+procedural texture feeds into an input like Base Color, that input will
+export either as a blank default color or fail to transfer
+entirely.</li>
+<li><strong>Legacy and Standalone Shaders:</strong> Connecting
+standalone shaders like Diffuse BSDF, Glass BSDF, or Toon Shaders
+directly to the Material Output results in an unsupported shader tree.
+The exporter typically defaults the material to a flat, featureless
+white or grey surface.</li>
+<li><strong>Shader to RGB Nodes:</strong> In EEVEE, the Shader to RGB
+node is frequently used to create non-photorealistic (NPR) or cel-shaded
+styles. Because this requires real-time scene lighting evaluations
+unique to Blender’s rendering pipeline, glTF cannot interpret it. The
+node and any post-processing connected to it are completely
+dropped.</li>
+<li><strong>Complex Mixing and Inversion Nodes:</strong> While standard
+image textures connected via straightforward UV maps will export,
+complex blending networks (like multiple Mix nodes combining different
+texture coordinates or blend modes) are dropped unless they fit exact
+exporter-recognized configurations (such as an Ambient Occlusion node
+combining with a glTF Settings node).</li>
+</ul>
+<h3 id="the-resulting-gltf-output">The Resulting glTF Output</h3>
+<p>When an asset with an unsupported node tree is exported, the
+resulting <code>.gltf</code> or <code>.glb</code> file will still
+contain geometry, UV maps, and the material slot. However, the material
+itself will be reduced to a bare-bones glTF material definition. Viewers
+and game engines loading the asset will display a plain, untextured mesh
+relying only on fallback values—typically a flat base color with default
+1.0 roughness and 0.0 metallic values.</p>
+<h3 id="solutions-for-exporting-non-pbr-materials">Solutions for
+Exporting Non-PBR Materials</h3>
+<p>To transfer the appearance of non-PBR node trees into glTF
+accurately, use one of the following workflows:</p>
+<ol type="1">
+<li><strong>Texture Baking:</strong> Bake the final procedural or
+non-PBR color, roughness, and normal information into standard 2D image
+textures (PNG or JPEG) within Blender.</li>
+<li><strong>Restructure with Principled BSDF:</strong> Replace custom
+shader networks with a single Principled BSDF node, plugging the baked
+texture maps into the designated Base Color, Roughness, Metallic,
+Normal, and Emission inputs.</li>
+<li><strong>Use glTF Material Extensions:</strong> If advanced effects
+like clearcoat, sheen, transmission, or unlit shading are needed,
+configure the shader using the specific node setups supported by
+official glTF extensions (such as using the Background or Emission node
+for an Unlit material).</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Directional Light Shadow Map Alignment - gltf</title>
+    <meta name="description" content="This article provides an overview of how shadow mapping projections align with directional light vectors in the glTF 2.0 format. Aligning shadow maps with glTF directional lights requires transforming the format&#39;s local light vector convention into a worl">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-directional-light-shadow-map-alignment">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Directional Light Shadow Map Alignment - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-directional-light-shadow-map-alignment" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of how shadow mapping projections align with directional light vectors in the glTF 2.0 format. Aligning shadow maps with glTF directional lights requires transforming the format&#39;s local light vector convention into a worl" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-directional-light-shadow-map-alignment">glTF Directional
+Light Shadow Map Alignment</h1>
+<p>This article provides an overview of how shadow mapping projections
+align with directional light vectors in the glTF 2.0 format. Aligning
+shadow maps with glTF directional lights requires transforming the
+format's local light vector convention into a world-space orientation,
+constructing an orthographic view-projection matrix along that vector,
+and mapping the resulting light-space coordinates to the target graphics
+API's normalized device coordinate system for depth sampling.</p>
+<h3 id="gltf-directional-light-vector-conventions">glTF Directional
+Light Vector Conventions</h3>
+<p>In the glTF specification (via the <code>KHR_lights_punctual</code>
+extension), a directional light emits light from its local origin down
+the negative Z-axis <code>[0, 0, -1]</code>. To determine the global
+direction of the light in a 3D scene, this local forward vector must be
+transformed by the world transformation matrix of the node containing
+the light:</p>
+<ol type="1">
+<li>Extract the rotation and translation components from the node’s
+global transform matrix.</li>
+<li>Multiply the vector <code>[0, 0, -1, 0]</code> by the node's global
+transform matrix (or rotate it using the node's global quaternion).</li>
+<li>Normalize the resulting vector to obtain the world-space light
+direction vector, <span
+class="math inline">\(\vec{L}_{\text{dir}}\)</span>.</li>
+</ol>
+<p>Because directional lights represent distant sources like the sun,
+their rays are parallel, and their position in space does not alter the
+light direction, only its orientation.</p>
+<h3 id="constructing-the-light-view-matrix">Constructing the Light View
+Matrix</h3>
+<p>Shadow mapping requires rendering the scene from the perspective of
+the light source. For directional lights, this involves constructing a
+"look-at" view matrix:</p>
+<ul>
+<li><strong>Forward Vector:</strong> The camera representing the light
+must point in the direction the light is shining (<span
+class="math inline">\(\vec{L}_{\text{dir}}\)</span>).</li>
+<li><strong>Position:</strong> The position is placed at a virtual
+origin offset in the opposite direction (<span
+class="math inline">\(-\vec{L}_{\text{dir}}\)</span>) by a distance
+sufficient to encompass the scene.</li>
+<li><strong>Up Vector:</strong> An arbitrary world vector (typically
+<code>[0, 1, 0]</code>) is chosen to stabilize orientation. If <span
+class="math inline">\(\vec{L}_{\text{dir}}\)</span> is parallel or
+nearly parallel to the selected up vector, an alternate axis such as
+<code>[0, 0, 1]</code> must be used to prevent cross-product
+singularities.</li>
+</ul>
+<p>The resulting view matrix transforms scene vertices from world space
+into light view space, orienting the negative Z-axis directly along the
+light path.</p>
+<h3 id="generating-the-orthographic-projection">Generating the
+Orthographic Projection</h3>
+<p>Because directional light rays do not diverge, the projection matrix
+must be orthographic rather than perspective. The dimensions of the
+orthographic bounding box (defined by <code>left</code>,
+<code>right</code>, <code>bottom</code>, <code>top</code>,
+<code>near</code>, and <code>far</code> planes) define the shadow
+volume:</p>
+<ul>
+<li><strong>Bounding the Scene:</strong> The orthographic box must
+encapsulate either the entire scene geometry or the visible frustum of
+the main camera (such as in Cascaded Shadow Maps).</li>
+<li><strong>Depth Extents:</strong> The <code>near</code> and
+<code>far</code> planes must be tightly fitted along the light's
+direction vector. Setting the near plane too close or the far plane too
+far reduces depth buffer precision, leading to shadow acne or bias
+artifacts.</li>
+</ul>
+<p>The orthographic projection transforms coordinates from light view
+space into Normalized Device Coordinates (NDC).</p>
+<h3 id="mapping-light-space-to-texture-coordinates">Mapping Light Space
+to Texture Coordinates</h3>
+<p>Once the combined light view-projection matrix transforms a vertex to
+clip space, perspective division produces coordinates in NDC. Because
+texture mapping relies on coordinates in the range <span
+class="math inline">\([0, 1]\)</span> rather than NDC ranges (such as
+<span class="math inline">\([-1, 1]\)</span> in OpenGL or <span
+class="math inline">\([0, 1]\)</span> for depth in Vulkan/DirectX), a
+bias transformation is applied:</p>
+<p><span class="math display">\[\mathbf{M}_{\text{shadow}} =
+\mathbf{T}_{\text{bias}} \times \mathbf{P}_{\text{ortho}} \times
+\mathbf{V}_{\text{light}}\]</span></p>
+<p>Where <span class="math inline">\(\mathbf{T}_{\text{bias}}\)</span>
+maps:</p>
+<ul>
+<li>X and Y coordinates from <span class="math inline">\([-1,
+1]\)</span> to <span class="math inline">\([0, 1]\)</span>.</li>
+<li>Z coordinates to match the target API's depth range (e.g., <span
+class="math inline">\([-1, 1]\)</span> to <span
+class="math inline">\([0, 1]\)</span> in OpenGL, or keeping <span
+class="math inline">\([0, 1]\)</span> in Vulkan/DirectX/Metal).</li>
+</ul>
+<p>When a fragment is shaded in the primary camera pass, its world
+position is multiplied by <span
+class="math inline">\(\mathbf{M}_{\text{shadow}}\)</span>. The resulting
+XY coordinates index directly into the shadow depth texture, and the Z
+coordinate is compared against the stored depth value to determine
+occlusion.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

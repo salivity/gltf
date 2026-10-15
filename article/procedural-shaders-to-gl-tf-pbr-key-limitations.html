@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procedural Shaders to glTF PBR: Key Limitations - gltf</title>
+    <meta name="description" content="Converting dynamic procedural shader networks into static Physically Based Rendering (PBR) maps for the glTF format is a critical optimization step for real-time web and game engines, yet it imposes fundamental technical compromises. While procedural shad">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/procedural-shaders-to-gl-tf-pbr-key-limitations">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Procedural Shaders to glTF PBR: Key Limitations - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/procedural-shaders-to-gl-tf-pbr-key-limitations" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Converting dynamic procedural shader networks into static Physically Based Rendering (PBR) maps for the glTF format is a critical optimization step for real-time web and game engines, yet it imposes fundamental technical compromises. While procedural shad" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="procedural-shaders-to-gltf-pbr-key-limitations">Procedural
+Shaders to glTF PBR: Key Limitations</h1>
+<p>Converting dynamic procedural shader networks into static Physically
+Based Rendering (PBR) maps for the glTF format is a critical
+optimization step for real-time web and game engines, yet it imposes
+fundamental technical compromises. While procedural shaders rely on
+mathematical algorithms evaluated at runtime to generate infinite,
+responsive surface details, glTF relies on pre-rendered, static raster
+textures packed into standardized channels. This transition inevitably
+forces trade-offs involving resolution constraints, loss of dynamic
+variability, strict UV mapping dependencies, and structural mismatches
+between arbitrary mathematical nodes and the standard glTF PBR material
+model.</p>
+<h3 id="1-loss-of-infinite-resolution-and-scalability">1. Loss of
+Infinite Resolution and Scalability</h3>
+<p>Procedural textures calculate detail per pixel via mathematical
+functions, allowing a camera to zoom in infinitely without a loss in
+visual fidelity. Converting these networks to static glTF textures
+requires rasterization at a fixed resolution (such as 2K or 4K). Once
+baked, the surface is constrained by texel density. Close-up views will
+expose pixelation, blurriness, or texture filtering artifacts that do
+not exist in procedural systems.</p>
+<h3 id="2-mandatory-uv-unwrapping-and-seam-artifacts">2. Mandatory UV
+Unwrapping and Seam Artifacts</h3>
+<p>Many procedural shaders bypass standard UV mapping by using
+three-dimensional coordinates, such as Object Space, World Space, or
+triplanar mapping algorithms. These projections seamlessly cover complex
+organic or hard-surface geometries without visible seams. glTF, however,
+strictly requires explicitly unwrapped 2D UV coordinates to map texture
+images onto 3D geometry. Converting procedural shaders requires
+unwrapping the mesh, which frequently introduces texture seams,
+distortion, and non-uniform texel density across different parts of the
+model.</p>
+<h3 id="3-destruction-of-dynamic-and-interactive-logic">3. Destruction
+of Dynamic and Interactive Logic</h3>
+<p>Procedural networks often rely on dynamic inputs such as runtime
+object coordinates, animated parameters (like time-based water or fire),
+camera angles, proximity to other scene assets, or vertex weight masks.
+When baked into static image files (such as PNG or WebP for glTF), all
+animated and logic-driven inputs are frozen at a single point in time.
+The shader loses its ability to react dynamically to player interaction,
+physics, or changing scene states.</p>
+<h3 id="4-architectural-and-channel-mismatches">4. Architectural and
+Channel Mismatches</h3>
+<p>The core glTF 2.0 specification operates primarily on a
+metallic-roughness PBR workflow. Complex procedural shaders frequently
+employ custom ray-marching nodes, complex Subsurface Scattering (SSS),
+arbitrary mathematical blending, refractive caustics, or custom Fresnel
+calculations. Standard glTF cannot natively represent these behaviors.
+While official glTF extensions exist for features like clearcoat,
+transmission, sheen, and volume, arbitrary math operations and
+unsupported optical phenomena must be either approximated, flattened, or
+discarded completely during conversion.</p>
+<h3 id="5-increased-file-size-and-memory-consumption">5. Increased File
+Size and Memory Consumption</h3>
+<p>A procedural shader typically adds only a few kilobytes of code or
+node data to an asset file. In contrast, baking out full PBR material
+sets requires exporting multiple texture maps: Base Color, Roughness,
+Metallic, Normal, and Ambient Occlusion. These image files drastically
+increase the overall glTF file size, impact network delivery times on
+the web, and demand significantly higher Video RAM (VRAM) to store and
+render in real-time.</p>
+<h3 id="6-dynamic-lighting-conflicts">6. Dynamic Lighting Conflicts</h3>
+<p>Procedural networks often incorporate ambient occlusion,
+curvature-based dirt, or procedural highlights that mimic local lighting
+conditions. If these lighting-dependent attributes are baked directly
+into the base color or static maps, they create visual inaccuracies
+under dynamic real-time lighting. Shadows and highlights become
+permanently imprinted on the model surface, conflicting with the actual
+light sources in the rendering environment.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

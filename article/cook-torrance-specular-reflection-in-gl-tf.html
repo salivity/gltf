@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cook-Torrance Specular Reflection in glTF - gltf</title>
+    <meta name="description" content="This article provides an overview of how the glTF 2.0 specification implements the Cook-Torrance microfacet BRDF (Bidirectional Reflectance Distribution Function) to calculate specular reflection. It breaks down the mathematical formulation defined by the">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/cook-torrance-specular-reflection-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Cook-Torrance Specular Reflection in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/cook-torrance-specular-reflection-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of how the glTF 2.0 specification implements the Cook-Torrance microfacet BRDF (Bidirectional Reflectance Distribution Function) to calculate specular reflection. It breaks down the mathematical formulation defined by the" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="cook-torrance-specular-reflection-in-gltf">Cook-Torrance
+Specular Reflection in glTF</h1>
+<p>This article provides an overview of how the glTF 2.0 specification
+implements the Cook-Torrance microfacet BRDF (Bidirectional Reflectance
+Distribution Function) to calculate specular reflection. It breaks down
+the mathematical formulation defined by the standard, detailing the
+specific Normal Distribution Function (NDF), Geometric shadowing/masking
+function, and Fresnel approximation used, as well as how glTF’s standard
+material inputs feed into these calculations.</p>
+<h3 id="the-cook-torrance-specular-formulation">The Cook-Torrance
+Specular Formulation</h3>
+<p>In glTF 2.0, physically based rendering (PBR) relies on the
+microfacet Cook-Torrance model to simulate the specular highlight
+produced by microscopic surface irregularities. The general
+Cook-Torrance specular BRDF is defined as:</p>
+<p><span class="math display">\[f_{\text{specular}} = \frac{D \cdot F
+\cdot G}{4 (\mathbf{N} \cdot \mathbf{L})(\mathbf{N} \cdot
+\mathbf{V})}\]</span></p>
+<p>Where:</p>
+<ul>
+<li><strong><span class="math inline">\(\mathbf{N}\)</span></strong> is
+the surface normal vector.</li>
+<li><strong><span class="math inline">\(\mathbf{L}\)</span></strong> is
+the unit vector pointing toward the light source.</li>
+<li><strong><span class="math inline">\(\mathbf{V}\)</span></strong> is
+the unit vector pointing toward the camera/viewer.</li>
+<li><strong><span class="math inline">\(D\)</span></strong> is the
+Normal Distribution Function.</li>
+<li><strong><span class="math inline">\(F\)</span></strong> is the
+Fresnel reflection term.</li>
+<li><strong><span class="math inline">\(G\)</span></strong> is the
+Geometric attenuation or shadowing-masking function.</li>
+</ul>
+<p>To optimize computation, real-time renderers and the glTF
+specification often combine the geometric term and the denominator into
+a single visibility function, <span
+class="math inline">\(V\)</span>:</p>
+<p><span class="math display">\[V = \frac{G}{4 (\mathbf{N} \cdot
+\mathbf{L})(\mathbf{N} \cdot \mathbf{V})}\]</span></p>
+<p>Which simplifies the equation to:</p>
+<p><span class="math display">\[f_{\text{specular}} = D \cdot F \cdot
+V\]</span></p>
+<h3 id="1-normal-distribution-function-d-trowbridge-reitz-ggx">1. Normal
+Distribution Function (<span class="math inline">\(D\)</span>):
+Trowbridge-Reitz (GGX)</h3>
+<p>The Normal Distribution Function determines the concentration and
+alignment of microfacets relative to the half-vector <span
+class="math inline">\(\mathbf{H}\)</span> (where <span
+class="math inline">\(\mathbf{H} = \frac{\mathbf{L} +
+\mathbf{V}}{\|\mathbf{L} + \mathbf{V}\|}\)</span>).</p>
+<p>glTF adopts the <strong>Trowbridge-Reitz (GGX)</strong>
+distribution:</p>
+<p><span class="math display">\[D(\mathbf{N}, \mathbf{H}, \alpha) =
+\frac{\alpha^2}{\pi \left( (\mathbf{N} \cdot \mathbf{H})^2 (\alpha^2 -
+1) + 1 \right)^2}\]</span></p>
+<p>In this formula, <span class="math inline">\(\alpha\)</span>
+represents surface roughness mapped linearly from glTF's perceptual
+roughness parameter (<span class="math inline">\(\alpha =
+\text{roughness}^2\)</span>). This formulation produces a highlight with
+a sharp peak and realistic, long falloff tails.</p>
+<h3 id="2-visibility-and-shadowing-masking-function-v--g">2. Visibility
+and Shadowing-Masking Function (<span class="math inline">\(V\)</span> /
+<span class="math inline">\(G\)</span>)</h3>
+<p>The Geometric term accounts for microfacets occluding one another,
+either blocking light from arriving (shadowing) or blocking light from
+reaching the viewer (masking).</p>
+<p>glTF specifies the <strong>Smith joint masking-shadowing
+function</strong> correlated for the GGX distribution. When expressed as
+the visibility term <span class="math inline">\(V\)</span>, it takes the
+following form:</p>
+<p><span class="math display">\[V = \frac{0.5}{(\mathbf{N} \cdot
+\mathbf{L}) \sqrt{(\mathbf{N} \cdot \mathbf{V})^2 (1 - \alpha^2) +
+\alpha^2} + (\mathbf{N} \cdot \mathbf{V}) \sqrt{(\mathbf{N} \cdot
+\mathbf{L})^2 (1 - \alpha^2) + \alpha^2}}\]</span></p>
+<p>This joint formulation models height-correlated microfacets, ensuring
+energy conservation and preventing unnatural brightening at grazing
+angles.</p>
+<h3 id="3-fresnel-reflectance-f-schlicks-approximation">3. Fresnel
+Reflectance (<span class="math inline">\(F\)</span>): Schlick's
+Approximation</h3>
+<p>The Fresnel term describes the fraction of reflected light versus
+refracted light depending on the angle of incidence. glTF uses
+<strong>Fresnel-Schlick approximation</strong>:</p>
+<p><span class="math display">\[F(\mathbf{V}, \mathbf{H}, F_0) = F_0 +
+(1 - F_0)(1 - (\mathbf{V} \cdot \mathbf{H}))^5\]</span></p>
+<p>Where <span class="math inline">\(F_0\)</span> represents the
+specular reflectance at normal incidence (facing directly toward the
+surface).</p>
+<h3 id="parameter-mapping-from-gltf-inputs">Parameter Mapping from glTF
+Inputs</h3>
+<p>glTF’s core metallic-roughness workflow dictates the values used by
+these functions:</p>
+<ul>
+<li><strong>Roughness:</strong> The <code>roughnessFactor</code> and the
+green channel of the <code>metallicRoughnessTexture</code> define
+perceptual roughness, which is squared to yield <span
+class="math inline">\(\alpha\)</span> for the <span
+class="math inline">\(D\)</span> and <span
+class="math inline">\(V\)</span> terms.</li>
+<li><strong><span class="math inline">\(F_0\)</span> (Reflectance at
+Normal Incidence):</strong> Computed by interpolating between a fixed
+dielectric reflectance and the base color:
+<ul>
+<li>For pure dielectrics (metalness = 0), <span
+class="math inline">\(F_0\)</span> defaults to a standard reflectance of
+4% (<code>vec3(0.04)</code>).</li>
+<li>For pure metals (metalness = 1), <span
+class="math inline">\(F_0\)</span> is taken directly from the material's
+<code>baseColorFactor</code> and texture.</li>
+<li>Intermediate metallic values linearly interpolate between
+<code>0.04</code> and the base color.</li>
+</ul></li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

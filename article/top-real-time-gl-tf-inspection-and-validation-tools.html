@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Real-Time glTF Inspection and Validation Tools - gltf</title>
+    <meta name="description" content="Efficient 3D asset delivery requires rigorous quality control, and the glTF (GL Transmission Format) ecosystem offers dedicated tools for real-time inspection and validation. This article outlines the primary tools available to 3D artists, technical direc">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/top-real-time-gl-tf-inspection-and-validation-tools">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Top Real-Time glTF Inspection and Validation Tools - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/top-real-time-gl-tf-inspection-and-validation-tools" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Efficient 3D asset delivery requires rigorous quality control, and the glTF (GL Transmission Format) ecosystem offers dedicated tools for real-time inspection and validation. This article outlines the primary tools available to 3D artists, technical direc" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="top-real-time-gltf-inspection-and-validation-tools">Top
+Real-Time glTF Inspection and Validation Tools</h1>
+<p>Efficient 3D asset delivery requires rigorous quality control, and
+the glTF (GL Transmission Format) ecosystem offers dedicated tools for
+real-time inspection and validation. This article outlines the primary
+tools available to 3D artists, technical directors, and web developers
+to diagnose mesh errors, evaluate PBR material configurations, check
+extension compliance, and optimize assets directly within standard glTF
+pipelines.</p>
+<h2 id="khronos-gltf-validator">Khronos glTF Validator</h2>
+<p>The Khronos glTF Validator is the official standard for validating
+glTF 2.0 assets. Developed by the Khronos Group, it checks the
+underlying JSON structure, binary buffers, image data, and official
+extension implementations against the formal specification.</p>
+<ul>
+<li><strong>How it works:</strong> Available as both a command-line tool
+(CLI) and an in-browser drag-and-drop web utility, it analyzes the raw
+asset and returns an itemized report categorizing issues as errors,
+warnings, or informational notices.</li>
+<li><strong>Key capabilities:</strong> It identifies missing texture
+references, out-of-bounds vertex attributes, invalid accessor indices,
+and non-conformant extension declarations before an asset ever reaches
+production.</li>
+</ul>
+<h2 id="babylonjs-sandbox">Babylon.js Sandbox</h2>
+<p>The Babylon.js Sandbox is a comprehensive, web-based environment
+designed for real-time asset rendering and debugging. It runs on both
+WebGL and WebGPU rendering engines, providing immediate visual
+feedback.</p>
+<ul>
+<li><strong>Asset Inspection:</strong> The built-in inspector provides a
+live scene tree where users can inspect individual nodes, meshes,
+skeletons, animations, and cameras.</li>
+<li><strong>Material &amp; Lighting Debugging:</strong> Users can alter
+lighting environments, isolate specific PBR channels (roughness,
+metallic, normal, ambient occlusion), and edit material properties in
+real time.</li>
+<li><strong>Integrated Validation:</strong> The sandbox automatically
+runs the Khronos Validator on loaded assets, surfacing structural issues
+directly in the interface without requiring third-party tools.</li>
+</ul>
+<h2 id="don-mccurdys-gltf-viewer">Don McCurdy’s glTF Viewer</h2>
+<p>Built on Three.js, Don McCurdy's glTF Viewer is a widely adopted
+standard for diagnosing how assets will render across Three.js-powered
+applications.</p>
+<ul>
+<li><strong>Performance Metrics:</strong> The viewer provides immediate
+telemetry on draw calls, triangle counts, vertex counts, and texture
+memory usage.</li>
+<li><strong>Diagnostic Modes:</strong> Users can inspect animations,
+cycle through morph targets, view wireframes, and test standard
+image-based lighting (IBL) presets.</li>
+<li><strong>Validation Output:</strong> Like the Babylon.js Sandbox, it
+integrates the Khronos glTF Validator to display validation reports
+directly in the user interface.</li>
+</ul>
+<h2 id="khronos-gltf-sample-viewer">Khronos glTF Sample Viewer</h2>
+<p>The glTF Sample Viewer acts as the official reference viewer
+maintained by the Khronos Group. Its primary objective is visual
+accuracy rather than performance optimization.</p>
+<ul>
+<li><strong>Reference Implementation:</strong> It serves as the baseline
+for determining how new and advanced Khronos extensions—such as
+<code>KHR_materials_transmission</code>,
+<code>KHR_materials_clearcoat</code>, and
+<code>KHR_materials_volume</code>—should visually behave.</li>
+<li><strong>Validation:</strong> It ensures that an asset's appearance
+matches the exact mathematical definitions specified in the glTF PBR
+specification.</li>
+</ul>
+<h2 id="vs-code-gltf-tools">VS Code glTF Tools</h2>
+<p>For developers working directly with <code>.gltf</code> (JSON) files,
+the glTF Tools extension for Visual Studio Code provides native
+inspection capabilities inside the code editor.</p>
+<ul>
+<li><strong>Direct Editing &amp; Linting:</strong> It validates JSON
+schemas in real time, auto-completes extension names, and highlights
+syntax or schema errors directly in the code editor.</li>
+<li><strong>Embedded Preview:</strong> The extension integrates
+real-time visual previews using Babylon.js, Three.js, or Filament,
+allowing side-by-side editing and rendering.</li>
+<li><strong>Buffer Analysis:</strong> Users can inspect internal binary
+chunk offsets and decode glTF accessors directly from the editor.</li>
+</ul>
+<h2 id="gltf-transform">glTF-Transform</h2>
+<p>While primarily an optimization and processing library,
+<code>glTF-Transform</code> provides a robust <code>inspect</code>
+command via its command-line interface.</p>
+<ul>
+<li><strong>Telemetry Analysis:</strong> Running
+<code>gltf-transform inspect model.glb</code> generates comprehensive
+tables breaking down mesh complexity, material assignments, texture
+compression formats (such as KTX2/Basis Universal), and Draco
+compression status.</li>
+<li><strong>Pipeline Validation:</strong> It detects redundant data,
+unindexed geometry, and uncompressed textures, making it ideal for
+automated CI/CD validation pipelines.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

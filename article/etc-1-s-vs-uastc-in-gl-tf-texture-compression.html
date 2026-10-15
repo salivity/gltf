@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETC1S vs UASTC in glTF Texture Compression - gltf</title>
+    <meta name="description" content="When optimizing 3D assets using the glTF format, developers face a critical choice between ETC1S and UASTC texture compression modes via the KHRtexturebasisu extension. Both formats originate from the Basis Universal technology to deliver GPU-ready textur">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/etc-1-s-vs-uastc-in-gl-tf-texture-compression">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="ETC1S vs UASTC in glTF Texture Compression - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/etc-1-s-vs-uastc-in-gl-tf-texture-compression" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When optimizing 3D assets using the glTF format, developers face a critical choice between ETC1S and UASTC texture compression modes via the KHRtexturebasisu extension. Both formats originate from the Basis Universal technology to deliver GPU-ready textur" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="etc1s-vs-uastc-in-gltf-texture-compression">ETC1S vs UASTC in
+glTF Texture Compression</h1>
+<p>When optimizing 3D assets using the glTF format, developers face a
+critical choice between ETC1S and UASTC texture compression modes via
+the <code>KHR_texture_basisu</code> extension. Both formats originate
+from the Basis Universal technology to deliver GPU-ready textures across
+diverse platforms without requiring manual conversion for every target
+hardware. The primary distinction separating ETC1S and UASTC is the
+trade-off between file size and visual fidelity: ETC1S focuses on
+aggressive compression to minimize network payloads, whereas UASTC
+targets high visual quality and rapid transcoding at the expense of
+larger transmission sizes.</p>
+<h3 id="fundamental-architecture">Fundamental Architecture</h3>
+<p>The structural differences between the two formats stem from how they
+encode and compress pixel data:</p>
+<ul>
+<li><strong>ETC1S</strong> is an endpoint-quantized, dictionary-based
+texture format. It simplifies color blocks into a limited, shared
+codebook across the entire texture. Because it reduces the variety of
+distinct color patterns to a small set of indices, the file compresses
+exceptionally well using traditional entropy coders.</li>
+<li><strong>UASTC</strong> (Universal ASTC) is a block-based format
+modeled after modern ASTC hardware texture compression. It supports
+multiple encoding modes per 4x4 block, allowing each block to retain
+distinct colors, gradients, and full independent alpha channels without
+relying on a shared global codebook.</li>
+</ul>
+<h3 id="visual-quality-and-map-compatibility">Visual Quality and Map
+Compatibility</h3>
+<p>Visual performance is one of the most prominent differentiators
+between the formats:</p>
+<ul>
+<li><strong>Color Artifacts:</strong> ETC1S introduces noticeable color
+banding and blocky artifacts, particularly in areas with smooth
+gradients, subtle lighting changes, or saturated colors. UASTC preserves
+color gradations and high-frequency details, resulting in an output
+virtually indistinguishable from uncompressed source images.</li>
+<li><strong>PBR and Normal Maps:</strong> Physical-based rendering (PBR)
+workflows heavily depend on high-precision data. ETC1S performs poorly
+with tangent-space normal maps and packed metalness/roughness maps,
+leading to lighting seams and surface distortion. UASTC excels at
+storing non-color data and normal maps with minimal error.</li>
+</ul>
+<h3 id="file-size-and-network-performance">File Size and Network
+Performance</h3>
+<p>ETC1S and UASTC serve different stages of bandwidth optimization:</p>
+<ul>
+<li><strong>ETC1S</strong> produces extremely compact files out of the
+box, typically achieving reductions of 75% to 90% compared to standard
+PNG or JPEG files. It is specifically designed to minimize download
+times and data transfer over the web.</li>
+<li><strong>UASTC</strong> creates substantially larger files when
+uncompressed—roughly comparable to raw GPU block-compressed formats
+(around 1 byte per pixel). To achieve competitive network transmission
+sizes, UASTC files must be packaged inside containers (such as KTX 2.0)
+paired with secondary supercompression algorithms like Zstandard (Zstd).
+Even with supercompression, UASTC files generally remain 2 to 3 times
+larger than equivalent ETC1S files.</li>
+</ul>
+<h3 id="runtime-transcoding-and-memory">Runtime Transcoding and
+Memory</h3>
+<p>Both formats must be transcoded on the client into native GPU formats
+(such as BCn, ETC2, or ASTC) before they can be displayed:</p>
+<ul>
+<li><strong>Transcoding Speed:</strong> UASTC is mathematically closer
+to native hardware formats (especially ASTC and BC7), allowing
+transcoding algorithms to map directly with low CPU overhead. ETC1S
+requires codebook lookups, which makes transcoding slightly more
+complex, though it remains fast enough for real-time applications.</li>
+<li><strong>VRAM Usage:</strong> Once transcoded into GPU memory, both
+formats consume nearly identical amounts of VRAM because they unpack
+into the same native block-compressed formats supported by the user's
+hardware.</li>
+</ul>
+<h3 id="practical-application-guidelines">Practical Application
+Guidelines</h3>
+<p>Choose <strong>ETC1S</strong> when network bandwidth and initial load
+times are the top priority. It is best suited for mobile web
+applications, e-commerce catalog models with basic textures, simple
+diffuse/albedo maps, and UI elements.</p>
+<p>Choose <strong>UASTC</strong> when rendering fidelity is
+non-negotiable. It is the preferred choice for detailed normal maps,
+roughness/metallic masks, high-end digital twins, architectural
+visualizations, and desktop-class interactive 3D experiences.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

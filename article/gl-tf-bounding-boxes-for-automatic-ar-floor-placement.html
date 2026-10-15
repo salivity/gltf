@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Bounding Boxes for Automatic AR Floor Placement - gltf</title>
+    <meta name="description" content="Accurate real-world placement is essential for convincing augmented reality (AR) experiences, particularly when positioning virtual objects on horizontal surfaces like floors. In the glTF (GL Transmission Format) 2.0 specification, bounding box dimensions">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-bounding-boxes-for-automatic-ar-floor-placement">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Bounding Boxes for Automatic AR Floor Placement - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-bounding-boxes-for-automatic-ar-floor-placement" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Accurate real-world placement is essential for convincing augmented reality (AR) experiences, particularly when positioning virtual objects on horizontal surfaces like floors. In the glTF (GL Transmission Format) 2.0 specification, bounding box dimensions" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-bounding-boxes-for-automatic-ar-floor-placement">glTF
+Bounding Boxes for Automatic AR Floor Placement</h1>
+<p>Accurate real-world placement is essential for convincing augmented
+reality (AR) experiences, particularly when positioning virtual objects
+on horizontal surfaces like floors. In the glTF (GL Transmission Format)
+2.0 specification, bounding box dimensions are explicitly declared
+through accessor <code>min</code> and <code>max</code> properties. This
+article explains how AR runtimes use this pre-computed metadata to
+calculate bottom-contact offsets, size placement reticles, and position
+3D assets flush against detected physical surfaces instantly, without
+the computational overhead of parsing raw vertex geometries.</p>
+<h3 id="pre-computed-spatial-metadata-in-gltf-accessors">Pre-Computed
+Spatial Metadata in glTF Accessors</h3>
+<p>In a glTF asset, 3D mesh geometry is broken down into buffers, buffer
+views, and accessors. An accessor defines the data type, component type,
+and spatial limits of an underlying buffer view. For vertex position
+attributes (<code>POSITION</code>), the glTF specification requires the
+accessor to define <code>min</code> and <code>max</code> arrays:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;accessors&quot;</span><span class="er">:</span> <span class="ot">[</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">{</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;bufferView&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;componentType&quot;</span><span class="fu">:</span> <span class="dv">5126</span><span class="fu">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;count&quot;</span><span class="fu">:</span> <span class="dv">3450</span><span class="fu">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;VEC3&quot;</span><span class="fu">,</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;max&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="fl">1.2</span><span class="ot">,</span> <span class="fl">0.85</span><span class="ot">,</span> <span class="fl">0.4</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;min&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="fl">-1.2</span><span class="ot">,</span> <span class="fl">-0.15</span><span class="ot">,</span> <span class="fl">-0.4</span><span class="ot">]</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="ot">]</span></span></code></pre></div>
+<p>These values represent the minimum and maximum coordinates of the
+geometry along the local X, Y, and Z axes, effectively defining an
+Axis-Aligned Bounding Box (AABB) in the asset's local object space.</p>
+<h3
+id="calculating-the-ground-offset-preventing-floating-and-clipping">Calculating
+the Ground Offset (Preventing Floating and Clipping)</h3>
+<p>The primary challenge in automatic AR floor placement is matching the
+model’s lowest geometric point to the plane detected by AR frameworks
+such as ARKit, ARCore, or WebXR.</p>
+<p>3D artists frequently export models with origins (pivots) that are
+not located at the base of the mesh. An origin might be centered in the
+object, placed arbitrarily, or misaligned during CAD conversion.</p>
+<p>AR engines read the minimum value of the vertical axis (typically
+<code>min[1]</code> in a Y-up coordinate system) directly from the
+accessor. The system calculates the vertical delta between the model's
+local origin <span class="math inline">\((0, 0, 0)\)</span> and its
+lowest boundary point (<span
+class="math inline">\(Y_{min}\)</span>):</p>
+<p><span class="math display">\[\Delta Y = -Y_{min}\]</span></p>
+<p>When the AR engine detects a horizontal surface at world height <span
+class="math inline">\(Y_{plane}\)</span>, it applies this offset to the
+root transform:</p>
+<p><span class="math display">\[Y_{placement} = Y_{plane} + \Delta
+Y\]</span></p>
+<p>This mathematical translation guarantees that the model rests flush
+on the floor plane, preventing the asset from either floating above the
+ground or clipping into the floor geometry.</p>
+<h3 id="instant-ingestion-without-vertex-processing">Instant Ingestion
+Without Vertex Processing</h3>
+<p>Mobile and web-based AR runtimes face strict memory and processing
+budgets. A complex glTF file may contain hundreds of thousands of
+vertices stored in compressed or binary form (such as Draco or
+EXT_meshopt_compression).</p>
+<p>Calculating an AABB at runtime by iterating over every vertex would
+require decompressing geometry and performing <span
+class="math inline">\(O(N)\)</span> comparisons across the entire vertex
+buffer before placement could occur. Because glTF accessors store
+<code>min</code> and <code>max</code> parameters directly in the JSON
+header, an AR application reads the bounds in <span
+class="math inline">\(O(1)\)</span> constant time upon parsing the
+manifest. The engine can prepare the placement transform before the GPU
+buffers have finished uploading or decompressing.</p>
+<h3 id="dynamic-reticle-and-footprint-sizing">Dynamic Reticle and
+Footprint Sizing</h3>
+<p>Before a user confirms placement, AR interfaces typically project a
+dynamic bounding box or circular reticle onto the detected surface to
+show where the object will land.</p>
+<p>By taking the difference between the maximum and minimum values of
+the horizontal axes:</p>
+<p><span class="math display">\[\text{Width} = X_{max} -
+X_{min}\]</span> <span class="math display">\[\text{Depth} = Z_{max} -
+Z_{min}\]</span></p>
+<p>The engine computes the exact footprint of the asset. This allows the
+AR system to:</p>
+<ul>
+<li>Scale the target reticle to match the object's physical
+dimensions.</li>
+<li>Evaluate whether the target detected plane provides enough
+continuous surface area to accommodate the asset.</li>
+<li>Automatically scale down oversized assets to fit smaller designated
+physical spaces if required.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How glTF Handles Out-of-Bounds Animation Time - gltf</title>
+    <meta name="description" content="This article provides an overview of how glTF 2.0 handles animation time queries outside defined clip boundaries. In glTF, out-of-bounds animation evaluations are resolved via keyframe clamping at the sampler level, leaving playback behaviors like looping">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-gl-tf-handles-out-of-bounds-animation-time">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How glTF Handles Out-of-Bounds Animation Time - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-gl-tf-handles-out-of-bounds-animation-time" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of how glTF 2.0 handles animation time queries outside defined clip boundaries. In glTF, out-of-bounds animation evaluations are resolved via keyframe clamping at the sampler level, leaving playback behaviors like looping" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-gltf-handles-out-of-bounds-animation-time">How glTF Handles
+Out-of-Bounds Animation Time</h1>
+<p>This article provides an overview of how glTF 2.0 handles animation
+time queries outside defined clip boundaries. In glTF, out-of-bounds
+animation evaluations are resolved via keyframe clamping at the sampler
+level, leaving playback behaviors like looping, wrapping, and
+ping-ponging entirely to the consuming runtime engine rather than the
+file format itself.</p>
+<h3 id="keyframe-clamping-in-the-gltf-specification">Keyframe Clamping
+in the glTF Specification</h3>
+<p>The glTF 2.0 specification defines animation data through channels
+and samplers. Each sampler references an <code>input</code> accessor
+containing monotonically increasing floating-point timestamps (<span
+class="math inline">\(t_0, t_1, \dots, t_n\)</span>) and an
+<code>output</code> accessor containing the corresponding transform
+values (translation, rotation, scale, or morph target weights).</p>
+<p>When a runtime queries an animation sampler at a time <span
+class="math inline">\(t\)</span> that falls outside the defined range
+<span class="math inline">\([t_0, t_n]\)</span>, the specification
+mandates the following evaluation rules:</p>
+<ul>
+<li><strong>Before the First Keyframe (<span class="math inline">\(t
+&lt; t_0\)</span>):</strong> The output value is clamped to the value of
+the first keyframe at <span class="math inline">\(t_0\)</span>.</li>
+<li><strong>After the Last Keyframe (<span class="math inline">\(t &gt;
+t_n\)</span>):</strong> The output value is clamped to the value of the
+final keyframe at <span class="math inline">\(t_n\)</span>.</li>
+</ul>
+<p>This behavior applies regardless of whether the chosen interpolation
+method is <code>LINEAR</code>, <code>STEP</code>, or
+<code>CUBICSPLINE</code>.</p>
+<h3 id="implicit-durations-and-multi-channel-discrepancies">Implicit
+Durations and Multi-Channel Discrepancies</h3>
+<p>A glTF animation does not possess an explicit, global "duration"
+property. Instead, the duration of an animation clip is implicitly
+defined as the time span between the earliest <span
+class="math inline">\(t_0\)</span> and the latest <span
+class="math inline">\(t_n\)</span> among all samplers included in that
+animation.</p>
+<p>Because each channel can have independent sampler timelines, channels
+within the same animation often have mismatched start or end times. For
+instance, a rotation channel might end at 2.0 seconds while a
+translation channel continues until 3.0 seconds. For any query where
+<span class="math inline">\(2.0 &lt; t \le 3.0\)</span>, the rotation
+track evaluates out-of-bounds and clamps to its 2.0-second value, while
+the translation track continues interpolating keyframes normally.</p>
+<h3 id="cubic-spline-handling-at-boundaries">Cubic Spline Handling at
+Boundaries</h3>
+<p>For <code>CUBICSPLINE</code> interpolation, each keyframe provides
+three components: an in-tangent, a value, and an out-tangent. When an
+out-of-bounds query occurs, the spline is not extrapolated along the
+boundary tangents. The query bypasses spline evaluation entirely and
+directly returns the raw keyframe value, preventing runaway polynomial
+curves beyond the clip bounds.</p>
+<h3 id="application-level-playback-and-looping">Application-Level
+Playback and Looping</h3>
+<p>Because glTF restricts sampler behavior to clamping, cyclic playback
+modes are not encoded in the standard asset data. Runtimes such as
+Three.js, Babylon.js, or game engines handle looping by wrapping the
+query time before passing it to the glTF sampler:</p>
+<p><span class="math display">\[\text{query\_time} = t_0 + ((t - t_0)
+\pmod{(t_n - t_0)})\]</span></p>
+<p>If an engine does not apply time-wrapping logic, querying past the
+end of the clip naturally freezes the animated node at its final pose
+due to glTF's underlying clamp-to-edge semantics.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

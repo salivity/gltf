@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NPOT Textures and Mipmaps in WebGL glTF Viewers - gltf</title>
+    <meta name="description" content="Non-Power-of-Two (NPOT) textures significantly alter how WebGL-based glTF viewers process and display 3D assets, primarily dictating whether mipmaps can be generated natively or require runtime intervention. While modern WebGL 2.0 contexts natively suppor">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/npot-textures-and-mipmaps-in-web-gl-gl-tf-viewers">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="NPOT Textures and Mipmaps in WebGL glTF Viewers - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/npot-textures-and-mipmaps-in-web-gl-gl-tf-viewers" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Non-Power-of-Two (NPOT) textures significantly alter how WebGL-based glTF viewers process and display 3D assets, primarily dictating whether mipmaps can be generated natively or require runtime intervention. While modern WebGL 2.0 contexts natively suppor" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="npot-textures-and-mipmaps-in-webgl-gltf-viewers">NPOT Textures
+and Mipmaps in WebGL glTF Viewers</h1>
+<p>Non-Power-of-Two (NPOT) textures significantly alter how WebGL-based
+glTF viewers process and display 3D assets, primarily dictating whether
+mipmaps can be generated natively or require runtime intervention. While
+modern WebGL 2.0 contexts natively support NPOT mipmaps, legacy WebGL
+1.0 implementations strictly forbid them, forcing viewers to choose
+between runtime texture resizing, fallback filtering without mipmaps, or
+degraded visual fidelity. Understanding these technical trade-offs is
+essential for optimizing 3D asset delivery and ensuring consistent
+real-time rendering performance across different web environments.</p>
+<h3 id="the-underlying-webgl-limitations">The Underlying WebGL
+Limitations</h3>
+<p>The primary friction surrounding NPOT textures stems from the WebGL
+specification itself.</p>
+<ul>
+<li><strong>WebGL 1.0:</strong> Texture dimensions that are not powers
+of two (such as 1024×1024 or 2048×2048) have strict hardware-level
+limitations. WebGL 1.0 cannot generate mipmaps for NPOT textures via
+<code>gl.generateMipmap()</code>. Doing so triggers an
+<code>INVALID_OPERATION</code> error. Furthermore, NPOT textures in
+WebGL 1.0 only support the <code>CLAMP_TO_EDGE</code> wrap mode,
+completely breaking repeating or mirrored textures.</li>
+<li><strong>WebGL 2.0:</strong> Removes these restrictions entirely.
+Full NPOT support is core to WebGL 2.0, allowing automatic mipmap
+generation and standard wrapping modes (<code>REPEAT</code>,
+<code>MIRRORED_REPEAT</code>) without special handling.</li>
+</ul>
+<h3 id="how-gltf-viewers-handle-npot-textures">How glTF Viewers Handle
+NPOT Textures</h3>
+<p>The glTF 2.0 specification permits NPOT textures to keep file sizes
+flexible, but it advises authors that runtime platforms may enforce
+constraints. Consequently, WebGL glTF engines—such as Three.js,
+Babylon.js, and Google’s <code>&lt;model-viewer&gt;</code>—must actively
+manage NPOT textures when targeting environments with WebGL 1.0
+fallbacks.</p>
+<h4 id="1-runtime-resizing-cpugpu-upscaling">1. Runtime Resizing
+(CPU/GPU Upscaling)</h4>
+<p>To preserve mipmapping capabilities in restrictive environments,
+viewers often intercept NPOT image files during the loading pipeline and
+resize them to the nearest power-of-two dimensions (e.g., resizing a
+1920×1080 texture to 2048×1024).</p>
+<ul>
+<li><strong>The Cost:</strong> This approach introduces measurable
+load-time latency. The viewer typically uses an off-screen HTML5
+<code>&lt;canvas&gt;</code> to redraw the image at POT dimensions before
+uploading it to the GPU. This consumes additional CPU time and spikes
+browser memory usage during asset initialization.</li>
+</ul>
+<h4 id="2-disabling-mipmaps-fallback-filtering">2. Disabling Mipmaps
+(Fallback Filtering)</h4>
+<p>If automatic resizing is disabled to prioritize load speed, the
+viewer cannot use mipmapped minification filters
+(<code>LINEAR_MIPMAP_LINEAR</code>,
+<code>NEAREST_MIPMAP_NEAREST</code>). Instead, it must downgrade texture
+filtering to standard <code>LINEAR</code> or <code>NEAREST</code>.</p>
+<ul>
+<li><strong>Visual Artifacts:</strong> Without mipmaps, textures viewed
+at an angle or at a distance produce severe texture aliasing and moiré
+patterns. Surfaces shimmer noticeably whenever the camera moves.</li>
+<li><strong>GPU Cache Thrashing:</strong> Sampling a large, un-mipmapped
+texture across a small screen area causes erratic GPU texture cache
+misses, reducing overall frame rates on lower-end devices.</li>
+</ul>
+<h3 id="summary-of-impact-on-gltf-rendering-pipelines">Summary of Impact
+on glTF Rendering Pipelines</h3>
+<p>When an asset contains NPOT textures, WebGL viewers face a direct
+trade-off between visual quality and performance. If the user’s browser
+supports WebGL 2.0, the viewer generates mipmaps cleanly with negligible
+overhead. However, on WebGL 1.0 fallbacks, NPOT textures either increase
+processing time and memory consumption through client-side resizing or
+introduce severe aliasing and reduced cache efficiency by disabling
+mipmaps altogether. For maximum compatibility and predictable
+performance, glTF textures should be authored in power-of-two dimensions
+prior to export.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

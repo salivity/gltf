@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF componentType Constants Explained - gltf</title>
+    <meta name="description" content="glTF relies on accessor objects to interpret raw binary data into 3D geometry and animations. Within these accessors, integer componentType values, such as 5126, define the scalar data type of the stored elements. This article explains how glTF implements">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-component-type-constants-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF componentType Constants Explained - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-component-type-constants-explained" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="glTF relies on accessor objects to interpret raw binary data into 3D geometry and animations. Within these accessors, integer componentType values, such as 5126, define the scalar data type of the stored elements. This article explains how glTF implements" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-componenttype-constants-explained">glTF componentType
+Constants Explained</h1>
+<p>glTF relies on accessor objects to interpret raw binary data into 3D
+geometry and animations. Within these accessors, integer
+<code>componentType</code> values, such as 5126, define the scalar data
+type of the stored elements. This article explains how glTF implements
+these numeric constants, why they mirror WebGL and OpenGL standards, and
+how rendering engines consume them to parse binary buffers directly into
+GPU memory.</p>
+<h2 id="the-role-of-accessors-in-gltf">The Role of Accessors in
+glTF</h2>
+<p>In the glTF specification, 3D asset data such as vertex positions,
+normals, UV coordinates, and animation keyframes are stored in raw
+binary files (<code>.bin</code>). A <code>bufferView</code> defines a
+contiguous slice of this raw binary buffer, while an
+<code>accessor</code> defines how that slice should be read and
+structured.</p>
+<p>An accessor combines two primary properties to structure the data:
+<code>type</code> and <code>componentType</code>.</p>
+<ul>
+<li><strong><code>type</code></strong> defines the layout or
+dimensionality of the element, such as <code>"SCALAR"</code>,
+<code>"VEC2"</code>, <code>"VEC3"</code>, <code>"VEC4"</code>, or
+<code>"MAT4"</code>.</li>
+<li><strong><code>componentType</code></strong> defines the underlying
+primitive data type for each individual component inside that
+layout.</li>
+</ul>
+<p>For example, a vertex position accessor might have a
+<code>type</code> of <code>"VEC3"</code> and a
+<code>componentType</code> of <code>5126</code>. This indicates that
+each vertex consists of three consecutive 32-bit floating-point
+numbers.</p>
+<h2 id="direct-alignment-with-webgl-and-opengl">Direct Alignment with
+WebGL and OpenGL</h2>
+<p>The integer values used for <code>componentType</code> are not
+arbitrary internal glTF IDs. Instead, they correspond directly to the
+standard symbolic constants used by the OpenGL and WebGL graphics
+APIs.</p>
+<p>The glTF specification defines six valid integer values for
+<code>componentType</code>:</p>
+<ul>
+<li><strong><code>5120</code> (<code>BYTE</code>)</strong>: Signed 8-bit
+integer (1 byte).</li>
+<li><strong><code>5121</code> (<code>UNSIGNED_BYTE</code>)</strong>:
+Unsigned 8-bit integer (1 byte). Frequently used for joint weights or
+8-bit vertex colors.</li>
+<li><strong><code>5122</code> (<code>SHORT</code>)</strong>: Signed
+16-bit integer (2 bytes).</li>
+<li><strong><code>5123</code> (<code>UNSIGNED_SHORT</code>)</strong>:
+Unsigned 16-bit integer (2 bytes). Commonly used for index buffers in
+small-to-medium meshes.</li>
+<li><strong><code>5125</code> (<code>UNSIGNED_INT</code>)</strong>:
+Unsigned 32-bit integer (4 bytes). Typically used for mesh index buffers
+that exceed 65,535 vertices.</li>
+<li><strong><code>5126</code> (<code>FLOAT</code>)</strong>: 32-bit IEEE
+754 floating-point number (4 bytes). The standard type for spatial data,
+including positions, normals, tangents, and texture coordinates.</li>
+</ul>
+<p>By using identical numerical identifiers to the graphics API, glTF
+simplifies runtime asset loading. In a WebGL context, the constant
+<code>gl.FLOAT</code> evaluates to the integer <code>5126</code>,
+<code>gl.UNSIGNED_SHORT</code> evaluates to <code>5123</code>, and so
+forth.</p>
+<h2 id="why-5126-is-the-core-geometry-standard">Why 5126 Is the Core
+Geometry Standard</h2>
+<p>The value <code>5126</code> represents single-precision floats
+(<code>gl.FLOAT</code>), which is the native data format expected by
+modern GPU vertex shaders. When a glTF file describes vertex positions
+(<code>POSITION</code>), the accessor typically states:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;bufferView&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;byteOffset&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;componentType&quot;</span><span class="fu">:</span> <span class="dv">5126</span><span class="fu">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;count&quot;</span><span class="fu">:</span> <span class="dv">1024</span><span class="fu">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;VEC3&quot;</span><span class="fu">,</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;max&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="fl">1.0</span><span class="ot">,</span> <span class="fl">1.0</span><span class="ot">,</span> <span class="fl">1.0</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;min&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="fl">-1.0</span><span class="ot">,</span> <span class="fl">-1.0</span><span class="ot">,</span> <span class="fl">-1.0</span><span class="ot">]</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>This configuration tells the loader that there are 1,024 vertices.
+Because the <code>type</code> is <code>"VEC3"</code> (3 components) and
+the <code>componentType</code> is <code>5126</code> (4 bytes per
+component), each vertex occupies 12 bytes (<code>3 * 4 bytes</code>),
+resulting in a total buffer segment of 12,288 bytes.</p>
+<h2 id="execution-in-the-rendering-pipeline">Execution in the Rendering
+Pipeline</h2>
+<p>Because glTF's <code>componentType</code> integers match graphics API
+enums, a loader can pass these values directly into rendering calls with
+zero mapping overhead.</p>
+<p>In WebGL, configuring a vertex attribute pointer typically looks like
+this:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>gl<span class="op">.</span><span class="fu">vertexAttribPointer</span>(</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  attributeLocation<span class="op">,</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  numberOfComponents<span class="op">,</span> <span class="co">// derived from accessor.type (e.g., VEC3 = 3)</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  accessor<span class="op">.</span><span class="at">componentType</span><span class="op">,</span> <span class="co">// passed directly (e.g., 5126)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  accessor<span class="op">.</span><span class="at">normalized</span> <span class="op">||</span> <span class="kw">false</span><span class="op">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  bufferView<span class="op">.</span><span class="at">byteStride</span> <span class="op">||</span> <span class="dv">0</span><span class="op">,</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  accessor<span class="op">.</span><span class="at">byteOffset</span> <span class="op">||</span> <span class="dv">0</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>)<span class="op">;</span></span></code></pre></div>
+<p>Because <code>accessor.componentType</code> holds <code>5126</code>,
+the WebGL runtime natively recognizes it as <code>gl.FLOAT</code>
+without requiring switch statements or lookups.</p>
+<p>This design pattern enables "zero-copy" or near-instant uploads from
+the downloaded <code>.bin</code> payload straight to GPU VRAM,
+fulfilling glTF's primary design goal: efficient, fast transmission and
+loading of 3D scenes.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

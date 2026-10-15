@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How VRM Spring Bone Physics Works in glTF - gltf</title>
+    <meta name="description" content="VRM handles dynamic secondary animation, such as the movement of hair, clothing, and accessories, through specialized glTF extension properties known as SpringBone. Rather than relying on pre-baked keyframes or proprietary engine setups, VRM stores spring">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-vrm-spring-bone-physics-works-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How VRM Spring Bone Physics Works in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-vrm-spring-bone-physics-works-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="VRM handles dynamic secondary animation, such as the movement of hair, clothing, and accessories, through specialized glTF extension properties known as SpringBone. Rather than relying on pre-baked keyframes or proprietary engine setups, VRM stores spring" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-vrm-spring-bone-physics-works-in-gltf">How VRM Spring Bone
+Physics Works in glTF</h1>
+<p>VRM handles dynamic secondary animation, such as the movement of
+hair, clothing, and accessories, through specialized glTF extension
+properties known as SpringBone. Rather than relying on pre-baked
+keyframes or proprietary engine setups, VRM stores spring parameters,
+node hierarchies, and collision volumes directly inside the glTF JSON
+structure. This article explains how VRM defines these bone springs,
+details the underlying mathematical parameters, and describes how
+runtime engines interpret this glTF metadata for cross-platform,
+real-time physics simulation.</p>
+<h3 id="the-gltf-extension-architecture">The glTF Extension
+Architecture</h3>
+<p>VRM is built on top of glTF 2.0 and utilizes the extension mechanism
+to declare procedural physics.</p>
+<ul>
+<li><strong>VRM 0.x:</strong> Spring physics are declared under the
+<code>extensions.VRM.secondaryAnimation</code> property.</li>
+<li><strong>VRM 1.0:</strong> The specification modularized physics
+under the standardized extension <code>VRMC_springBone</code>, alongside
+<code>VRMC_node_collider</code> for collision shapes.</li>
+</ul>
+<p>Regardless of the specification version, the extension JSON does not
+store physics simulation logic itself; instead, it defines an execution
+graph that maps to existing glTF <code>nodes</code>. Runtime
+applications read these properties and apply dynamic solvers (typically
+Verlet integration) directly to the target node transforms.</p>
+<h3 id="spring-bone-hierarchy-and-springs">Spring Bone Hierarchy and
+Springs</h3>
+<p>In the extension data, springs are grouped into logical chains. Each
+spring entry identifies a starting bone node within the glTF
+<code>nodes</code> array:</p>
+<ol type="1">
+<li><strong>Root Nodes:</strong> The spring definition points to the
+root of a chain (for example, the base of a hair strand).</li>
+<li><strong>Joints:</strong> In VRM 1.0, each segment of the chain is
+explicitly defined as a spring joint with localized physical properties,
+allowing stiffness or hit radius to vary progressively from root to
+tip.</li>
+<li><strong>Reference Frames:</strong> The movement of a spring bone is
+calculated relative to its parent node, allowing the rest pose to match
+the model's base skeleton without needing separate bind poses for
+physics.</li>
+</ol>
+<h3 id="core-physical-parameters">Core Physical Parameters</h3>
+<p>The glTF extension properties dictate how the spring responds to
+movement, inertia, and external forces:</p>
+<ul>
+<li><strong>Stiffness (<code>stiffness</code> /
+<code>stiffnessForce</code>):</strong> Determines the force pulling the
+bone back toward its original local orientation. Higher values result in
+rigid objects, while lower values make the bone loose and flexible.</li>
+<li><strong>Damping (<code>dragForce</code>):</strong> Simulates air
+resistance and energy dissipation. It prevents perpetual oscillation by
+slowing down bone velocity over time.</li>
+<li><strong>Gravity (<code>gravityPower</code> and
+<code>gravityDir</code>):</strong> Applies a constant directional vector
+force to the spring. This is used to pull elements downward or simulate
+constant external forces like wind.</li>
+<li><strong>Hit Radius (<code>hitRadius</code>):</strong> Defines a
+spherical collision boundary around the spring bone’s joint. This radius
+is evaluated during collision tests with collider shapes.</li>
+</ul>
+<h3 id="collision-detection-via-extension-properties">Collision
+Detection via Extension Properties</h3>
+<p>To prevent dynamic bones from passing through the avatar's body, the
+extension defines collision structures that link to standard skeleton
+nodes (such as the head, chest, or arms).</p>
+<ul>
+<li><strong>Collider Groups (<code>colliders</code> /
+<code>colliderGroups</code>):</strong> Specify nodes that host collision
+geometry.</li>
+<li><strong>Collision Shapes:</strong> Primarily defined as spheres
+(center offset and radius) or capsules (spheres connected across an
+axis).</li>
+<li><strong>Linkage:</strong> Inside the spring definition, an array of
+indices references which collider groups that specific spring chain
+should interact with. This selective linkage optimizes performance by
+avoiding global collision calculations across all bones.</li>
+</ul>
+<h3 id="runtime-execution-workflow">Runtime Execution Workflow</h3>
+<p>When a VRM-compatible engine imports the glTF file, it executes the
+following steps:</p>
+<ol type="1">
+<li><strong>Parse Extensions:</strong> The engine reads
+<code>VRMC_springBone</code> and identifies all target bone indices and
+collider nodes.</li>
+<li><strong>State Initialization:</strong> The initial world transforms
+of the spring joints are cached as reference positions.</li>
+<li><strong>Frame-by-Frame Integration:</strong> During each frame
+update:
+<ul>
+<li>Parent bone transforms are updated via animation or tracking.</li>
+<li>Inertia and external forces (gravity, drag, stiffness) update each
+spring joint's virtual position using numerical integration.</li>
+<li>Length constraints are enforced to ensure bone lengths remain
+constant.</li>
+<li>Collision resolution pushes spring joint spheres outside the bounds
+of defined collider spheres and capsules.</li>
+</ul></li>
+<li><strong>Transform Application:</strong> The resolved positions are
+converted back into local rotations and applied to the glTF scene nodes
+before mesh rendering.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

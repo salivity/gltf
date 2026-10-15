@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Accessors: Bridging JSON and Binary Data - gltf</title>
+    <meta name="description" content="In the glTF (GL Transmission Format) 3D asset pipeline, data is divided between lightweight JSON metadata and high-performance binary storage. This article explains how accessors serve as the vital translation layer bridging these two domains. By defining">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-accessors-bridging-json-and-binary-data">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Accessors: Bridging JSON and Binary Data - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-accessors-bridging-json-and-binary-data" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In the glTF (GL Transmission Format) 3D asset pipeline, data is divided between lightweight JSON metadata and high-performance binary storage. This article explains how accessors serve as the vital translation layer bridging these two domains. By defining" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-accessors-bridging-json-and-binary-data">glTF Accessors:
+Bridging JSON and Binary Data</h1>
+<p>In the glTF (GL Transmission Format) 3D asset pipeline, data is
+divided between lightweight JSON metadata and high-performance binary
+storage. This article explains how accessors serve as the vital
+translation layer bridging these two domains. By defining how raw byte
+arrays are structured into meaningful geometric attributes—such as
+vertex positions, normals, texture coordinates, and animation
+keyframes—accessors allow graphics engines to consume binary buffers
+directly with minimal CPU overhead.</p>
+<h3 id="the-gltf-data-hierarchy">The glTF Data Hierarchy</h3>
+<p>To understand accessors, it is necessary to examine the three-tier
+hierarchy glTF uses to handle geometry and animation data:</p>
+<ol type="1">
+<li><strong>Buffers (<code>buffers</code>):</strong> Represent flat,
+contiguous arrays of raw binary data. A buffer contains no structural
+information, data types, or memory offsets; it is simply a collection of
+bytes stored internally or in an external <code>.bin</code> file.</li>
+<li><strong>BufferViews (<code>bufferViews</code>):</strong> Segment the
+raw buffer into distinct subsets. A <code>bufferView</code> defines a
+byte offset, a byte length, an optional target (such as an array buffer
+or element array buffer), and an optional byte stride. However, it still
+does not define what individual elements within that memory
+represent.</li>
+<li><strong>Accessors (<code>accessors</code>):</strong> Reference a
+specific <code>bufferView</code> and apply strong typing, component
+counts, and data formatting.</li>
+</ol>
+<h3 id="how-accessors-bridge-json-and-binary">How Accessors Bridge JSON
+and Binary</h3>
+<p>The JSON segment of a glTF file cannot efficiently store thousands of
+floating-point coordinates. Storing numbers as text bloats file sizes
+and introduces parsing bottlenecks. Conversely, graphics processing
+units (GPUs) require raw, contiguous memory blocks.</p>
+<p>Accessors bridge this gap by acting as a schema for the binary data.
+An accessor specifies:</p>
+<ul>
+<li><strong><code>componentType</code>:</strong> The scalar data type of
+the underlying binary elements (e.g., <code>5126</code> for
+<code>FLOAT</code>, <code>5123</code> for
+<code>UNSIGNED_SHORT</code>).</li>
+<li><strong><code>type</code>:</strong> The mathematical structure of
+the data, such as <code>"SCALAR"</code>, <code>"VEC2"</code>,
+<code>"VEC3"</code>, <code>"VEC4"</code>, or <code>"MAT4"</code>.</li>
+<li><strong><code>count</code>:</strong> The total number of elements
+(attributes) defined by this accessor.</li>
+<li><strong><code>byteOffset</code>:</strong> The offset relative to the
+start of the <code>bufferView</code> where the data sequence
+begins.</li>
+</ul>
+<p>By combining <code>componentType</code> and <code>type</code>, a
+runtime engine knows both the element size and dimension. For example, a
+<code>VEC3</code> of <code>FLOAT</code> components translates to three
+32-bit floating-point values (12 bytes per vertex).</p>
+<h3 id="direct-gpu-mapping">Direct GPU Mapping</h3>
+<p>Accessors are tailored to align directly with modern graphics APIs
+such as WebGL, WebGPU, Vulkan, and DirectX. When setting up vertex
+attribute pointers (such as <code>glVertexAttribPointer</code> in
+OpenGL), the engine directly maps the properties of an accessor:</p>
+<ul>
+<li>The <code>count</code> dictates the vertex or index count for draw
+calls.</li>
+<li>The <code>componentType</code> and <code>type</code> map directly to
+the API's attribute size and format parameters.</li>
+<li>The <code>normalized</code> boolean flag defines whether integer
+types should be converted to floating-point ranges (<code>[0, 1]</code>
+or <code>[-1, 1]</code>) when read by shaders.</li>
+</ul>
+<p>Because the accessor layout matches hardware expectations, the GPU
+can consume binary buffers directly via DMA (Direct Memory Access)
+without expensive CPU-side transformation or deserialization.</p>
+<h3 id="optimization-via-metadata-and-sparse-accessors">Optimization via
+Metadata and Sparse Accessors</h3>
+<p>Accessors also store optimization metadata in the JSON structure,
+specifically the <code>min</code> and <code>max</code> values for each
+component of the data. This allows rendering engines to compute bounding
+volumes (such as axis-aligned bounding boxes) for view frustum culling
+and collision detection instantly, without needing to iterate through
+the entire binary payload.</p>
+<p>Additionally, glTF supports <strong>sparse accessors</strong>. When
+geometry requires localized variations—such as morph targets or blend
+shapes where only a fraction of the vertices deviate from the base
+mesh—sparse accessors store only the modified elements and their
+corresponding indices. This technique avoids duplicating entire
+coordinate arrays, drastically reducing transmission sizes while
+maintaining a direct link to the underlying binary buffers.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How KHR_materials_dispersion Works in glTF - gltf</title>
+    <meta name="description" content="The KHRmaterialsdispersion extension introduces realistic optical dispersion to the glTF ecosystem, enabling real-time 3D engines to simulate the wavelength-dependent refraction of light—commonly recognized as chromatic aberration or prismatic color separ">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-khr-materials-dispersion-works-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How KHR_materials_dispersion Works in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-khr-materials-dispersion-works-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The KHRmaterialsdispersion extension introduces realistic optical dispersion to the glTF ecosystem, enabling real-time 3D engines to simulate the wavelength-dependent refraction of light—commonly recognized as chromatic aberration or prismatic color separ" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-khr_materials_dispersion-works-in-gltf">How
+KHR_materials_dispersion Works in glTF</h1>
+<p>The <code>KHR_materials_dispersion</code> extension introduces
+realistic optical dispersion to the glTF ecosystem, enabling real-time
+3D engines to simulate the wavelength-dependent refraction of
+light—commonly recognized as chromatic aberration or prismatic color
+separation. By building upon glTF's existing transmission, volume, and
+index of refraction (IOR) extensions, this extension allows transmissive
+surfaces such as glass, water, crystals, and gemstones to break white
+light into its spectral components, creating physically accurate rainbow
+fringing at refracted boundaries.</p>
+<h3 id="the-physics-of-optical-dispersion">The Physics of Optical
+Dispersion</h3>
+<p>In physical optics, the refractive index of a transparent medium is
+not constant; it varies based on the wavelength of the light passing
+through it. Shorter wavelengths (such as blue and violet light) bend
+more sharply than longer wavelengths (such as red light). When white
+light enters an angled transmissive boundary, this differential bending
+causes the constituent colors to separate, producing a visible spectrum
+known as chromatic dispersion.</p>
+<h3 id="integration-with-the-gltf-pbr-pipeline">Integration with the
+glTF PBR Pipeline</h3>
+<p>The <code>KHR_materials_dispersion</code> extension works as an
+add-on to the core glTF PBR model and requires two prerequisite
+extensions:</p>
+<ul>
+<li><code>KHR_materials_transmission</code>, which governs how much
+light passes directly through the material.</li>
+<li><code>KHR_materials_ior</code>, which establishes the baseline index
+of refraction (<span class="math inline">\(n_d\)</span>, typically
+measured at the yellow helium d-line, 587.6 nm).</li>
+<li><code>KHR_materials_volume</code>, which provides thickness to the
+geometry, allowing the rays to travel through a physical medium where
+dispersion can manifest.</li>
+</ul>
+<h3 id="the-dispersion-parameter">The Dispersion Parameter</h3>
+<p>The extension introduces a single floating-point property:
+<code>dispersion</code>. In the glTF specification, this value is
+defined using the optical relationship:</p>
+<p><span class="math display">\[\text{dispersion} = \frac{n_d - 1}{V_d}
+= n_F - n_C\]</span></p>
+<p>Here, <span class="math inline">\(V_d\)</span> represents the
+material's Abbe number, which quantifies the medium's chromatic
+dispersion, while <span class="math inline">\(n_F\)</span> and <span
+class="math inline">\(n_C\)</span> represent the refractive indices at
+the blue hydrogen F-line (486.1 nm) and red hydrogen C-line (656.3 nm),
+respectively.</p>
+<p>A <code>dispersion</code> value of <code>0.0</code> (the default)
+indicates zero spectral separation, meaning all wavelengths refract at
+the exact same base IOR. Higher values increase the refractive spread
+between red and blue light, producing stronger prismatic distortion.</p>
+<h3 id="how-renderers-simulate-the-effect">How Renderers Simulate the
+Effect</h3>
+<p>Renderers implement <code>KHR_materials_dispersion</code> using
+either spectral path tracing or trichromatic approximation:</p>
+<ol type="1">
+<li><p><strong>Spectral Sampling (Offline &amp; High-End Path
+Tracers):</strong> Rays are assigned continuous wavelengths. When a ray
+hits an interface, its specific refractive index is calculated using
+Cauchy's transmission equation or Sellmeier approximations derived from
+the material's base IOR and <code>dispersion</code> value.</p></li>
+<li><p><strong>Trichromatic Split (Real-Time Renderers):</strong> For
+real-time engines, continuous spectral rendering is computationally
+prohibitive. Instead, the renderer derives three distinct refractive
+indices for the standard Red, Green, and Blue color channels:</p>
+<ul>
+<li><span class="math inline">\(IOR_{\text{green}} =
+IOR_{\text{base}}\)</span></li>
+<li><span class="math inline">\(IOR_{\text{red}} = IOR_{\text{base}} -
+\frac{\text{dispersion}}{2}\)</span></li>
+<li><span class="math inline">\(IOR_{\text{blue}} = IOR_{\text{base}} +
+\frac{\text{dispersion}}{2}\)</span></li>
+</ul></li>
+</ol>
+<p>The shader traces or samples the transmission environment three
+separate times—once for each color channel—using each channel's
+respective IOR. The results are recombined additively, generating the
+characteristic red-green-blue separation along interior caustics and
+edges viewed through thick, transmissive volumes.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

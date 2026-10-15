@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What Is the Difference Between glTF and FBX Files? - gltf</title>
+    <meta name="description" content="This article explores the core distinctions between glTF (Graphics Language Transmission Format) and Autodesk FBX, highlighting why both formats exist and how their architectures serve opposite ends of the 3D pipeline. While FBX was built as an authoring">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/what-is-the-difference-between-gl-tf-and-fbx-files">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="What Is the Difference Between glTF and FBX Files? - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/what-is-the-difference-between-gl-tf-and-fbx-files" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores the core distinctions between glTF (Graphics Language Transmission Format) and Autodesk FBX, highlighting why both formats exist and how their architectures serve opposite ends of the 3D pipeline. While FBX was built as an authoring" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="what-is-the-difference-between-gltf-and-fbx-files">What Is the
+Difference Between glTF and FBX Files?</h1>
+<p>This article explores the core distinctions between glTF (Graphics
+Language Transmission Format) and Autodesk FBX, highlighting why both
+formats exist and how their architectures serve opposite ends of the 3D
+pipeline. While FBX was built as an authoring and asset-exchange
+standard designed to move work between digital content creation (DCC)
+suites, glTF was engineered from the ground up as a lightweight
+transmission format for efficient real-time rendering on the web,
+mobile, and interactive engines. Readers will learn about the
+structural, graphical, and licensing factors that set these two dominant
+3D formats apart.</p>
+<h2 id="authoring-exchange-vs-runtime-delivery">Authoring Exchange vs.
+Runtime Delivery</h2>
+<p>The fundamental difference between FBX and glTF lies in their
+purpose. FBX is an interchange format designed for DCC applications like
+Maya, 3ds Max, Blender, and game engines such as Unreal and Unity. It is
+engineered to preserve authoring complexity, retaining intricate scene
+graphs, multi-track animation clips, inverse kinematics, constraints,
+and custom engine metadata so artists can round-trip work across
+different software packages.</p>
+<p>In contrast, glTF—often dubbed the "JPEG of 3D"—is a runtime delivery
+format. Developed by the Khronos Group, glTF is optimized not for
+ongoing asset editing, but for fast transfer and immediate playback. It
+prioritizes what a rendering engine or browser needs to draw a model
+right away, intentionally discarding production-only baggage.</p>
+<h2 id="data-structure-and-parsing-efficiency">Data Structure and
+Parsing Efficiency</h2>
+<p>FBX files store data in an object-model hierarchy containing deeply
+nested properties and legacy features like NURBS geometry. Loading an
+FBX requires parsing this entire scene graph, decoding its internal
+structures, and converting the proprietary data into vertex buffers that
+a graphics processing unit (GPU) can understand. This conversion step
+consumes noticeable CPU time and memory, making FBX poorly suited for
+bandwidth-constrained or low-latency environments like web browsers.</p>
+<p>glTF resolves this bottleneck by aligning its file architecture
+directly with standard graphics APIs such as WebGL, WebGPU, and Vulkan.
+A standard glTF model splits its payload into:</p>
+<ul>
+<li>A human-readable JSON manifest defining the scene structure, node
+hierarchy, and material references.</li>
+<li>Binary <code>.bin</code> files that store geometry data (vertex
+positions, indices, UV coordinates, and skinning weights) directly in
+memory-aligned layouts.</li>
+<li>External or embedded image textures.</li>
+</ul>
+<p>Because glTF binary buffers are pre-arranged in GPU-friendly formats,
+renderers can read and upload them directly to VRAM via memory-copy
+operations without preprocessing the vertex layouts. For single-file
+deployments, the binary <code>.glb</code> variant bundles the JSON
+header, binary data, and textures into one compact container.</p>
+<h2 id="shading-and-material-standards">Shading and Material
+Standards</h2>
+<p>Material interpretation has long been a challenge with legacy
+formats. FBX originally emerged during an era dominated by legacy Phong
+and Blinn-Phong shading models. Because FBX lacks a single standardized,
+modern material specification across different exporters, migrating an
+FBX across applications often leads to missing textures, broken specular
+maps, or mismatched shader behaviors that require manual re-linking.</p>
+<p>glTF, on the other hand, made Physically Based Rendering (PBR)
+metallic-roughness its native standard from version 2.0 onward. By
+codifying standardized PBR workflows, glTF ensures that roughness,
+metallic properties, ambient occlusion, and base colors render
+consistently across diverse platforms, from Three.js and Babylon.js to
+native mobile AR viewers and game engines. The Khronos Group also
+provides official PBR extensions for specular workflows, transmission,
+clearcoat, and volume to support advanced real-time rendering.</p>
+<h2 id="compression-and-file-footprint">Compression and File
+Footprint</h2>
+<p>Because FBX is built to retain full authoring flexibility, file sizes
+are often significantly larger. FBX lacks standardized geometry or
+GPU-level texture compression schemes.</p>
+<p>glTF integrates modern compression technologies designed for
+streaming:</p>
+<ul>
+<li><strong>Draco Mesh Compression:</strong> Compresses complex vertex
+attributes, drastically reducing geometric data payloads.</li>
+<li><strong>Meshopt:</strong> Provides high-speed decoding alternatives
+optimized for rapid CPU-to-GPU throughput.</li>
+<li><strong>KTX2 with Basis Universal:</strong> Compresses textures
+into GPU-native formats, allowing textures to remain compressed even
+after loading into VRAM, lowering memory overhead and eliminating
+client-side decompression delays.</li>
+</ul>
+<h2 id="open-ecosystem-vs-proprietary-standard">Open Ecosystem vs.
+Proprietary Standard</h2>
+<p>Licensing and governance mark another critical divergence. FBX is a
+proprietary format owned and maintained exclusively by Autodesk. To read
+or write FBX assets officially, developers must link against the
+closed-source Autodesk FBX SDK, which can complicate distribution,
+cross-platform portability, and open-source engine integration.</p>
+<p>glTF is an open, royalty-free, ISO-certified international standard
+(ISO/IEC 12113) steered by the Khronos Group—the same consortium
+overseeing Vulkan and OpenGL. Its openly documented specification allows
+any developer to write custom parsers, exporters, and runtime engines
+without proprietary licensing hurdles.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Depth Write State Across Alpha Modes - gltf</title>
+    <meta name="description" content="The glTF specification defines three alpha modes—OPAQUE, MASK, and BLEND—each dictating how surface transparency interacts with the graphics rendering pipeline. The depth write state (glDepthMask in OpenGL or depthWrite in standard WebGL frameworks) contr">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-depth-write-state-across-alpha-modes">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Depth Write State Across Alpha Modes - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-depth-write-state-across-alpha-modes" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The glTF specification defines three alpha modes—OPAQUE, MASK, and BLEND—each dictating how surface transparency interacts with the graphics rendering pipeline. The depth write state (glDepthMask in OpenGL or depthWrite in standard WebGL frameworks) contr" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-depth-write-state-across-alpha-modes">glTF Depth Write
+State Across Alpha Modes</h1>
+<p>The glTF specification defines three alpha modes—OPAQUE, MASK, and
+BLEND—each dictating how surface transparency interacts with the
+graphics rendering pipeline. The depth write state
+(<code>glDepthMask</code> in OpenGL or <code>depthWrite</code> in
+standard WebGL frameworks) controls whether rendered pixels update the
+Z-buffer, directly impacting visibility, occlusion, and rendering order.
+When toggling between these alpha modes at runtime without synchronizing
+the depth write state, applications encounter visual artifacts such as
+missing background geometry, sorting anomalies, or depth fighting.</p>
+<h3 id="expected-depth-write-states-per-gltf-alpha-mode">Expected Depth
+Write States per glTF Alpha Mode</h3>
+<p>To maintain visual accuracy, graphics engines assign distinct depth
+write behaviors to each glTF alpha mode:</p>
+<ul>
+<li><strong>OPAQUE:</strong> Depth write is <strong>enabled</strong>
+(<code>depthWrite = true</code>). Fully opaque surfaces write their
+fragment depth to the Z-buffer. This allows subsequent fragments further
+away from the camera to be rejected via early or late depth
+testing.</li>
+<li><strong>MASK:</strong> Depth write is <strong>enabled</strong>
+(<code>depthWrite = true</code>). Alpha values are tested against a
+defined cutoff threshold (<code>alphaCutoff</code>). Fragments failing
+the test are discarded completely, while passing fragments write to the
+depth buffer as standard opaque pixels.</li>
+<li><strong>BLEND:</strong> Depth write is typically
+<strong>disabled</strong> (<code>depthWrite = false</code>). Fragments
+are blended with background pixels using traditional alpha blending
+equations. Because blending requires visibility of objects behind the
+current surface, writing to the depth buffer is suppressed to prevent
+early depth-test rejections of subsequent background fragments.</li>
+</ul>
+<h3 id="the-impact-of-toggling-modes">The Impact of Toggling Modes</h3>
+<p>Dynamic material changes—such as transitioning an object from opaque
+to transparent or enabling cutouts—modify how fragments are handled.
+Failing to update the depth write state alongside the alpha mode
+produces significant graphical degradation.</p>
+<h4 id="1-switching-to-blend-with-depth-write-enabled">1. Switching to
+BLEND with Depth Write Enabled</h4>
+<p>If a material changes from <code>OPAQUE</code> or <code>MASK</code>
+to <code>BLEND</code> while leaving depth write active, the transparent
+surface writes its depth into the Z-buffer.</p>
+<ul>
+<li><strong>Occlusion Artifacts:</strong> Any object drawn
+<em>after</em> the blended surface that lies spatially <em>behind</em>
+it will fail the depth test. Consequently, background geometry becomes
+invisible through the translucent surface, creating artificial "holes"
+in the scene.</li>
+<li><strong>Sorting Sensitivity:</strong> While drawing transparent
+meshes back-to-front partially mitigates this, self-overlapping geometry
+on the same mesh will fail to blend properly, as foreground polygons
+block background polygons of the same object.</li>
+</ul>
+<h4 id="2-switching-to-opaque-or-mask-with-depth-write-disabled">2.
+Switching to OPAQUE or MASK with Depth Write Disabled</h4>
+<p>If a material transitions from <code>BLEND</code> to
+<code>OPAQUE</code> or <code>MASK</code> while keeping depth write
+disabled, surfaces render visually opaque but register no presence in
+the Z-buffer.</p>
+<ul>
+<li><strong>Incorrect Occlusion:</strong> Objects positioned further
+behind will pass their depth tests and overwrite the supposedly opaque
+foreground object if drawn later in the render loop.</li>
+<li><strong>Sorting Failures:</strong> The engine loses the ability to
+perform standard hardware-accelerated occlusion culling, requiring
+strict front-to-back sorting that is computationally expensive and prone
+to self-intersection artifacts on complex meshes.</li>
+</ul>
+<h3 id="pipeline-and-sorting-considerations">Pipeline and Sorting
+Considerations</h3>
+<p>Toggling alpha modes also alters the pipeline requirements for draw
+call batching and queue management:</p>
+<ul>
+<li><strong>Queue Migration:</strong> Engines group <code>OPAQUE</code>
+and <code>MASK</code> materials into an opaque pass sorted front-to-back
+to maximize early-Z performance. <code>BLEND</code> materials must
+migrate to a transparent pass sorted back-to-front.</li>
+<li><strong>State Synchronization:</strong> Updating the alpha mode
+property alone in an engine's material definition is insufficient if the
+underlying pipeline state object (PSO) or material flags do not
+automatically link <code>depthWrite</code> status to the chosen mode.
+Explicitly binding depth write status ensures the hardware rasterizer
+handles occlusion and blending correctly across state transitions.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

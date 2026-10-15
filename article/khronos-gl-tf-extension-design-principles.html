@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khronos glTF Extension Design Principles - gltf</title>
+    <meta name="description" content="The Khronos Group evaluates new extensions for glTF through a defined set of philosophical principles designed to balance continuous graphical innovation with format stability. Because glTF is positioned as the standard runtime asset delivery format—often">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/khronos-gl-tf-extension-design-principles">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Khronos glTF Extension Design Principles - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/khronos-gl-tf-extension-design-principles" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The Khronos Group evaluates new extensions for glTF through a defined set of philosophical principles designed to balance continuous graphical innovation with format stability. Because glTF is positioned as the standard runtime asset delivery format—often" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="khronos-gltf-extension-design-principles">Khronos glTF Extension
+Design Principles</h1>
+<p>The Khronos Group evaluates new extensions for glTF through a defined
+set of philosophical principles designed to balance continuous graphical
+innovation with format stability. Because glTF is positioned as the
+standard runtime asset delivery format—often called the "JPEG of 3D"—any
+proposed extension must undergo rigorous scrutiny regarding runtime
+efficiency, cross-platform interoperability, implementation consensus,
+and backward compatibility before it is ratified.</p>
+<h3
+id="transmission-and-runtime-efficiency-over-authoring-completeness">Transmission
+and Runtime Efficiency Over Authoring Completeness</h3>
+<p>glTF is fundamentally an asset delivery format, not a digital content
+creation (DCC) or authoring format. When evaluating extensions, the
+Khronos 3D Formats Working Group rejects proposals that introduce
+complex dependency graphs, parametric curves, or procedural generation
+that requires heavy CPU-side preprocessing. Data structures within an
+extension must be laid out for direct transmission into modern GPU APIs
+(such as Vulkan, WebGPU, Metal, and DirectX) with minimal parsing,
+memory allocation, or runtime overhead.</p>
+<h3 id="graceful-degradation-and-compatibility">Graceful Degradation and
+Compatibility</h3>
+<p>Extensions must not unnecessarily break renderers that lack support
+for them. Khronos requires extension authors to declare whether an
+extension is strictly required (<code>extensionsRequired</code>) or
+merely optional (<code>extensionsUsed</code>). Where possible,
+extensions are expected to provide fallback properties using baseline
+glTF 2.0 definitions. For instance, advanced material extensions (such
+as clearcoat, sheen, or transmission) build additively on top of the
+standard Metallic-Roughness Physically Based Rendering (PBR) model,
+allowing basic renderers to still display an aesthetically coherent
+asset.</p>
+<h3 id="multi-vendor-consensus-and-independence">Multi-Vendor Consensus
+and Independence</h3>
+<p>To prevent proprietary lock-in and fragmentation, Khronos does not
+ratify core or multi-vendor (<code>KHR_</code> or <code>EXT_</code>)
+extensions without broad industry consensus. An extension must be proven
+across multiple independent engines, authoring tools, and platforms
+before graduating. The evaluation process demands proof that at least
+two independent implementations (both export and import/render) can
+parse and display the feature identically, ensuring that specifications
+reflect practical reality rather than theoretical design.</p>
+<h3 id="strict-standardization-of-visual-and-physical-models">Strict
+Standardization of Visual and Physical Models</h3>
+<p>Extensions that introduce new visual capabilities must adhere to
+well-defined physical or mathematical models rather than arbitrary
+shader code. By standardizing explicit physical parameters—such as index
+of refraction, volumetric attenuation, or dispersion—the working group
+ensures that an asset rendered in a web browser using WebGL appears
+visually identical when loaded in a native desktop game engine or an
+enterprise visualization suite.</p>
+<h3 id="minimalism-and-modularity">Minimalism and Modularity</h3>
+<p>The core glTF specification is kept intentionally minimal, with new
+features isolated into modular extensions. Khronos favors small,
+orthogonal extensions that can be combined cleanly rather than
+monolithic additions that introduce cross-feature dependencies. This
+modular approach allows resource-constrained environments, such as
+mobile or embedded AR applications, to implement only the subset of
+extensions relevant to their performance budgets without carrying unused
+specification bloat.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Maya Maps Arnold Materials to glTF PBR - gltf</title>
+    <meta name="description" content="Exporting 3D assets from Autodesk Maya to the glTF (GL Transmission Format) standard requires translating proprietary shader networks—predominantly Arnold&#39;s aiStandardSurface—into the standardized glTF 2.0 Metallic-Roughness PBR material model. This proce">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-maya-maps-arnold-materials-to-gl-tf-pbr">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Maya Maps Arnold Materials to glTF PBR - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-maya-maps-arnold-materials-to-gl-tf-pbr" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Exporting 3D assets from Autodesk Maya to the glTF (GL Transmission Format) standard requires translating proprietary shader networks—predominantly Arnold&#39;s aiStandardSurface—into the standardized glTF 2.0 Metallic-Roughness PBR material model. This proce" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-maya-maps-arnold-materials-to-gltf-pbr">How Maya Maps Arnold
+Materials to glTF PBR</h1>
+<p>Exporting 3D assets from Autodesk Maya to the glTF (GL Transmission
+Format) standard requires translating proprietary shader
+networks—predominantly Arnold's <code>aiStandardSurface</code>—into the
+standardized glTF 2.0 Metallic-Roughness PBR material model. This
+process involves direct parameter conversion, texture channel packing,
+and the use of glTF material extensions to preserve material fidelity
+across real-time engines and web viewers.</p>
+<h3 id="core-architecture-differences">Core Architecture
+Differences</h3>
+<p>Arnold is a production path-tracing renderer that uses an expansive
+physical uber-shader (<code>aiStandardSurface</code>) with complex
+light-interaction models, arbitrary ray depths, and decoupled specular
+components. Conversely, glTF 2.0 relies on an efficient,
+real-time-friendly Metallic-Roughness PBR model.</p>
+<p>When exporting via Maya’s native glTF exporter, Maya's export
+pipeline evaluates the Arnold node graph and translates its inputs into
+glTF-compliant factors and packed texture maps.</p>
+<h3 id="parameter-mapping-breakdown">Parameter Mapping Breakdown</h3>
+<h4 id="1-base-color-and-diffuse">1. Base Color and Diffuse</h4>
+<ul>
+<li><strong>Arnold Input:</strong> <code>baseColor</code> combined with
+the <code>base</code> weight.</li>
+<li><strong>glTF Target:</strong> <code>baseColorFactor</code> and
+<code>baseColorTexture</code>.</li>
+<li><strong>Behavior:</strong> Maya calculates the effective diffuse
+color by multiplying the RGB value of <code>baseColor</code> by the
+scalar <code>base</code> weight. The resulting color or texture map is
+assigned directly to the glTF <code>baseColorTexture</code> (typically
+stored in sRGB color space).</li>
+</ul>
+<h4 id="2-metallic-and-roughness-channel-packing">2. Metallic and
+Roughness (Channel Packing)</h4>
+<ul>
+<li><strong>Arnold Input:</strong> <code>metalness</code> and
+<code>specularRoughness</code>.</li>
+<li><strong>glTF Target:</strong> <code>metallicRoughnessTexture</code>
+(<code>pbrMetallicRoughness</code>).</li>
+<li><strong>Behavior:</strong> glTF requires a single packed linear
+texture (commonly known as an ORM texture) for surface roughness and
+metalness:
+<ul>
+<li><strong>Green Channel:</strong> <code>specularRoughness</code> from
+Arnold is mapped to glTF's <code>roughnessFactor</code> / green texture
+channel.</li>
+<li><strong>Blue Channel:</strong> <code>metalness</code> from Arnold is
+mapped to glTF's <code>metallicFactor</code> / blue texture
+channel.</li>
+<li><strong>Red Channel:</strong> Often allocated to Ambient Occlusion
+(AO) if present, or set to 1.0.</li>
+</ul></li>
+</ul>
+<h4 id="3-normal-and-bump-mapping">3. Normal and Bump Mapping</h4>
+<ul>
+<li><strong>Arnold Input:</strong> Normal or bump nodes connected to
+<code>normalCamera</code>.</li>
+<li><strong>glTF Target:</strong> <code>normalTexture</code>.</li>
+<li><strong>Behavior:</strong> Tangent-space normal maps connected via
+Maya's <code>bump2d</code> node (configured to "Tangent Space Normals")
+map directly to glTF's <code>normalTexture</code>. Maya handles the
+coordinate translation, ensuring the green channel (Y-axis) matches the
+standard OpenGL/glTF orientation (+Y up).</li>
+</ul>
+<h4 id="4-emission">4. Emission</h4>
+<ul>
+<li><strong>Arnold Input:</strong> <code>emissionColor</code> combined
+with the <code>emission</code> weight.</li>
+<li><strong>glTF Target:</strong> <code>emissiveFactor</code> and
+<code>emissiveTexture</code>.</li>
+<li><strong>Behavior:</strong> The exported emissive value is the
+product of <code>emissionColor</code> and <code>emission</code>. In
+standard glTF 2.0, emission values are clamped between 0.0 and 1.0
+unless the engine or viewer supports the
+<code>KHR_materials_emissive_strength</code> extension for HDR
+values.</li>
+</ul>
+<h4 id="5-specular-and-index-of-refraction-ior">5. Specular and Index of
+Refraction (IOR)</h4>
+<ul>
+<li><strong>Arnold Input:</strong> <code>specularIOR</code>,
+<code>specularColor</code>, and <code>specular</code>.</li>
+<li><strong>glTF Target:</strong> Standard glTF assumes a fixed
+dielectric F0 reflectance corresponding to an IOR of 1.5 (4%
+reflectance). If the Maya glTF exporter is configured with extension
+support, it translates non-default IOR and specular values using:
+<ul>
+<li><code>KHR_materials_ior</code>: Receives the raw
+<code>specularIOR</code> value.</li>
+<li><code>KHR_materials_specular</code>: Receives
+<code>specularColor</code> and the <code>specular</code> weight.</li>
+</ul></li>
+</ul>
+<h4 id="6-transmission-and-refraction">6. Transmission and
+Refraction</h4>
+<ul>
+<li><strong>Arnold Input:</strong> <code>transmission</code> weight and
+<code>transmissionColor</code>.</li>
+<li><strong>glTF Target:</strong>
+<code>KHR_materials_transmission</code>.</li>
+<li><strong>Behavior:</strong> Standard glTF core does not support
+volumetric transparency, treating opacity primarily as alpha cutout or
+alpha blending. Maya maps Arnold’s transmission to the
+<code>KHR_materials_transmission</code> extension, allowing real-time
+glass, liquids, and thin transmissive surfaces.</li>
+</ul>
+<h4 id="7-clearcoat">7. Clearcoat</h4>
+<ul>
+<li><strong>Arnold Input:</strong> <code>coat</code> weight and
+<code>coatRoughness</code>.</li>
+<li><strong>glTF Target:</strong>
+<code>KHR_materials_clearcoat</code>.</li>
+<li><strong>Behavior:</strong> Arnold’s dedicated secondary specular
+layer maps directly to glTF's clearcoat extension, where the
+<code>coat</code> factor maps to <code>clearcoatFactor</code> and
+<code>coatRoughness</code> maps to
+<code>clearcoatRoughnessFactor</code>.</li>
+</ul>
+<h3 id="unsupported-and-non-direct-features">Unsupported and Non-Direct
+Features</h3>
+<p>Procedural Arnold utility nodes (such as <code>aiCurvature</code>,
+<code>aiAmbientOcclusion</code>, or complex layered procedural textures)
+cannot be natively translated into glTF runtime instructions. For these
+components to transfer accurately, Maya must bake the downstream result
+of the procedural network into static image textures prior to or during
+the glTF export process. Complex subsurface scattering (SSS) networks
+are also flattened or mapped using the
+<code>KHR_materials_subsurface</code> extension where supported.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exporting IFC to Web-Ready glTF in BIM Platforms - gltf</title>
+    <meta name="description" content="Exporting heavy Industry Foundation Classes (IFC) models into lightweight glTF (Graphics Language Transmission Format) files requires a pipeline that converts implicit architectural geometries into explicit polygonal meshes, optimizes draw calls, and sepa">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/exporting-ifc-to-web-ready-gl-tf-in-bim-platforms">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Exporting IFC to Web-Ready glTF in BIM Platforms - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/exporting-ifc-to-web-ready-gl-tf-in-bim-platforms" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Exporting heavy Industry Foundation Classes (IFC) models into lightweight glTF (Graphics Language Transmission Format) files requires a pipeline that converts implicit architectural geometries into explicit polygonal meshes, optimizes draw calls, and sepa" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="exporting-ifc-to-web-ready-gltf-in-bim-platforms">Exporting IFC
+to Web-Ready glTF in BIM Platforms</h1>
+<p>Exporting heavy Industry Foundation Classes (IFC) models into
+lightweight glTF (Graphics Language Transmission Format) files requires
+a pipeline that converts implicit architectural geometries into explicit
+polygonal meshes, optimizes draw calls, and separates rich semantic
+metadata from renderable graphics. This transformation allows web
+browsers to stream and render massive architectural models at high frame
+rates without crashing client-side memory.</p>
+<h3 id="1-geometry-tessellation-and-conversion">1. Geometry Tessellation
+and Conversion</h3>
+<p>IFC files store geometry using parametric, constructive solid
+geometry (CSG), and boundary representation (B-Rep) definitions to
+maintain dimensional accuracy for construction. WebGL engines, however,
+can only process explicit triangle meshes.</p>
+<p>During export, the BIM conversion engine parses the IFC schema and
+tessellates these parametric curves and solids into discrete triangles.
+Curved surfaces (such as circular columns or pipes) are approximated
+using linear segments. Converters allow users to adjust deflection
+tolerances to strike a balance between visual fidelity and polygon
+counts.</p>
+<h3 id="2-geometry-instancing-and-batching">2. Geometry Instancing and
+Batching</h3>
+<p>Raw architectural models often contain thousands of individual
+objects, which creates an excessive number of draw calls for a graphics
+card. BIM-to-glTF exporters optimize this through two primary
+methods:</p>
+<ul>
+<li><strong>Hardware Instancing:</strong> When identical elements (like
+recurring doors, structural bolts, or light fixtures) are detected, the
+exporter writes the geometry once and references it multiple times using
+glTF transformation matrices or the <code>EXT_mesh_gpu_instancing</code>
+extension.</li>
+<li><strong>Mesh Merging (Batching):</strong> Non-moving elements
+sharing identical materials are often combined into unified meshes. This
+drastically reduces CPU-to-GPU communication bottlenecks during browser
+rendering.</li>
+</ul>
+<h3 id="3-material-translation-to-pbr">3. Material Translation to
+PBR</h3>
+<p>IFC typically defines appearance via basic surface styles, colors,
+and transparency values. Modern glTF scenes rely on Physically Based
+Rendering (PBR) metallic-roughness workflows. Exporters map IFC style
+properties to standard PBR material parameters:</p>
+<ul>
+<li>Diffuse colors map to the base color factor.</li>
+<li>Surface transparencies are assigned to alpha channels or glTF
+transmission properties.</li>
+<li>Specular values are translated into appropriate roughness and
+metalness ratios.</li>
+</ul>
+<h3 id="4-decoupling-semantic-metadata">4. Decoupling Semantic
+Metadata</h3>
+<p>A major reason IFC files are large is the hierarchical property data
+(Psets) attached to every element. Embedding all IFC attributes directly
+into the glTF node hierarchy inflates file sizes and degrades parsing
+performance.</p>
+<p>To maintain light payloads, modern BIM platforms decouple metadata
+from visual assets. Each 3D node in the glTF file retains only a unique
+identifier (such as the IFC GlobalId). The associated structural
+relationships, property sets, and classifications are exported
+separately into compressed JSON, FlatBuffers, or external databases. The
+web client queries this metadata dynamically only when a user selects a
+specific element in the viewport.</p>
+<h3 id="5-compression-and-delivery">5. Compression and Delivery</h3>
+<p>The final step packages the processed scene into binary format
+(<code>.glb</code>) to minimize network transfer times. BIM exporters
+frequently apply advanced web-delivery optimizations, such as:</p>
+<ul>
+<li><strong>Draco Compression
+(<code>KHR_draco_mesh_compression</code>):</strong> Dramatically reduces
+geometry data sizes by compressing vertex positions, normals, and
+texture coordinates.</li>
+<li><strong>Vertex Quantization
+(<code>KHR_mesh_quantization</code>):</strong> Converts 32-bit
+floating-point coordinates into 8-bit or 16-bit integers where high
+precision is not visually necessary.</li>
+</ul>
+<p>Through this multi-stage pipeline, multi-gigabyte IFC architectural
+projects are reduced to compact, optimized glTF assets that load
+smoothly across desktop and mobile browsers.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

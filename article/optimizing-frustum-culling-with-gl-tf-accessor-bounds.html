@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimizing Frustum Culling with glTF Accessor Bounds - gltf</title>
+    <meta name="description" content="The glTF (GL Transmission Format) specification optimizes frustum culling by embedding precomputed axis-aligned bounding box (AABB) data directly into the min and max properties of its position accessors. This architecture allows real-time graphics engine">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/optimizing-frustum-culling-with-gl-tf-accessor-bounds">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Optimizing Frustum Culling with glTF Accessor Bounds - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/optimizing-frustum-culling-with-gl-tf-accessor-bounds" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The glTF (GL Transmission Format) specification optimizes frustum culling by embedding precomputed axis-aligned bounding box (AABB) data directly into the min and max properties of its position accessors. This architecture allows real-time graphics engine" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="optimizing-frustum-culling-with-gltf-accessor-bounds">Optimizing
+Frustum Culling with glTF Accessor Bounds</h1>
+<p>The glTF (GL Transmission Format) specification optimizes frustum
+culling by embedding precomputed axis-aligned bounding box (AABB) data
+directly into the <code>min</code> and <code>max</code> properties of
+its position accessors. This architecture allows real-time graphics
+engines to determine whether a mesh is visible within the camera’s view
+frustum instantaneously, completely bypassing the need to download,
+decompress, or iterate over individual vertex arrays on the CPU during
+runtime.</p>
+<h3 id="accessor-min-and-max-properties">Accessor Min and Max
+Properties</h3>
+<p>In a glTF asset, 3D geometry is broken down into buffers, buffer
+views, and accessors. An accessor defines the data type, component type,
+and layout of a specific attribute (such as position, normal, or UV
+coordinates).</p>
+<p>For the <code>POSITION</code> attribute, the glTF specification
+mandates the inclusion of <code>min</code> and <code>max</code> arrays.
+These properties consist of three floating-point values representing the
+minimum and maximum spatial coordinates <span class="math inline">\([X,
+Y, Z]\)</span> of the underlying geometry in local object space:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;accessors&quot;</span><span class="er">:</span> <span class="ot">[</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">{</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;bufferView&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;byteOffset&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;componentType&quot;</span><span class="fu">:</span> <span class="dv">5126</span><span class="fu">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;count&quot;</span><span class="fu">:</span> <span class="dv">1024</span><span class="fu">,</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;VEC3&quot;</span><span class="fu">,</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;max&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="fl">1.5</span><span class="ot">,</span> <span class="fl">2.0</span><span class="ot">,</span> <span class="fl">0.5</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;min&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="fl">-1.5</span><span class="ot">,</span> <span class="fl">0.0</span><span class="ot">,</span> <span class="fl">-0.5</span><span class="ot">]</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="ot">]</span></span></code></pre></div>
+<p>These values define the exact local-space AABB containing every
+vertex of that primitive.</p>
+<h3 id="the-frustum-culling-pipeline">The Frustum Culling Pipeline</h3>
+<p>Using these precomputed bounds, rendering engines optimize frustum
+culling through a lightweight sequence of calculations:</p>
+<ol type="1">
+<li><strong>Extract Local Bounds:</strong> The engine reads the
+<code>min</code> and <code>max</code> vectors directly from the JSON
+metadata during scene parsing. No vertex buffers are queried.</li>
+<li><strong>Transform to World Space:</strong> The local AABB is
+multiplied by the node's global transform matrix (including translation,
+rotation, and scale). The resulting transformed volume can be
+represented either as a transformed oriented bounding box (OBB), a new
+world-space AABB encompassing the transformed corners, or a bounding
+sphere derived from the extents.</li>
+<li><strong>Frustum Intersection Test:</strong> The engine tests the
+derived world-space bounding volume against the six clipping planes of
+the camera’s view frustum.</li>
+<li><strong>Draw Call Decision:</strong>
+<ul>
+<li><strong>Outside:</strong> If all corners of the bounding volume
+reside outside any single plane, the entire mesh is discarded. The
+engine skips issuing the draw call, updates, and GPU state changes.</li>
+<li><strong>Inside / Intersecting:</strong> If the volume is fully
+inside or intersects the planes, the primitive is sent to the GPU for
+rasterization.</li>
+</ul></li>
+</ol>
+<h3 id="performance-benefits">Performance Benefits</h3>
+<ul>
+<li><strong>Zero CPU Geometry Overhead:</strong> Without accessor
+bounds, an engine would have to read thousands or millions of raw
+floating-point vertices from system memory to compute an initial
+bounding box. Reading directly from JSON metadata reduces this
+complexity to an <span class="math inline">\(O(1)\)</span> memory
+lookup.</li>
+<li><strong>Hierarchical Culling:</strong> Node hierarchies can combine
+the accessors of child nodes to establish composite bounds at the parent
+level. An entire branch of a scene graph can be rejected in a single
+plane-intersection test.</li>
+<li><strong>Compatibility with Compressed Payloads:</strong> Formats
+utilizing extensions like <code>KHR_draco_mesh_compression</code> or
+<code>EXT_meshopt_compression</code> store geometry in compressed
+formats. Because accessor <code>min</code> and <code>max</code>
+properties exist in plaintext JSON outside the compressed binary
+payload, the engine can cull objects before allocating memory or
+executing CPU-intensive decompression routines.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

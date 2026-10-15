@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Vertex Color Encoding and Interpretation - gltf</title>
+    <meta name="description" content="This article provides an overview of how raw vertex colors are defined, stored, and rendered according to the glTF 2.0 specification. It covers the required attribute naming conventions, supported data formats, component normalization, linear color space">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-vertex-color-encoding-and-interpretation">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Vertex Color Encoding and Interpretation - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-vertex-color-encoding-and-interpretation" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of how raw vertex colors are defined, stored, and rendered according to the glTF 2.0 specification. It covers the required attribute naming conventions, supported data formats, component normalization, linear color space" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-vertex-color-encoding-and-interpretation">glTF Vertex Color
+Encoding and Interpretation</h1>
+<p>This article provides an overview of how raw vertex colors are
+defined, stored, and rendered according to the glTF 2.0 specification.
+It covers the required attribute naming conventions, supported data
+formats, component normalization, linear color space requirements, and
+how these values integrate into the glTF physically based rendering
+(PBR) pipeline.</p>
+<h3 id="attribute-naming-and-accessors">Attribute Naming and
+Accessors</h3>
+<p>In the glTF 2.0 specification, vertex colors are stored as mesh
+primitive attributes using the semantic name <code>COLOR_0</code> (or
+<code>COLOR_n</code> for additional color sets). Each color attribute
+points to an accessor object, which defines how to read the underlying
+binary buffer data.</p>
+<h3 id="supported-data-types-and-layouts">Supported Data Types and
+Layouts</h3>
+<p>Vertex colors must be defined as either three-component vectors
+(<code>VEC3</code>) representing RGB or four-component vectors
+(<code>VEC4</code>) representing RGBA. The component types allowed for
+vertex colors are:</p>
+<ul>
+<li><strong><code>5121</code> (<code>UNSIGNED_BYTE</code>):</strong>
+8-bit unsigned integers. When used, the accessor's
+<code>normalized</code> property must explicitly be set to
+<code>true</code>, mapping the range <code>[0, 255]</code> to the
+floating-point range <code>[0.0, 1.0]</code>.</li>
+<li><strong><code>5123</code> (<code>UNSIGNED_SHORT</code>):</strong>
+16-bit unsigned integers. The accessor's <code>normalized</code>
+property must also be set to <code>true</code>, mapping the range
+<code>[0, 65535]</code> to the floating-point range
+<code>[0.0, 1.0]</code>.</li>
+<li><strong><code>5126</code> (<code>FLOAT</code>):</strong> 32-bit
+floating-point values representing colors directly within the standard
+range <code>[0.0, 1.0]</code>.</li>
+</ul>
+<p>If a primitive uses a <code>VEC3</code> format, the alpha component
+is implicitly assumed to be <code>1.0</code>.</p>
+<h3 id="color-space-interpretation">Color Space Interpretation</h3>
+<p>A critical requirement of the glTF specification is that vertex
+colors are interpreted in <strong>Linear sRGB</strong> color space.</p>
+<p>Unlike color textures (such as <code>baseColorTexture</code>), which
+are typically encoded in non-linear sRGB and require conversion in the
+shader, raw vertex color data must already represent linear values.
+Client implementations must not apply an sRGB-to-linear transfer
+function (gamma expansion) to normalized or floating-point vertex
+colors.</p>
+<h3 id="integration-in-the-pbr-material-pipeline">Integration in the PBR
+Material Pipeline</h3>
+<p>Once decoded into linear RGBA values, vertex colors directly modify
+the surface base color in the metallic-roughness and specular-glossiness
+material workflows.</p>
+<p>The glTF shading model specifies that vertex colors are applied via
+component-wise multiplication with the material's base color
+properties:</p>
+<p><span class="math display">\[\text{Final Base Color} =
+\text{COLOR\_0} \times \text{baseColorFactor} \times
+\text{baseColorTexture}\]</span></p>
+<p>If no base color texture is assigned, the vertex color multiplies
+only the <code>baseColorFactor</code>. If no vertex color is present on
+the mesh, the vertex color term defaults to a neutral
+<code>(1.0, 1.0, 1.0, 1.0)</code>.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

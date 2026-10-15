@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Layer Order: Clearcoat, Iridescence, Sheen - gltf</title>
+    <meta name="description" content="When combining clearcoat, iridescence, and sheen on a single glTF surface, the material system evaluates layers in a strict bottom-to-top hierarchy to maintain physical plausibility and energy conservation. Iridescence acts directly on the base substrate">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-layer-order-clearcoat-iridescence-sheen">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Layer Order: Clearcoat, Iridescence, Sheen - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-layer-order-clearcoat-iridescence-sheen" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When combining clearcoat, iridescence, and sheen on a single glTF surface, the material system evaluates layers in a strict bottom-to-top hierarchy to maintain physical plausibility and energy conservation. Iridescence acts directly on the base substrate" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-layer-order-clearcoat-iridescence-sheen">glTF Layer Order:
+Clearcoat, Iridescence, Sheen</h1>
+<p>When combining clearcoat, iridescence, and sheen on a single glTF
+surface, the material system evaluates layers in a strict bottom-to-top
+hierarchy to maintain physical plausibility and energy conservation.
+Iridescence acts directly on the base substrate to modify its specular
+reflectance, sheen sits above the base substrate to simulate surface
+microfibers, and clearcoat acts as the topmost protective layer covering
+everything else.</p>
+<h3 id="1-the-substrate-with-iridescence-khr_materials_iridescence">1.
+The Substrate with Iridescence
+(<code>KHR_materials_iridescence</code>)</h3>
+<p>The bottom of the evaluation stack is the standard PBR
+metallic-roughness base layer. When iridescence is present, it does not
+act as an independent outer coating; instead, it modifies the specular
+reflectance (Fresnel response) of the base substrate itself.</p>
+<ul>
+<li>The thin-film interference equations calculate phase shifts and
+wavelength-dependent reflections.</li>
+<li>These interference colors replace or blend with the standard
+dielectric or conductor specular response of the base surface.</li>
+<li>Diffuse contributions from the base substrate are tinted or
+attenuated accordingly based on the energy transmitted through the thin
+film.</li>
+</ul>
+<h3 id="2-the-intermediate-sheen-layer-khr_materials_sheen">2. The
+Intermediate Sheen Layer (<code>KHR_materials_sheen</code>)</h3>
+<p>The sheen layer simulates soft, micro-fuzz reflections typically
+found on velvet or fabric. In the glTF layering stack, sheen sits
+directly on top of the iridescent base substrate, but beneath any
+clearcoat.</p>
+<ul>
+<li>Sheen adds an independent specular sheen lobe using the Charlie or
+similar microfacet distribution.</li>
+<li>To conserve energy, the sheen layer absorbs incoming and outgoing
+light, scaling down (attenuating) the underlying iridescent base layer's
+specular and diffuse contributions based on the sheen's albedo and
+roughness.</li>
+</ul>
+<h3 id="3-the-top-clearcoat-layer-khr_materials_clearcoat">3. The Top
+Clearcoat Layer (<code>KHR_materials_clearcoat</code>)</h3>
+<p>The clearcoat extension represents a smooth, transparent resin or
+lacquer applied over the entire surface. It occupies the highest level
+of the layer stack.</p>
+<ul>
+<li>The clearcoat specular reflection is computed first from the
+perspective of an external light source, using its own distinct
+roughness and normal maps.</li>
+<li>Because clearcoat reflects a portion of the incoming light at the
+outermost boundary, it attenuates all transmission to and reflection
+from the layers beneath it.</li>
+<li>Both the sheen layer and the iridescent base layer are darkened in
+proportion to the clearcoat's Fresnel reflectance factor
+(<code>1 - F_clearcoat</code>), ensuring energy conservation across the
+composite material.</li>
+</ul>
+<h3 id="composite-evaluation-summary">Composite Evaluation Summary</h3>
+<p>In terms of rendering composition and shading calculations:</p>
+<ol type="1">
+<li><strong>Base Layer:</strong> Compute base diffuse and specular
+terms, factoring in thin-film interference from
+<strong>Iridescence</strong>.</li>
+<li><strong>Apply Sheen:</strong> Add the <strong>Sheen</strong>
+specular lobe on top, attenuating the iridescent base layer according to
+sheen reflectance.</li>
+<li><strong>Apply Clearcoat:</strong> Add the <strong>Clearcoat</strong>
+specular lobe on the outer surface, attenuating the combined result of
+the sheen and iridescent base layers beneath it.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

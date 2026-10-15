@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How glTF Linear Animation Interpolation Works - gltf</title>
+    <meta name="description" content="This article provides a technical overview of how glTF animation samplers calculate intermediate values between keyframes using the LINEAR interpolation mode. It explains the mechanics of determining the interpolation factor between keyframe timestamps an">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-gl-tf-linear-animation-interpolation-works">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How glTF Linear Animation Interpolation Works - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-gl-tf-linear-animation-interpolation-works" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides a technical overview of how glTF animation samplers calculate intermediate values between keyframes using the LINEAR interpolation mode. It explains the mechanics of determining the interpolation factor between keyframe timestamps an" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-gltf-linear-animation-interpolation-works">How glTF Linear
+Animation Interpolation Works</h1>
+<p>This article provides a technical overview of how glTF animation
+samplers calculate intermediate values between keyframes using the
+<code>LINEAR</code> interpolation mode. It explains the mechanics of
+determining the interpolation factor between keyframe timestamps and
+details the exact mathematical approaches required by the glTF 2.0
+specification, differentiating between linear vector interpolation
+(Lerp) for translation, scale, and morph weights, and spherical linear
+interpolation (Slerp) for rotations.</p>
+<h3 id="animation-sampler-basics">Animation Sampler Basics</h3>
+<p>In glTF, an animation sampler defines how animation data is sampled
+and interpolated over time. It relies on two main components:</p>
+<ul>
+<li><strong><code>input</code></strong>: An accessor pointing to
+floating-point timestamps representing keyframe times (<span
+class="math inline">\(t_0, t_1, \dots, t_n\)</span>) in strictly
+increasing order.</li>
+<li><strong><code>output</code></strong>: An accessor pointing to
+keyframe values (translations, rotations, scales, or morph target
+weights) corresponding directly to the input timestamps.</li>
+</ul>
+<p>When the animation sampler's <code>interpolation</code> property is
+set to <code>"LINEAR"</code>, the engine must mathematically bridge the
+gap between keyframe values across any given current time <span
+class="math inline">\(T\)</span>.</p>
+<h3 id="calculating-the-interpolation-factor">Calculating the
+Interpolation Factor</h3>
+<p>Given a current playback time <span class="math inline">\(T\)</span>
+that falls between two adjacent keyframes <span
+class="math inline">\(t_k\)</span> and <span
+class="math inline">\(t_{k+1}\)</span> such that <span
+class="math inline">\(t_k \le T &lt; t_{k+1}\)</span>, the first step is
+computing the normalized interpolation factor <span
+class="math inline">\(t\)</span>:</p>
+<p><span class="math display">\[t = \frac{T - t_k}{t_{k+1} -
+t_k}\]</span></p>
+<p>The resulting scalar <span class="math inline">\(t\)</span> ranges
+from <code>0.0</code> (at timestamp <span
+class="math inline">\(t_k\)</span>) to <code>1.0</code> (at timestamp
+<span class="math inline">\(t_{k+1}\)</span>).</p>
+<h3 id="translation-and-scale-linear-interpolation-lerp">Translation and
+Scale: Linear Interpolation (Lerp)</h3>
+<p>When the animation target is a node's <strong>translation</strong> or
+<strong>scale</strong>, the output values are 3D vectors
+(<code>VEC3</code>). The sampler computes intermediate values using
+standard component-wise linear interpolation (Lerp):</p>
+<p><span class="math display">\[\vec{V}(t) = (1 - t)\vec{V}_k +
+t\vec{V}_{k+1}\]</span></p>
+<p>Each component (<span class="math inline">\(x, y, z\)</span>) is
+interpolated independently. The result directly represents the node's
+local position or scale factor at time <span
+class="math inline">\(T\)</span>.</p>
+<h3 id="rotation-spherical-linear-interpolation-slerp">Rotation:
+Spherical Linear Interpolation (Slerp)</h3>
+<p>When the animation target is a node's <strong>rotation</strong>, the
+output values are unit quaternions (<code>VEC4</code>) ordered as <span
+class="math inline">\((x, y, z, w)\)</span>.</p>
+<p>Standard linear interpolation cannot be used directly on quaternions
+because it fails to preserve a constant angular velocity and degrades
+the unit length of the quaternion, which leads to visual distortion.
+Instead, the glTF specification mandates Spherical Linear Interpolation
+(Slerp).</p>
+<p>Slerp interpolates along the shortest arc on the 4D unit
+hypersphere:</p>
+<ol type="1">
+<li><strong>Shortest Path Correction</strong>: Compute the dot product
+between the two quaternions: <span class="math display">\[\cos(\Omega) =
+q_k \cdot q_{k+1} = x_k x_{k+1} + y_k y_{k+1} + z_k z_{k+1} + w_k
+w_{k+1}\]</span> If <span class="math inline">\(\cos(\Omega) &lt;
+0\)</span>, invert one of the quaternions (e.g., <span
+class="math inline">\(q_{k+1} = -q_{k+1}\)</span>) and negate <span
+class="math inline">\(\cos(\Omega)\)</span> so the rotation takes the
+shortest path.</li>
+<li><strong>Interpolation Formula</strong>: <span
+class="math display">\[q(t) = \frac{\sin((1 - t)\Omega)}{\sin(\Omega)}
+q_k + \frac{\sin(t\Omega)}{\sin(\Omega)} q_{k+1}\]</span> Where <span
+class="math inline">\(\Omega = \arccos(\cos(\Omega))\)</span>.</li>
+<li><strong>Small Angle Fallback</strong>: If <span
+class="math inline">\(\cos(\Omega)\)</span> is close to <code>1.0</code>
+(meaning the angle between keyframes is extremely small), engines fall
+back to a normalized Lerp (Nlerp) to avoid division by zero: <span
+class="math display">\[q(t) = \text{normalize}((1 - t)q_k + t
+q_{k+1})\]</span></li>
+</ol>
+<p>The final quaternion must always be normalized to ensure it remains a
+valid unit rotation.</p>
+<h3 id="morph-target-weights-component-wise-interpolation">Morph Target
+Weights: Component-wise Interpolation</h3>
+<p>When targeting <strong>weights</strong> for morph targets, the output
+elements represent scalar arrays. If a mesh has <span
+class="math inline">\(m\)</span> morph targets, each keyframe provides
+<span class="math inline">\(m\)</span> weight values.</p>
+<p>The sampler applies standard linear interpolation component-wise
+across each individual morph target weight:</p>
+<p><span class="math display">\[w_i(t) = (1 - t)w_{i, k} + t w_{i,
+k+1}\]</span></p>
+<p>for each target index <span class="math inline">\(i \in [0, m -
+1]\)</span>.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

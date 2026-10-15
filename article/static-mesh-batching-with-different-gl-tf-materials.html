@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Static Mesh Batching with Different glTF Materials - gltf</title>
+    <meta name="description" content="Static mesh batching combines multiple geometries into a unified buffer to reduce draw calls and optimize rendering performance, but primitives utilizing different glTF materials severely restrict this process. When primitives do not share material proper">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/static-mesh-batching-with-different-gl-tf-materials">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Static Mesh Batching with Different glTF Materials - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/static-mesh-batching-with-different-gl-tf-materials" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Static mesh batching combines multiple geometries into a unified buffer to reduce draw calls and optimize rendering performance, but primitives utilizing different glTF materials severely restrict this process. When primitives do not share material proper" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="static-mesh-batching-with-different-gltf-materials">Static Mesh
+Batching with Different glTF Materials</h1>
+<p>Static mesh batching combines multiple geometries into a unified
+buffer to reduce draw calls and optimize rendering performance, but
+primitives utilizing different glTF materials severely restrict this
+process. When primitives do not share material properties, the rendering
+engine cannot submit them in a single draw call without significant
+pipeline reconfiguration. This article examines the core limitations
+encountered when batching static meshes that feature disparate glTF
+materials, including draw call fragmentation, pipeline state changes,
+texture management bottlenecks, and culling inefficiencies.</p>
+<h3 id="draw-call-fragmentation">Draw Call Fragmentation</h3>
+<p>The fundamental objective of static batching is to merge geometry
+into a single draw call sent to the GPU. However, a standard graphics
+pipeline requires uniform state parameters—including shaders, textures,
+and blending modes—for each draw call. In glTF, each primitive points to
+a specific <code>material</code> index. If primitives reference
+different material definitions, the engine cannot merge them into a
+single command buffer without preprocessing. Consequently, the batch
+breaks into multiple sub-draw calls, directly defeating the primary CPU
+optimization that static batching is meant to achieve.</p>
+<h3 id="gpu-pipeline-state-changes">GPU Pipeline State Changes</h3>
+<p>Distinct glTF materials often dictate distinct graphics pipeline
+configurations. For instance, transitioning between an
+<code>OPAQUE</code> material and a <code>BLEND</code> or
+<code>MASK</code> material (with an <code>alphaCutoff</code>) requires
+changing the pipeline state object (PSO) or rasterizer state. Similarly,
+variations between standard PBR metallic-roughness and extensions like
+specular, transmission, or clearcoat necessitate different shader
+variants. Switching shaders and pipeline states mid-frame forces GPU
+pipeline flushes and introduces driver overhead, diminishing rendering
+throughput.</p>
+<h3 id="texture-binding-and-atlasing-limits">Texture Binding and
+Atlasing Limits</h3>
+<p>Materials in glTF define separate image sources for maps such as
+<code>baseColorTexture</code>, <code>metallicRoughnessTexture</code>,
+and <code>normalTexture</code>. A GPU can only bind a limited number of
+texture units per shader stage. When primitives use differing materials,
+they point to separate texture files. Merging these primitives into a
+single draw call requires either:</p>
+<ul>
+<li><strong>Texture Atlasing:</strong> Combining separate textures into
+a single large texture sheet. This introduces preprocessing overhead,
+requires recalculating UV coordinates across vertices, and risks texture
+bleeding artifacts across mipmaps.</li>
+<li><strong>Texture Arrays:</strong> Allocating a uniform 2D texture
+array. This demands that all textures share identical dimensions, bit
+depths, and formats, which is rarely standard in diverse glTF asset
+libraries.</li>
+</ul>
+<p>Without automatic atlasing or texture arrays, materials cannot share
+shader executions, preventing geometry consolidation.</p>
+<h3 id="memory-overhead-and-vertex-duplication">Memory Overhead and
+Vertex Duplication</h3>
+<p>glTF allows vertex attributes (like positions, normals, and UVs) to
+be referenced via sparse accessors or shared across primitives. To batch
+meshes with distinct materials into merged buffers, engines often must
+unroll, convert, and duplicate vertex data to match a common vertex
+format required by the most complex material in the batch. Adding
+padding or unused vertex attributes (such as an extra UV set or tangent
+vector required by only one material) inflates the vertex buffer size
+and consumes unnecessary VRAM and bandwidth.</p>
+<h3 id="impaired-spatial-and-occlusion-culling">Impaired Spatial and
+Occlusion Culling</h3>
+<p>Static batching combines the bounding boxes of individual primitives
+into a single aggregate bounding volume. If primitives with varied
+materials are scattered across a scene and combined into uniform batches
+based solely on material grouping, the resulting bounding boxes become
+artificially large and sparse. This diminishes the effectiveness of
+frustum and occlusion culling, forcing the GPU to process vertices and
+fragments that reside outside the camera's field of view or behind other
+occluders.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

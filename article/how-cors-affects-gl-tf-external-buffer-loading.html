@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How CORS Affects glTF External Buffer Loading - gltf</title>
+    <meta name="description" content="The glTF (GL Transmission Format) standard frequently relies on separate external files, such as .bin binary buffers and image textures, to store mesh data, animations, and materials. Because web browsers enforce security policies like the Same-Origin Pol">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-cors-affects-gl-tf-external-buffer-loading">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How CORS Affects glTF External Buffer Loading - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-cors-affects-gl-tf-external-buffer-loading" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The glTF (GL Transmission Format) standard frequently relies on separate external files, such as .bin binary buffers and image textures, to store mesh data, animations, and materials. Because web browsers enforce security policies like the Same-Origin Pol" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-cors-affects-gltf-external-buffer-loading">How CORS Affects
+glTF External Buffer Loading</h1>
+<p>The glTF (GL Transmission Format) standard frequently relies on
+separate external files, such as <code>.bin</code> binary buffers and
+image textures, to store mesh data, animations, and materials. Because
+web browsers enforce security policies like the Same-Origin Policy
+(SOP), fetching these external resources from different domains,
+subdomains, or ports triggers Cross-Origin Resource Sharing (CORS)
+checks. This article examines how CORS governs the retrieval of external
+glTF buffers, why loading failures occur, and how developers can
+properly configure servers and assets to prevent rendering errors.</p>
+<h2 id="the-mechanism-of-external-buffer-loading">The Mechanism of
+External Buffer Loading</h2>
+<p>A standard <code>.gltf</code> file is a JSON document that defines
+the scene graph, node hierarchies, and material properties of a 3D
+model. Rather than embedding large binary data directly within the JSON,
+the file uses Uniform Resource Identifiers (URIs) inside its
+<code>buffers</code> and <code>images</code> arrays to point to external
+binary files (<code>.bin</code>) and texture assets.</p>
+<p>When a WebGL or WebGPU engine—such as Three.js, Babylon.js, or
+model-viewer—parses a glTF file, it initiates asynchronous network
+requests using the <code>fetch</code> API or <code>XMLHttpRequest</code>
+to download these referenced buffers. Once downloaded, the application
+reads the underlying <code>ArrayBuffer</code> data to populate GPU-side
+vertex buffers, index arrays, and skinning weights.</p>
+<h2 id="how-cors-restricts-buffer-access">How CORS Restricts Buffer
+Access</h2>
+<p>Browsers strictly isolate web applications using the Same-Origin
+Policy. A cross-origin request occurs whenever the external
+<code>.bin</code> buffer resides on a different protocol, domain, or
+port than the page hosting the 3D application (for example, hosting the
+web app on <code>https://example.com</code> while serving assets from
+<code>https://assets.cdn.com</code>).</p>
+<p>Because glTF loaders require programmatic read access to the raw byte
+arrays via JavaScript, simple image rendering policies do not suffice.
+The browser demands explicit permission from the storage server via CORS
+headers:</p>
+<ol type="1">
+<li><strong>Origin Verification:</strong> The browser automatically
+attaches an <code>Origin</code> header to the outgoing fetch
+request.</li>
+<li><strong>Permission Check:</strong> The server hosting the
+<code>.bin</code> file must respond with an
+<code>Access-Control-Allow-Origin</code> header matching the requesting
+domain, or a wildcard (<code>*</code>) for public resources.</li>
+<li><strong>Block on Failure:</strong> If this header is missing or
+mismatches the origin, the browser blocks JavaScript access to the
+response body. Even if the network transfer succeeds with an HTTP 200
+status code, the application receives a network error instead of the
+<code>ArrayBuffer</code>.</li>
+</ol>
+<p>Without access to the binary buffer, the 3D engine cannot construct
+geometric attributes like positions, normals, and UV coordinates,
+causing the model to fail to render completely.</p>
+<h2 id="common-cors-failure-scenarios">Common CORS Failure
+Scenarios</h2>
+<ul>
+<li><strong>Unconfigured Cloud Storage:</strong> Storing
+<code>.bin</code> files in cloud object storage (such as Amazon S3,
+Google Cloud Storage, or Azure Blob Storage) without explicitly defining
+a CORS configuration rule blocks client-side loaders.</li>
+<li><strong>Local Development (<code>file:///</code>):</strong> Opening
+HTML files directly from a local filesystem assigns a <code>null</code>
+or unique origin to the document, which modern browsers automatically
+block from fetching external local files like <code>.bin</code>
+buffers.</li>
+<li><strong>Preflight Request Drops:</strong> If an application attaches
+custom headers or authorization tokens to buffer fetch requests, the
+browser sends an HTTP <code>OPTIONS</code> preflight request. If the
+server fails to handle <code>OPTIONS</code> requests or omit
+<code>Access-Control-Allow-Headers</code>, the buffer download is
+aborted.</li>
+<li><strong>Tainted Canvas with Textures:</strong> While binary geometry
+files strictly require CORS to load, external textures loaded without
+CORS block pixel-level manipulation. If an image is applied to a WebGL
+texture without the <code>crossOrigin</code> attribute set, it can taint
+the WebGL context, breaking post-processing effects or screenshots.</li>
+</ul>
+<h2 id="best-practices-to-prevent-cors-issues-in-gltf">Best Practices to
+Prevent CORS Issues in glTF</h2>
+<p>To ensure external glTF assets load reliably, implement the following
+strategies:</p>
+<ul>
+<li><strong>Configure Server Headers:</strong> Ensure the server or CDN
+delivering <code>.bin</code> and image assets sends the header
+<code>Access-Control-Allow-Origin: *</code> (or specific trusted
+domains) alongside
+<code>Access-Control-Allow-Methods: GET, OPTIONS</code>.</li>
+<li><strong>Use Local Development Servers:</strong> Never test glTF
+loading directly through the <code>file:///</code> protocol. Use
+lightweight local HTTP servers (such as Node-based
+<code>http-server</code> or Vite) to provide consistent
+<code>http://localhost</code> origins.</li>
+<li><strong>Adopt the GLB Binary Format:</strong> Packing the JSON
+structure, <code>.bin</code> buffers, and textures into a single
+self-contained <code>.glb</code> container eliminates secondary external
+buffer requests. While fetching the <code>.glb</code> itself still
+requires CORS if cross-origin, it reduces the complexity of handling
+multiple cross-origin requests for linked assets.</li>
+<li><strong>Serve Assets Same-Origin:</strong> When feasible, host 3D
+assets on the same origin as the web application, or use reverse proxies
+to route asset paths (e.g., <code>/models/...</code>) to the storage
+backend under the main domain.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

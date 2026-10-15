@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Interleaved vs Non-Interleaved Vertex Buffers - gltf</title>
+    <meta name="description" content="The glTF 2.0 specification natively supports both interleaved and non-interleaved vertex buffer layouts through its hierarchical data storage architecture consisting of buffers, buffer views, and accessors. In glTF, the choice between structuring vertex a">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-interleaved-vs-non-interleaved-vertex-buffers">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Interleaved vs Non-Interleaved Vertex Buffers - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-interleaved-vs-non-interleaved-vertex-buffers" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The glTF 2.0 specification natively supports both interleaved and non-interleaved vertex buffer layouts through its hierarchical data storage architecture consisting of buffers, buffer views, and accessors. In glTF, the choice between structuring vertex a" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-interleaved-vs-non-interleaved-vertex-buffers">glTF
+Interleaved vs Non-Interleaved Vertex Buffers</h1>
+<p>The glTF 2.0 specification natively supports both interleaved and
+non-interleaved vertex buffer layouts through its hierarchical data
+storage architecture consisting of buffers, buffer views, and accessors.
+In glTF, the choice between structuring vertex attributes separately or
+packaging them into a single interleaved array is managed by setting the
+<code>byteStride</code> property in a <code>bufferView</code> and
+adjusting the <code>byteOffset</code> inside corresponding
+<code>accessors</code>. This design allows graphics pipelines to
+optimize for cache locality, memory bandwidth, or dynamic data updates
+without altering the underlying mesh definition.</p>
+<h3 id="the-gltf-data-architecture">The glTF Data Architecture</h3>
+<p>To understand how glTF formats vertex layouts, it is necessary to
+examine three core entities in the glTF JSON structure:</p>
+<ul>
+<li><strong><code>buffers</code></strong>: Raw binary blobs containing
+geometry data.</li>
+<li><strong><code>bufferViews</code></strong>: Slices of a buffer
+defining a byte offset, a byte length, and an optional
+<code>byteStride</code>.</li>
+<li><strong><code>accessors</code></strong>: Definitions that describe
+how to read typed data (e.g., <code>VEC3</code> of <code>FLOAT</code>)
+from a <code>bufferView</code>, defining component types, counts, and
+sub-offsets (<code>byteOffset</code>).</li>
+</ul>
+<p>The handling of interleaved versus non-interleaved configurations
+depends directly on how <code>bufferViews</code> and
+<code>accessors</code> interact.</p>
+<h3 id="non-interleaved-separate-vertex-buffers">Non-Interleaved
+(Separate) Vertex Buffers</h3>
+<p>In a non-interleaved (or planar) layout, each vertex attribute—such
+as position, normal, and texture coordinate—is stored in its own
+distinct, contiguous memory block.</p>
+<ul>
+<li><strong>Structure</strong>: Vertex positions are grouped together
+(P0, P1, P2...), followed by all normals (N0, N1, N2...), and so
+forth.</li>
+<li><strong>glTF Implementation</strong>: Each attribute typically
+points to its own distinct <code>bufferView</code> (or non-overlapping
+regions within the same <code>bufferView</code>). Because the data is
+tightly packed, the <code>bufferView</code> either omits the
+<code>byteStride</code> property or sets it to the size of a single
+element (e.g., 12 bytes for a <code>VEC3</code> of 32-bit floats). Each
+<code>accessor</code> simply references the start of its respective
+attribute array.</li>
+</ul>
+<p><strong>Use Case</strong>: Non-interleaved layouts are ideal when
+certain vertex attributes are updated frequently (such as software
+skinning or morph targets affecting only positions) or when rendering
+passes only require a subset of attributes (such as a depth-only shadow
+pass that only needs positions).</p>
+<h3 id="interleaved-vertex-buffers">Interleaved Vertex Buffers</h3>
+<p>In an interleaved layout, all attributes for a single vertex are
+stored together sequentially in memory (P0, N0, UV0, P1, N1,
+UV1...).</p>
+<ul>
+<li><strong>Structure</strong>: A single array of structures where each
+element represents the complete set of attributes for a single
+vertex.</li>
+<li><strong>glTF Implementation</strong>:
+<ol type="1">
+<li>A single <code>bufferView</code> encompasses the entire interleaved
+array.</li>
+<li>The <code>bufferView</code> defines a <code>byteStride</code>
+property, which represents the total size in bytes of one complete
+vertex (e.g., 12 bytes for position + 12 bytes for normal + 8 bytes for
+UV = 32-byte stride). According to the glTF specification,
+<code>byteStride</code> must be a multiple of 4 and between 4 and 252
+bytes.</li>
+<li>Multiple <code>accessors</code> reference this identical
+<code>bufferView</code>. Each accessor uses its own
+<code>byteOffset</code> to point to the start of its specific attribute
+within the first vertex (e.g., position at offset 0, normal at offset
+12, UV at offset 24).</li>
+</ol></li>
+</ul>
+<p><strong>Use Case</strong>: Interleaved layouts maximize GPU cache
+efficiency during standard rendering passes where all vertex attributes
+are consumed simultaneously by the vertex shader.</p>
+<h3 id="key-rules-and-restrictions-in-the-specification">Key Rules and
+Restrictions in the Specification</h3>
+<ul>
+<li>When <code>byteStride</code> is defined on a
+<code>bufferView</code>, it applies to all <code>accessors</code>
+referencing that view.</li>
+<li>An <code>accessor.byteOffset</code> within an interleaved
+<code>bufferView</code> must be aligned to the component type size
+(e.g., an attribute using <code>FLOAT</code> components must have an
+offset that is a multiple of 4).</li>
+<li>glTF allows a hybrid approach within the same model: static
+attributes (like normals and UVs) can be interleaved in one
+<code>bufferView</code>, while dynamically modified attributes (like
+positions) remain non-interleaved in another.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

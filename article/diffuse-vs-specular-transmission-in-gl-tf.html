@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diffuse vs Specular Transmission in glTF - gltf</title>
+    <meta name="description" content="In glTF physically based rendering (PBR), light transmission describes how rays pass through a surface rather than being reflected or absorbed. The core distinction between diffuse transmission and specular transmission lies in how directional light rays">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/diffuse-vs-specular-transmission-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Diffuse vs Specular Transmission in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/diffuse-vs-specular-transmission-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In glTF physically based rendering (PBR), light transmission describes how rays pass through a surface rather than being reflected or absorbed. The core distinction between diffuse transmission and specular transmission lies in how directional light rays" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="diffuse-vs-specular-transmission-in-gltf">Diffuse vs Specular
+Transmission in glTF</h1>
+<p>In glTF physically based rendering (PBR), light transmission
+describes how rays pass through a surface rather than being reflected or
+absorbed. The core distinction between diffuse transmission and specular
+transmission lies in how directional light rays behave as they traverse
+the material: specular transmission preserves directional coherence,
+producing transparent refractive effects like clear glass, whereas
+diffuse transmission completely scatters incoming light, creating
+translucent effects like paper or foliage. Understanding the specific
+roles of the <code>KHR_materials_transmission</code> and
+<code>KHR_materials_diffuse_transmission</code> extensions allows 3D
+artists and technical directors to accurately reproduce real-world
+transmissive phenomena in real-time engines.</p>
+<h3 id="specular-transmission-khr_materials_transmission">Specular
+Transmission (<code>KHR_materials_transmission</code>)</h3>
+<p>Specular transmission models optical transparency. When light strikes
+a surface using standard glTF transmission, the light enters the medium
+and continues along a path governed by Snell's Law of refraction and the
+material's Index of Refraction (IOR), typically defined via the
+<code>KHR_materials_ior</code> extension.</p>
+<p>Key characteristics include:</p>
+<ul>
+<li><strong>Directional Preservation:</strong> Specular transmission
+preserves the shapes and details of objects behind the transmissive
+surface. Viewers can see through the geometry.</li>
+<li><strong>Roughness Dependency:</strong> The sharpness of the
+transmitted view is determined by the material's roughness. A roughness
+value of zero yields perfectly clear glass or water, while higher
+roughness values simulate frosted or etched glass via microfacet
+refraction.</li>
+<li><strong>Volume Integration:</strong> Specular transmission
+frequently pairs with <code>KHR_materials_volume</code> to define light
+attenuation (Beer-Lambert Law) and internal color tinting over a
+specified physical thickness.</li>
+</ul>
+<h3 id="diffuse-transmission-khr_materials_diffuse_transmission">Diffuse
+Transmission (<code>KHR_materials_diffuse_transmission</code>)</h3>
+<p>Diffuse transmission models translucency, specifically designed for
+thin surfaces where light penetrates the boundary, undergoes intense
+internal scattering, and exits uniformly from the opposite side.</p>
+<p>Key characteristics include:</p>
+<ul>
+<li><strong>Lambertian Scattering:</strong> Once light passes through
+the surface, its original direction is completely randomized. The
+exiting light follows a Lambertian diffuse distribution on the back side
+of the geometry.</li>
+<li><strong>No Image Clarity:</strong> Objects placed behind a diffusely
+transmissive material cannot be resolved as distinct images. Only
+blurred light intensities and shadows pass through.</li>
+<li><strong>Thin-Walled Approximation:</strong> Unlike volumetric
+subsurface scattering (SSS), glTF diffuse transmission is tailored for
+thin, non-refractive structures where computational expense must remain
+low.</li>
+<li><strong>Target Materials:</strong> It accurately represents
+materials such as leaves, paper sheets, fabric curtains, lampshades, and
+thin plastic membranes.</li>
+</ul>
+<h3 id="direct-comparison">Direct Comparison</h3>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th style="text-align: left;">Feature</th>
+<th style="text-align: left;">Specular Transmission</th>
+<th style="text-align: left;">Diffuse Transmission</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Extension Name</strong></td>
+<td
+style="text-align: left;"><code>KHR_materials_transmission</code></td>
+<td
+style="text-align: left;"><code>KHR_materials_diffuse_transmission</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Physical Phenomemon</strong></td>
+<td style="text-align: left;">Refraction / Transparency</td>
+<td style="text-align: left;">Translucency / Forward Scattering</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Exiting Light
+Pattern</strong></td>
+<td style="text-align: left;">Directional / Microfacet distribution</td>
+<td style="text-align: left;">Lambertian diffuse distribution</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Background
+Visibility</strong></td>
+<td style="text-align: left;">Distinct (clear or frosted
+silhouettes)</td>
+<td style="text-align: left;">Invisible (only diffuse irradiance
+transmitted)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>IOR Dependency</strong></td>
+<td style="text-align: left;">High (relies on Fresnel and Snell's
+Law)</td>
+<td style="text-align: left;">Negligible (direction is lost upon
+exit)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Roughness Impact</strong></td>
+<td style="text-align: left;">Blurs the refracted background image</td>
+<td style="text-align: left;">Modulates diffuse reflection, not
+transmission spread</td>
+</tr>
+</tbody>
+</table>
+<h3 id="implementation-considerations">Implementation
+Considerations</h3>
+<p>When authoring glTF assets, choosing between these two extensions
+depends entirely on the degree of internal light scattering:</p>
+<ul>
+<li>Use <strong>specular transmission</strong> when rendering solid
+clear optics, lenses, glass containers, liquids, or any material where
+light rays remain largely parallel as they enter the body.</li>
+<li>Use <strong>diffuse transmission</strong> when light is meant to
+illuminate the reverse side of a thin object without producing any
+see-through transparency, simulating back-lit subsurface luminance
+efficiently across real-time viewers.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

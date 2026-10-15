@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animate Material Properties in glTF - gltf</title>
+    <meta name="description" content="In base glTF 2.0, animations are strictly limited to node transformations and morph target weights, leaving material parameters static by default. To animate arbitrary material properties—such as base color, roughness, metallic factors, emissive strength,">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/animate-material-properties-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Animate Material Properties in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/animate-material-properties-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In base glTF 2.0, animations are strictly limited to node transformations and morph target weights, leaving material parameters static by default. To animate arbitrary material properties—such as base color, roughness, metallic factors, emissive strength," />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="animate-material-properties-in-gltf">Animate Material Properties
+in glTF</h1>
+<p>In base glTF 2.0, animations are strictly limited to node
+transformations and morph target weights, leaving material parameters
+static by default. To animate arbitrary material properties—such as base
+color, roughness, metallic factors, emissive strength, and UV
+offsets—the official Khronos extension
+<strong><code>KHR_animation_pointer</code></strong> is required. This
+article explains how <code>KHR_animation_pointer</code> enables material
+property animation, how it handles complex adjustments like texture
+scrolling alongside <strong><code>KHR_texture_transform</code></strong>,
+and how it integrates into the glTF animation pipeline.</p>
+<h3 id="the-role-of-khr_animation_pointer">The Role of
+KHR_animation_pointer</h3>
+<p>The core glTF 2.0 specification restricts
+<code>animation.channel.target.path</code> to four predefined targets:
+<code>translation</code>, <code>rotation</code>, <code>scale</code>, and
+<code>weights</code>. The <code>KHR_animation_pointer</code> extension
+removes this limitation by introducing a dynamic path pointing system
+based on RFC 6901 JSON Pointers.</p>
+<p>Instead of binding to fixed node transform channels, an animation
+channel utilizing <code>KHR_animation_pointer</code> targets specific
+properties anywhere within the glTF JSON hierarchy via the
+<code>pointer</code> property.</p>
+<h3 id="animating-core-material-properties">Animating Core Material
+Properties</h3>
+<p>With <code>KHR_animation_pointer</code>, an animation sampler's
+output values can directly modify any numeric or vector property defined
+in a material. The target path specifies the zero-indexed location of
+the material and the target parameter:</p>
+<ul>
+<li><strong>Base Color Factor:</strong>
+<code>/materials/0/pbrMetallicRoughness/baseColorFactor</code> (animates
+a <code>VEC4</code> representing RGBA)</li>
+<li><strong>Metallic / Roughness:</strong>
+<code>/materials/0/pbrMetallicRoughness/roughnessFactor</code> (animates
+a <code>SCALAR</code>)</li>
+<li><strong>Emissive Factor:</strong>
+<code>/materials/0/emissiveFactor</code> (animates a <code>VEC3</code>
+for RGB emissive color)</li>
+<li><strong>Alpha Cutoff:</strong> <code>/materials/0/alphaCutoff</code>
+(animates a <code>SCALAR</code> for masked materials)</li>
+</ul>
+<p>The animation channel syntax replaces the standard
+<code>target</code> object with an extension block pointing to the
+property:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;channels&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;sampler&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;target&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;extensions&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;KHR_animation_pointer&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>            <span class="dt">&quot;pointer&quot;</span><span class="fu">:</span> <span class="st">&quot;/materials/0/pbrMetallicRoughness/baseColorFactor&quot;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>          <span class="fu">}</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        <span class="fu">}</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>      <span class="fu">}</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="animating-texture-offsets-and-scales">Animating Texture Offsets
+and Scales</h3>
+<p>To animate UV coordinates for effects such as flowing water, conveyor
+belts, or flickering displays, <code>KHR_animation_pointer</code> must
+be paired with <strong><code>KHR_texture_transform</code></strong>.</p>
+<p>The <code>KHR_texture_transform</code> extension defines UV
+properties—such as <code>offset</code>, <code>scale</code>, and
+<code>rotation</code>—directly on texture info objects.
+<code>KHR_animation_pointer</code> then references those transformed
+properties:</p>
+<ul>
+<li><strong>UV Translation (Scrolling):</strong>
+<code>/materials/0/pbrMetallicRoughness/baseColorTexture/extensions/KHR_texture_transform/offset</code>
+(animates a <code>VEC2</code>)</li>
+<li><strong>UV Tiling (Scale):</strong>
+<code>/materials/0/pbrMetallicRoughness/baseColorTexture/extensions/KHR_texture_transform/scale</code>
+(animates a <code>VEC2</code>)</li>
+<li><strong>UV Rotation:</strong>
+<code>/materials/0/pbrMetallicRoughness/baseColorTexture/extensions/KHR_texture_transform/rotation</code>
+(animates a <code>SCALAR</code> in radians)</li>
+</ul>
+<h3 id="interpolation-and-data-types">Interpolation and Data Types</h3>
+<p>When animating material properties via
+<code>KHR_animation_pointer</code>, standard glTF interpolation
+algorithms apply: <code>LINEAR</code>, <code>STEP</code>, and
+<code>CUBICSPLINE</code>. The accessor defined by the animation sampler
+must match the data type and component count of the target property:</p>
+<ul>
+<li>Properties accepting floating-point numbers require accessor
+component type <code>5126</code> (<code>FLOAT</code>).</li>
+<li>Vector lengths must match the target (e.g., <code>VEC3</code> for
+emissive color, <code>VEC4</code> for color factors with alpha).</li>
+</ul>
+<h3 id="declaring-extension-requirements">Declaring Extension
+Requirements</h3>
+<p>Any asset relying on this capability must register the extension in
+the document root. If the material animation is vital to the rendering
+of the scene, it must be listed under both <code>extensionsUsed</code>
+and <code>extensionsRequired</code>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;extensionsUsed&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;KHR_animation_pointer&quot;</span><span class="ot">,</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;KHR_texture_transform&quot;</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;extensionsRequired&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;KHR_animation_pointer&quot;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>Engines supporting <code>KHR_animation_pointer</code> resolve the
+JSON Pointer at load time, binding the timeline tracks directly to the
+shader uniforms or material state representations used in the runtime
+engine.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

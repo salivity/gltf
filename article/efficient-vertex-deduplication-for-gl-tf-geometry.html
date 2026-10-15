@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Efficient Vertex Deduplication for glTF Geometry - gltf</title>
+    <meta name="description" content="When generating or processing 3D models for glTF via code, generating flat polygon lists often creates redundant vertex data that inflates buffer sizes and degrades GPU rendering efficiency. Vertex deduplication transforms unstructured soups of triangles">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/efficient-vertex-deduplication-for-gl-tf-geometry">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Efficient Vertex Deduplication for glTF Geometry - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/efficient-vertex-deduplication-for-gl-tf-geometry" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When generating or processing 3D models for glTF via code, generating flat polygon lists often creates redundant vertex data that inflates buffer sizes and degrades GPU rendering efficiency. Vertex deduplication transforms unstructured soups of triangles" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="efficient-vertex-deduplication-for-gltf-geometry">Efficient
+Vertex Deduplication for glTF Geometry</h1>
+<p>When generating or processing 3D models for glTF via code, generating
+flat polygon lists often creates redundant vertex data that inflates
+buffer sizes and degrades GPU rendering efficiency. Vertex deduplication
+transforms unstructured soups of triangles into indexed primitive arrays
+(<code>indices</code> accessor in glTF) by merging vertices that share
+identical spatial and attribute data. This article explores the most
+efficient algorithms used in production pipelines to deduplicate
+vertices, ranging from spatial hash grids to cache-optimized linear
+sorting methods.</p>
+<h3 id="hash-based-quantization-and-bucket-lookup">Hash-Based
+Quantization and Bucket Lookup</h3>
+<p>The standard approach for <span class="math inline">\(O(N)\)</span>
+average-time complexity involves hashing vertex attributes into a lookup
+table. Because floating-point rounding errors often prevent exact
+bitwise equality, vertices must first be quantized.</p>
+<ol type="1">
+<li><strong>Grid Snapping (Quantization):</strong> Float coordinates for
+positions, normals, and texture coordinates are divided by an epsilon
+tolerance value (<span class="math inline">\(\epsilon\)</span>) and
+converted to integer grid coordinates: <span
+class="math display">\[\text{Cell} = \lfloor \text{Coordinate} /
+\epsilon \rfloor\]</span></li>
+<li><strong>Hash Generation:</strong> The quantized integer components
+(X, Y, Z, plus UVs and normals) are combined using a fast,
+non-cryptographic hash function such as MurmurHash3 or FNV-1a.</li>
+<li><strong>Collision and Neighbor Checking:</strong> A simple hash
+table merges vertices falling into the same grid cell. However, vertices
+placed closely across a cell boundary may be missed. To resolve this,
+the algorithm either snaps vertices unconditionally to the grid before
+hashing or queries the 26 neighboring cells within the spatial hash map
+for any vertex within the radial distance <span
+class="math inline">\(\epsilon\)</span>.</li>
+</ol>
+<h3 id="sort-and-sweep-lexicographical-sorting">Sort-and-Sweep
+(Lexicographical Sorting)</h3>
+<p>For large geometries where memory fragmentation or dynamic allocation
+in hash maps is a bottleneck, sorting-based algorithms provide better
+cache coherence and deterministic <span class="math inline">\(O(N \log
+N)\)</span> execution (or <span class="math inline">\(O(N)\)</span>
+using Radix Sort).</p>
+<ol type="1">
+<li><strong>Axis Projection:</strong> Vertices are sorted along a
+primary axis (e.g., the X-axis) or mapped to a 1D Morton space-filling
+curve (Z-order).</li>
+<li><strong>Linear Sweep:</strong> The algorithm iterates linearly
+through the sorted list. For each vertex, it compares subsequent
+vertices in the list.</li>
+<li><strong>Early Termination:</strong> Because the list is ordered by
+coordinate value, the comparison loop terminates as soon as the
+difference along the primary axis exceeds <span
+class="math inline">\(\epsilon\)</span>. Vertices meeting the tolerance
+threshold across all additional attributes (normals, UVs, joints) are
+merged into a canonical index.</li>
+</ol>
+<h3 id="space-filling-curves-morton--hilbert-codes">Space-Filling Curves
+(Morton / Hilbert Codes)</h3>
+<p>Using space-filling curves improves on standard 1D sorting by
+preserving 3D spatial locality in a single scalar dimension.</p>
+<ol type="1">
+<li><strong>Coordinate Encoding:</strong> Integer-quantized 3D
+coordinates are interleaved at the bit level to produce a 32-bit or
+64-bit Morton code.</li>
+<li><strong>Sorting:</strong> Vertices are sorted directly by their
+Morton key using an efficient Radix sort.</li>
+<li><strong>Clustering:</strong> Because points that are close in 3D
+space are almost always adjacent or near-adjacent in Morton order,
+duplicate detection requires checking only a narrow sliding window of
+neighboring elements in the sorted array.</li>
+</ol>
+<h3 id="k-d-trees-and-bounding-volume-hierarchies">K-D Trees and
+Bounding Volume Hierarchies</h3>
+<p>When exact Euclidean distance (<span
+class="math inline">\(L_2\)</span> norm) must be evaluated without
+cell-boundary artifacts and with variable tolerances, spatial
+partitioning trees (k-d trees or octrees) are utilized.</p>
+<ul>
+<li><strong>Query Process:</strong> Vertices are inserted incrementally
+or loaded in bulk. Before adding a vertex, a fixed-radius neighbor
+search (<span class="math inline">\(r \le \epsilon\)</span>) queries the
+tree.</li>
+<li><strong>Trade-Off:</strong> While exact and versatile, tree-based
+methods incur pointer overhead and branch mispredictions, generally
+making them slower than flat spatial hash tables for web or real-time
+glTF compilation.</li>
+</ul>
+<h3 id="the-production-standard-remap-tables">The Production Standard:
+Remap Tables</h3>
+<p>In performance-critical libraries such as <code>meshoptimizer</code>,
+deduplication is structured as an index remapping pipeline rather than
+repeated dynamic queries:</p>
+<ol type="1">
+<li><strong>Binary Bitwise Deduplication:</strong> First, a strict
+bitwise hash map checks for 100% byte-identical vertices across the
+entire vertex buffer structure. This executes at memory bandwidth speeds
+and handles non-floating point data cleanly.</li>
+<li><strong>Attribute Tolerance Welding:</strong> A secondary pass uses
+quantized spatial buckets to merge vertices that differ within defined
+attribute tolerances.</li>
+<li><strong>Index Buffer Generation:</strong> A compact remap array
+outputs the final glTF index buffer while compacting the original
+interleaved vertex attributes, preserving spatial locality to optimize
+the GPU's post-transform vertex cache (FIFO).</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

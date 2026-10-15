@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Orthographic Camera Configuration Fields - gltf</title>
+    <meta name="description" content="In glTF 2.0, an orthographic camera defines a parallel projection where objects maintain the same visual size regardless of their distance from the viewer. Defining this projection involves setting the camera&#39;s base type to &quot;orthographic&quot; and specifying f">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-orthographic-camera-configuration-fields">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Orthographic Camera Configuration Fields - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-orthographic-camera-configuration-fields" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In glTF 2.0, an orthographic camera defines a parallel projection where objects maintain the same visual size regardless of their distance from the viewer. Defining this projection involves setting the camera&#39;s base type to &quot;orthographic&quot; and specifying f" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-orthographic-camera-configuration-fields">glTF Orthographic
+Camera Configuration Fields</h1>
+<p>In glTF 2.0, an orthographic camera defines a parallel projection
+where objects maintain the same visual size regardless of their distance
+from the viewer. Defining this projection involves setting the camera's
+base type to <code>"orthographic"</code> and specifying four primary
+numerical parameters within the camera's <code>orthographic</code>
+definition object: <code>xmag</code>, <code>ymag</code>,
+<code>znear</code>, and <code>zfar</code>.</p>
+<h3 id="core-fields-in-cameraorthographic">Core Fields in
+<code>camera.orthographic</code></h3>
+<p>To establish the orthographic viewing volume (a rectangular cuboid),
+the <code>orthographic</code> property object requires the following
+specific fields:</p>
+<ul>
+<li><strong><code>xmag</code> (number, required):</strong> The
+floating-point horizontal magnification of the view. It defines half of
+the width of the orthographic view box (the distance from the center of
+the camera to the left or right edge). This value must not be zero.</li>
+<li><strong><code>ymag</code> (number, required):</strong> The
+floating-point vertical magnification of the view. It defines half of
+the height of the orthographic view box (the distance from the center to
+the top or bottom edge). This value must not be zero.</li>
+<li><strong><code>znear</code> (number, required):</strong> The
+floating-point distance to the near clipping plane along the negative
+z-axis in camera space. This value must be greater than or equal to
+<code>0.0</code>.</li>
+<li><strong><code>zfar</code> (number, required):</strong> The
+floating-point distance to the far clipping plane along the negative
+z-axis in camera space. This value must be strictly greater than
+<code>znear</code>.</li>
+</ul>
+<h3 id="optional-gltf-schema-fields">Optional glTF Schema Fields</h3>
+<p>Like most entities in glTF, the <code>orthographic</code> object also
+supports optional standard metadata fields:</p>
+<ul>
+<li><strong><code>extensions</code> (object, optional):</strong> A
+dictionary containing extension-specific objects.</li>
+<li><strong><code>extras</code> (any, optional):</strong>
+Application-specific user data.</li>
+</ul>
+<h3 id="example-gltf-definition">Example glTF Definition</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;cameras&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;orthographic&quot;</span><span class="fu">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;orthographic&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;xmag&quot;</span><span class="fu">:</span> <span class="fl">1.0</span><span class="fu">,</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;ymag&quot;</span><span class="fu">:</span> <span class="fl">1.0</span><span class="fu">,</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;znear&quot;</span><span class="fu">:</span> <span class="fl">0.1</span><span class="fu">,</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;zfar&quot;</span><span class="fu">:</span> <span class="fl">100.0</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>      <span class="fu">}</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>Together, <code>xmag</code> and <code>ymag</code> establish the
+aspect ratio and visible area of the parallel projection, while
+<code>znear</code> and <code>zfar</code> clamp the visible range in
+depth, fully determining the orthographic projection matrix.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

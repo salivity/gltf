@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPU Texture Matrix Palettes for glTF Crowd Rendering - gltf</title>
+    <meta name="description" content="Rendering large crowds of animated glTF characters in real time introduces significant performance bottlenecks, primarily due to uniform buffer limits and excessive draw calls. Storing skeletal joint transformation matrices inside floating-point GPU textu">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gpu-texture-matrix-palettes-for-gl-tf-crowd-rendering">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="GPU Texture Matrix Palettes for glTF Crowd Rendering - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gpu-texture-matrix-palettes-for-gl-tf-crowd-rendering" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Rendering large crowds of animated glTF characters in real time introduces significant performance bottlenecks, primarily due to uniform buffer limits and excessive draw calls. Storing skeletal joint transformation matrices inside floating-point GPU textu" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gpu-texture-matrix-palettes-for-gltf-crowd-rendering">GPU
+Texture Matrix Palettes for glTF Crowd Rendering</h1>
+<p>Rendering large crowds of animated glTF characters in real time
+introduces significant performance bottlenecks, primarily due to uniform
+buffer limits and excessive draw calls. Storing skeletal joint
+transformation matrices inside floating-point GPU textures—often
+referred to as texture-based matrix palettes—bypasses standard uniform
+buffer limits and enables massive hardware instancing across thousands
+of animated agents in a single draw call. This article details how to
+pack transformation matrices into textures, fetch them within vertex
+shaders, and implement animation baking to maximize glTF crowd rendering
+performance.</p>
+<h3 id="the-bottleneck-of-standard-skinning">The Bottleneck of Standard
+Skinning</h3>
+<p>Standard glTF skeletal animation binds joint matrices via Uniform
+Buffer Objects (UBOs) or uniform arrays. Graphics drivers impose strict
+size limits on UBOs (typically 64 KB), which restricts the maximum
+number of simultaneous joints per draw call. While a single character
+with 64 joints fits comfortably, rendering hundreds of unique animated
+instances requires either separate draw calls per instance or constant
+uniform buffer updates, heavily taxing the CPU and graphics API
+pipeline.</p>
+<h3 id="texture-based-palette-architecture">Texture-Based Palette
+Architecture</h3>
+<p>A texture-based matrix palette offloads the entire skinning state to
+GPU memory by encoding <span class="math inline">\(4 \times 4\)</span>
+or <span class="math inline">\(4 \times 3\)</span> transformation
+matrices into texels.</p>
+<ul>
+<li><strong>Pixel Format:</strong> Use a 32-bit floating-point format,
+typically <code>RGBA32F</code>. Each pixel contains four float values
+<span class="math inline">\((x, y, z, w)\)</span>.</li>
+<li><strong>Matrix Representation:</strong> A full <span
+class="math inline">\(4 \times 4\)</span> affine matrix requires four
+consecutive pixels. Because the last row of an affine transformation
+matrix in 3D space is always <span class="math inline">\([0, 0, 0,
+1]\)</span>, you can discard it and store only a <span
+class="math inline">\(4 \times 3\)</span> matrix. This reduces memory
+footprint and bandwidth by 25%, packing a joint into three pixels:
+<ul>
+<li>Pixel 0: Row 0 <span class="math inline">\((m_{00}, m_{01}, m_{02},
+m_{03})\)</span></li>
+<li>Pixel 1: Row 1 <span class="math inline">\((m_{10}, m_{11}, m_{12},
+m_{13})\)</span></li>
+<li>Pixel 2: Row 2 <span class="math inline">\((m_{20}, m_{21}, m_{22},
+m_{23})\)</span></li>
+</ul></li>
+<li><strong>Texture Layout:</strong> A common structure is a 2D texture
+where the horizontal axis corresponds to the joint index (multiplied by
+the number of pixels per matrix), and the vertical axis corresponds to
+either the instance ID or pre-baked animation frame index.</li>
+</ul>
+<h3 id="pre-baking-vs-dynamic-compute-updates">Pre-Baking vs. Dynamic
+Compute Updates</h3>
+<p>Depending on your application, joint textures can be populated
+dynamically or pre-baked:</p>
+<ol type="1">
+<li><strong>Pre-Baked Animations:</strong> Ideal for background crowds.
+All keyframe poses of glTF animation clips are sampled offline or at
+load time and written sequentially into the texture. Each row represents
+a specific animation frame. At runtime, the CPU simply passes an
+animation time or frame offset per instance, requiring zero skeletal
+math during frame execution.</li>
+<li><strong>Compute Shader Updates:</strong> Ideal for dynamic crowd
+behaviors (such as ragdolls or procedural IK). The CPU sends minimal
+transform data, and a GPU compute shader evaluates the glTF node
+hierarchy, computes inverse bind matrix multiplications, and writes the
+results directly into a writable storage texture
+(<code>image2D</code>).</li>
+</ol>
+<h3 id="fetching-matrices-in-the-vertex-shader">Fetching Matrices in the
+Vertex Shader</h3>
+<p>glTF meshes specify skinning data using <code>JOINTS_0</code> (joint
+indices) and <code>WEIGHTS_0</code> (joint weights). When using a
+texture matrix palette, the vertex shader reconstructs the final
+transformation matrix using integer texel lookups via
+<code>texelFetch</code>.</p>
+<p>Below is a GLSL implementation using <span class="math inline">\(4
+\times 3\)</span> matrices:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode glsl"><code class="sourceCode glsl"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="pp">#version 450 core</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">layout</span><span class="op">(</span><span class="dt">location</span> <span class="op">=</span> <span class="dv">0</span><span class="op">)</span> <span class="dt">in</span> <span class="dt">vec3</span> a_Position<span class="op">;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="kw">layout</span><span class="op">(</span><span class="dt">location</span> <span class="op">=</span> <span class="dv">1</span><span class="op">)</span> <span class="dt">in</span> <span class="dt">vec3</span> a_Normal<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">layout</span><span class="op">(</span><span class="dt">location</span> <span class="op">=</span> <span class="dv">2</span><span class="op">)</span> <span class="dt">in</span> <span class="dt">uvec4</span> a_Joints<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="kw">layout</span><span class="op">(</span><span class="dt">location</span> <span class="op">=</span> <span class="dv">3</span><span class="op">)</span> <span class="dt">in</span> <span class="dt">vec4</span> a_Weights<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">// Instanced attributes</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="kw">layout</span><span class="op">(</span><span class="dt">location</span> <span class="op">=</span> <span class="dv">4</span><span class="op">)</span> <span class="dt">in</span> <span class="dt">int</span> a_FrameIndex<span class="op">;</span> </span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="kw">uniform</span> <span class="dt">sampler2D</span> u_JointMatrixTexture<span class="op">;</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="dt">mat4</span> <span class="fu">getJointMatrix</span><span class="op">(</span><span class="dt">uint</span> jointIndex<span class="op">,</span> <span class="dt">int</span> frame<span class="op">)</span> <span class="op">{</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">int</span> basePixel <span class="op">=</span> <span class="dt">int</span><span class="op">(</span>jointIndex<span class="op">)</span> <span class="op">*</span> <span class="dv">3</span><span class="op">;</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="dt">vec4</span> row0 <span class="op">=</span> <span class="bu">texelFetch</span><span class="op">(</span>u_JointMatrixTexture<span class="op">,</span> <span class="dt">ivec2</span><span class="op">(</span>basePixel <span class="op">+</span> <span class="dv">0</span><span class="op">,</span> frame<span class="op">),</span> <span class="dv">0</span><span class="op">);</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="dt">vec4</span> row1 <span class="op">=</span> <span class="bu">texelFetch</span><span class="op">(</span>u_JointMatrixTexture<span class="op">,</span> <span class="dt">ivec2</span><span class="op">(</span>basePixel <span class="op">+</span> <span class="dv">1</span><span class="op">,</span> frame<span class="op">),</span> <span class="dv">0</span><span class="op">);</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    <span class="dt">vec4</span> row2 <span class="op">=</span> <span class="bu">texelFetch</span><span class="op">(</span>u_JointMatrixTexture<span class="op">,</span> <span class="dt">ivec2</span><span class="op">(</span>basePixel <span class="op">+</span> <span class="dv">2</span><span class="op">,</span> frame<span class="op">),</span> <span class="dv">0</span><span class="op">);</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    <span class="dt">vec4</span> row3 <span class="op">=</span> <span class="dt">vec4</span><span class="op">(</span><span class="fl">0.0</span><span class="op">,</span> <span class="fl">0.0</span><span class="op">,</span> <span class="fl">0.0</span><span class="op">,</span> <span class="fl">1.0</span><span class="op">);</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    <span class="kw">return</span> <span class="dt">mat4</span><span class="op">(</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>        <span class="dt">vec4</span><span class="op">(</span>row0<span class="op">.</span><span class="fu">x</span><span class="op">,</span> row1<span class="op">.</span><span class="fu">x</span><span class="op">,</span> row2<span class="op">.</span><span class="fu">x</span><span class="op">,</span> row3<span class="op">.</span><span class="fu">x</span><span class="op">),</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>        <span class="dt">vec4</span><span class="op">(</span>row0<span class="op">.</span><span class="fu">y</span><span class="op">,</span> row1<span class="op">.</span><span class="fu">y</span><span class="op">,</span> row2<span class="op">.</span><span class="fu">y</span><span class="op">,</span> row3<span class="op">.</span><span class="fu">y</span><span class="op">),</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>        <span class="dt">vec4</span><span class="op">(</span>row0<span class="op">.</span><span class="fu">z</span><span class="op">,</span> row1<span class="op">.</span><span class="fu">z</span><span class="op">,</span> row2<span class="op">.</span><span class="fu">z</span><span class="op">,</span> row3<span class="op">.</span><span class="fu">z</span><span class="op">),</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>        <span class="dt">vec4</span><span class="op">(</span>row0<span class="op">.</span><span class="fu">w</span><span class="op">,</span> row1<span class="op">.</span><span class="fu">w</span><span class="op">,</span> row2<span class="op">.</span><span class="fu">w</span><span class="op">,</span> row3<span class="op">.</span><span class="fu">w</span><span class="op">)</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    <span class="op">);</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="dt">void</span> <span class="fu">main</span><span class="op">()</span> <span class="op">{</span></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    <span class="dt">mat4</span> skinMatrix <span class="op">=</span> </span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>        a_Weights<span class="op">.</span><span class="fu">x</span> <span class="op">*</span> <span class="fu">getJointMatrix</span><span class="op">(</span>a_Joints<span class="op">.</span><span class="fu">x</span><span class="op">,</span> a_FrameIndex<span class="op">)</span> <span class="op">+</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>        a_Weights<span class="op">.</span><span class="fu">y</span> <span class="op">*</span> <span class="fu">getJointMatrix</span><span class="op">(</span>a_Joints<span class="op">.</span><span class="fu">y</span><span class="op">,</span> a_FrameIndex<span class="op">)</span> <span class="op">+</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>        a_Weights<span class="op">.</span><span class="fu">z</span> <span class="op">*</span> <span class="fu">getJointMatrix</span><span class="op">(</span>a_Joints<span class="op">.</span><span class="fu">z</span><span class="op">,</span> a_FrameIndex<span class="op">)</span> <span class="op">+</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>        a_Weights<span class="op">.</span><span class="fu">w</span> <span class="op">*</span> <span class="fu">getJointMatrix</span><span class="op">(</span>a_Joints<span class="op">.</span><span class="fu">w</span><span class="op">,</span> a_FrameIndex<span class="op">);</span></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    <span class="dt">vec4</span> skinnedPosition <span class="op">=</span> skinMatrix <span class="op">*</span> <span class="dt">vec4</span><span class="op">(</span>a_Position<span class="op">,</span> <span class="fl">1.0</span><span class="op">);</span></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    <span class="bu">gl_Position</span> <span class="op">=</span> u_ViewProjection <span class="op">*</span> skinnedPosition<span class="op">;</span></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="op">}</span></span></code></pre></div>
+<p>Using <code>texelFetch</code> bypasses standard texture filtering and
+coordinate normalization, pulling raw floating-point data directly by
+texel coordinates without precision loss or unwanted interpolation.</p>
+<h3 id="implementation-best-practices">Implementation Best
+Practices</h3>
+<ul>
+<li><strong>Texture Arrays for Large Datasets:</strong> If the baked
+animation clips exceed the maximum 2D texture width or height limits of
+the target hardware (often 8192 or 16384 texels), switch to a 2D Texture
+Array (<code>sampler2DArray</code>). Assign each clip or character type
+its own array slice.</li>
+<li><strong>Dual Quaternion Packing:</strong> For further bandwidth
+savings, represent joint transformations as dual quaternions instead of
+matrices. A dual quaternion requires only two pixels (8 floats) instead
+of three or four, lowering fetch overhead and automatically preventing
+skin-collapsing artifacts during weight blending.</li>
+<li><strong>Frame Interpolation:</strong> If frame rates fluctuate or
+animations are sampled at low intervals (e.g., 30 Hz on a 120 Hz
+display), pass two frame indices and a fractional blend factor
+(<code>lerp</code>) to interpolate between adjacent matrix rows directly
+in the shader.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

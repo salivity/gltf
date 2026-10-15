@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF PBR Data in Deferred Rendering G-Buffers - gltf</title>
+    <meta name="description" content="Deferred rendering decouples scene geometry processing from lighting calculations by rasterizing surface characteristics into a collection of screen-space textures known as the Geometry Buffer (G-buffer). When ingesting assets defined by the standard glTF">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-pbr-data-in-deferred-rendering-g-buffers">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF PBR Data in Deferred Rendering G-Buffers - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-pbr-data-in-deferred-rendering-g-buffers" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Deferred rendering decouples scene geometry processing from lighting calculations by rasterizing surface characteristics into a collection of screen-space textures known as the Geometry Buffer (G-buffer). When ingesting assets defined by the standard glTF" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-pbr-data-in-deferred-rendering-g-buffers">glTF PBR Data in
+Deferred Rendering G-Buffers</h1>
+<p>Deferred rendering decouples scene geometry processing from lighting
+calculations by rasterizing surface characteristics into a collection of
+screen-space textures known as the Geometry Buffer (G-buffer). When
+ingesting assets defined by the standard glTF 2.0 Physically Based
+Rendering (PBR) metallic-roughness workflow, the geometry pass extracts
+specific optical and microfacet properties—including base color,
+perturbed normals, perceptual roughness, metalness, ambient occlusion,
+and emissive color. These material attributes are decomposed,
+transformed, and packed into optimal render target channels so that
+lighting shaders can evaluate standard bidirectional reflectance
+distribution functions (BRDF) later in the pipeline.</p>
+<h3 id="base-color-albedo">Base Color (Albedo)</h3>
+<p>In the standard glTF PBR specification, base color defines the
+diffuse reflectivity for dielectric surfaces and the specular color
+reflectance (<span class="math inline">\(F_0\)</span>) for metallic
+surfaces. The G-buffer pipeline extracts this by sampling the
+<code>baseColorTexture</code> (typically stored in sRGB space) and
+multiplying it by the linear <code>baseColorFactor</code> RGBA vector.
+In the G-buffer, the resulting linearized RGB values are stored as the
+surface albedo. The alpha channel of the base color is either used
+during rasterization for alpha testing/discarding (via
+<code>alphaMode</code> and <code>alphaCutoff</code>) or packed into an
+available G-buffer channel to store subsurface scattering masks,
+material flags, or transmission factors.</p>
+<h3 id="surface-normals">Surface Normals</h3>
+<p>Geometric detail beyond vertex geometry is provided via glTF's
+<code>normalTexture</code>. The deferred pass extracts tangent-space
+normal vectors from this two- or three-component texture, applies the
+asset's normal scale factor, and transforms the vector into view space
+or world space using the vertex Normal-Tangent-Bitangent (TBN) frame.
+The resulting unit vector is then stored in the G-buffer. Because full
+32-bit floating-point normal vectors consume significant memory
+bandwidth, engines frequently compress the extracted normal data using
+octahedral encoding or spherical coordinates, storing the vector in two
+16-bit float channels (RG16F) or a packed 10-bit format (RGB10A2).</p>
+<h3 id="roughness-and-metallic-properties">Roughness and Metallic
+Properties</h3>
+<p>The core glTF PBR model packs microfacet roughness and metallic
+properties into a single linear texture, the
+<code>metallicRoughnessTexture</code>. The G-buffer extraction step
+samples this texture and applies the corresponding material
+multipliers:</p>
+<ul>
+<li><strong>Roughness:</strong> Extracted from the green channel and
+multiplied by <code>roughnessFactor</code>. This scalar represents
+perceptual roughness, which lighting passes convert to the microfacet
+distribution parameter <span class="math inline">\(\alpha\)</span>
+(<span class="math inline">\(\alpha = \text{roughness}^2\)</span>) for
+models such as GGX.</li>
+<li><strong>Metalness:</strong> Extracted from the blue channel and
+multiplied by <code>metallicFactor</code>. This scalar interpolates
+between dielectric behavior (low reflectance at normal incidence,
+non-colored specular highlights) and metallic behavior (high
+reflectance, specular color derived from the base color).</li>
+</ul>
+<p>Because both parameters are single-channel values ranging from <span
+class="math inline">\(0.0\)</span> to <span
+class="math inline">\(1.0\)</span>, they are typically packed alongside
+other scalar values into standard 8-bit unorm render targets.</p>
+<h3 id="ambient-occlusion-cavity-data">Ambient Occlusion (Cavity
+Data)</h3>
+<p>glTF assets optionally provide a pre-baked ambient occlusion map via
+the red channel of the <code>occlusionTexture</code>. Scaled by the
+material's <code>occlusionStrength</code>, this value represents
+localized accessibility and shadowing from ambient light. When writing
+to the G-buffer, this scalar is sampled and packed into a spare 8-bit
+channel—often sharing a multi-render target (MRT) with roughness and
+metallic data—to be consumed during the indirect/ambient lighting
+pass.</p>
+<h3 id="emissive-attributes">Emissive Attributes</h3>
+<p>The self-illumination characteristics of a glTF material are governed
+by <code>emissiveTexture</code> (stored in sRGB) and
+<code>emissiveFactor</code> (a linear RGB vector), often scaled further
+by the <code>KHR_materials_emissive_strength</code> extension for
+high-dynamic-range (HDR) effects. Depending on the engine's deferred
+architecture, emissive data is handled in one of two ways:</p>
+<ol type="1">
+<li><strong>Direct Accumulation:</strong> Emissive energy bypasses the
+G-buffer entirely and is written directly to the HDR scene-color
+accumulation buffer during the geometry pass.</li>
+<li><strong>G-Buffer Storage:</strong> Emissive RGB values are written
+to a dedicated high-precision render target (e.g., RGBA16F) within the
+G-buffer array, allowing deferred post-processing passes like
+screen-space bloom or temporal anti-aliasing to process the surface
+before lighting integration.</li>
+</ol>
+<h3 id="typical-g-buffer-layout-for-gltf-pbr">Typical G-Buffer Layout
+for glTF PBR</h3>
+<p>To balance memory bandwidth and sampling performance, a standard
+three-target (MRT) G-buffer layout maps glTF PBR data as follows:</p>
+<ul>
+<li><strong>RT0 (RGBA8):</strong> Base Color (RGB) + Ambient Occlusion
+(A)</li>
+<li><strong>RT1 (RGBA8 or RGBA16F):</strong> Encoded Normal (<span
+class="math inline">\(X, Y\)</span>) + Roughness (B) + Metalness
+(A)</li>
+<li><strong>RT2 (RGBA16F):</strong> Emissive Color (RGB) + Material
+Flags / Coverage (A)</li>
+<li><strong>Depth-Stencil:</strong> Hardware depth buffer (used to
+reconstruct world/view position analytically rather than storing
+explicit coordinates).</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

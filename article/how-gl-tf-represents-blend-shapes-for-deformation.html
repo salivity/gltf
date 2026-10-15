@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How glTF Represents Blend Shapes for Deformation - gltf</title>
+    <meta name="description" content="In glTF (GL Transmission Format), non-rigid mesh deformations such as facial expressions and organic flexing are achieved using morph targets, commonly known as vertex blend shapes. Rather than storing full duplicates of the geometry for every variation,">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-gl-tf-represents-blend-shapes-for-deformation">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How glTF Represents Blend Shapes for Deformation - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-gl-tf-represents-blend-shapes-for-deformation" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In glTF (GL Transmission Format), non-rigid mesh deformations such as facial expressions and organic flexing are achieved using morph targets, commonly known as vertex blend shapes. Rather than storing full duplicates of the geometry for every variation," />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-gltf-represents-blend-shapes-for-deformation">How glTF
+Represents Blend Shapes for Deformation</h1>
+<p>In glTF (GL Transmission Format), non-rigid mesh deformations such as
+facial expressions and organic flexing are achieved using morph targets,
+commonly known as vertex blend shapes. Rather than storing full
+duplicates of the geometry for every variation, glTF handles blend
+shapes by storing relative displacement vectors alongside the base mesh
+attributes, which runtime engines combine using a series of scalar
+weights. This article explains the data structure, math, and animation
+mechanisms glTF uses to efficiently encode and render these non-rigid
+deformations.</p>
+<h3 id="the-base-primitive-and-morph-targets">The Base Primitive and
+Morph Targets</h3>
+<p>In the glTF JSON schema, 3D geometry is organized under
+<code>meshes</code>, where each mesh contains one or more
+<code>primitives</code>. A standard primitive holds core vertex
+attributes—such as <code>POSITION</code>, <code>NORMAL</code>, and
+<code>TANGENT</code>—defined by accessors that point to the underlying
+binary buffer data.</p>
+<p>To support blend shapes, a primitive includes an optional
+<code>targets</code> array. Each entry in the <code>targets</code> array
+represents a distinct morph target and contains an object mapping
+attribute names to accessor IDs. The attributes supported in morph
+targets are:</p>
+<ul>
+<li><code>POSITION</code>: Stores 3D displacement vectors
+(offsets).</li>
+<li><code>NORMAL</code>: Stores normal displacement vectors.</li>
+<li><code>TANGENT</code>: Stores XYZ tangent displacement vectors.</li>
+</ul>
+<h3 id="additive-delta-storage">Additive Delta Storage</h3>
+<p>A critical aspect of glTF's representation is that morph target data
+is strictly stored as deltas (displacements) rather than absolute
+coordinates. For example, if a vertex at position <span
+class="math inline">\((0, 5, 0)\)</span> moves to <span
+class="math inline">\((0, 6, 0)\)</span> in a given expression, the
+morph target stores <span class="math inline">\((0, 1, 0)\)</span>.</p>
+<p>Storing relative differences provides significant advantages:</p>
+<ul>
+<li>It simplifies blending, allowing multiple morph targets to be
+applied simultaneously.</li>
+<li>It improves compression efficiency because many target vertices
+remain stationary, yielding displacement values of zero.</li>
+</ul>
+<p>To optimize bandwidth further, glTF implementations frequently use
+sparse accessors (<code>accessor.sparse</code>). Sparse accessors only
+record vertices that deviate from the neutral state, omitting untouched
+vertices entirely.</p>
+<h3 id="the-blending-formulation">The Blending Formulation</h3>
+<p>The deformation state at runtime is governed by an array of scalar
+float values called <code>weights</code>. These weights can be defined
+globally on the <code>mesh</code> as default values or overridden at the
+<code>node</code> level via <code>node.weights</code>.</p>
+<p>The final transformed attribute is computed using additive
+blending:</p>
+<p><span class="math display">\[\text{Attribute}_{\text{final}} =
+\text{Attribute}_{\text{base}} + \sum_{i=0}^{n-1} (w_i \times
+\Delta\text{Attribute}_i)\]</span></p>
+<p>Where:</p>
+<ul>
+<li><span class="math inline">\(\text{Attribute}_{\text{base}}\)</span>
+is the neutral vertex position, normal, or tangent.</li>
+<li><span class="math inline">\(w_i\)</span> is the scalar weight for
+target <span class="math inline">\(i\)</span> (typically clamped between
+<span class="math inline">\(0.0\)</span> and <span
+class="math inline">\(1.0\)</span>, though negative values and
+overshooting values above <span class="math inline">\(1.0\)</span> are
+mathematically valid).</li>
+<li><span class="math inline">\(\Delta\text{Attribute}_i\)</span> is the
+displacement vector for target <span
+class="math inline">\(i\)</span>.</li>
+</ul>
+<p>After computing final normals and tangents, shaders typically
+re-normalize the vectors to correct for non-linear interpolation
+distortions.</p>
+<h3 id="animating-blend-shapes">Animating Blend Shapes</h3>
+<p>glTF integrates blend shape control directly into its core animation
+system. To animate a morph target over time:</p>
+<ol type="1">
+<li>An animation channel designates a <code>target</code> pointing to a
+specific <code>node</code>.</li>
+<li>The channel's <code>path</code> is set to
+<code>"weights"</code>.</li>
+<li>An animation sampler provides the timeline inputs and the
+corresponding scalar array outputs (one weight per morph target at each
+keyframe).</li>
+<li>Engines interpolate these weights (via <code>LINEAR</code>,
+<code>STEP</code>, or <code>CUBICSPLINE</code> interpolation) and apply
+the resulting values to the target node during the frame update.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

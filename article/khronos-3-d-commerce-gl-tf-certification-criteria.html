@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khronos 3D Commerce glTF Certification Criteria - gltf</title>
+    <meta name="description" content="This article outlines the core technical standards, asset optimization rules, and validation checks required for 3D e-commerce assets to achieve official Khronos 3D Commerce certification. Passing certification ensures that glTF and GLB models display con">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/khronos-3-d-commerce-gl-tf-certification-criteria">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Khronos 3D Commerce glTF Certification Criteria - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/khronos-3-d-commerce-gl-tf-certification-criteria" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article outlines the core technical standards, asset optimization rules, and validation checks required for 3D e-commerce assets to achieve official Khronos 3D Commerce certification. Passing certification ensures that glTF and GLB models display con" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="khronos-3d-commerce-gltf-certification-criteria">Khronos 3D
+Commerce glTF Certification Criteria</h1>
+<p>This article outlines the core technical standards, asset
+optimization rules, and validation checks required for 3D e-commerce
+assets to achieve official Khronos 3D Commerce certification. Passing
+certification ensures that glTF and GLB models display consistently,
+perform efficiently, and render photorealistically across diverse retail
+platforms, web engines, and augmented reality devices.</p>
+<h2 id="gltf-20-validation-and-schema-compliance">glTF 2.0 Validation
+and Schema Compliance</h2>
+<p>The baseline requirement for certification is absolute adherence to
+the core glTF 2.0 specification. The asset must pass the official
+Khronos glTF Validator with zero errors. Any warnings generated during
+validation must be reviewed and resolved unless explicitly permitted by
+the certification guidelines. The model must utilize standard
+<code>.glb</code> or <code>.gltf</code> formatting with correctly
+declared Khronos-approved extensions (such as
+<code>KHR_materials_*</code> or <code>KHR_texture_basisu</code>).
+Proprietary or vendor-specific extensions that break interoperability
+across standard render engines are prohibited.</p>
+<h2 id="real-world-scale-orientation-and-pivot-points">Real-World Scale,
+Orientation, and Pivot Points</h2>
+<p>To ensure seamless integration into web viewers and AR experiences,
+the asset must reflect accurate real-world physical dimensions:</p>
+<ul>
+<li><strong>Units:</strong> Scene units must strictly represent meters
+(1 unit = 1 meter).</li>
+<li><strong>Orientation:</strong> Assets must follow the glTF coordinate
+standard: Y-axis is up, Z-axis is forward, and X-axis is
+right-handed.</li>
+<li><strong>Alignment:</strong> The model's origin (pivot point) must be
+centered horizontally (X=0, Z=0) and placed at the lowest physical
+boundary of the object (Y=0), ensuring the asset rests flush on ground
+surfaces in AR placement.</li>
+</ul>
+<h2 id="geometry-and-mesh-efficiency">Geometry and Mesh Efficiency</h2>
+<p>Geometry must be optimized to balance visual fidelity with mobile
+performance and fast network delivery:</p>
+<ul>
+<li><strong>Topology:</strong> All geometry must consist of clean,
+manifold polygonal meshes, predominantly using standard triangles.</li>
+<li><strong>Polygon Budget:</strong> Models must stay within designated
+triangle budgets set for real-time commerce, avoiding redundant edge
+loops and unoptimized high-poly density.</li>
+<li><strong>Draw Calls:</strong> Meshes should be consolidated where
+practical to minimize draw calls without sacrificing essential
+functionality.</li>
+<li><strong>Transforms:</strong> Scale transformations on individual
+nodes must be normalized to (1, 1, 1), and rotational transforms should
+be baked into the geometry where possible.</li>
+</ul>
+<h2 id="pbr-material-standards-and-extension-compliance">PBR Material
+Standards and Extension Compliance</h2>
+<p>Certified models must adhere to the Physically Based Rendering (PBR)
+Metallic-Roughness workflow:</p>
+<ul>
+<li><strong>Material Model:</strong> Standard core rendering must use
+the <code>pbrMetallicRoughness</code> model.</li>
+<li><strong>Texture Channels:</strong> Metallic and roughness values
+must be packed correctly into a single texture map (Occlusion in Red,
+Roughness in Green, Metalness in Blue).</li>
+<li><strong>Advanced Extensions:</strong> If simulating complex
+materials, models must use approved Khronos extensions—such as
+<code>KHR_materials_clearcoat</code>,
+<code>KHR_materials_transmission</code>,
+<code>KHR_materials_sheen</code>, <code>KHR_materials_ior</code>, and
+<code>KHR_materials_volume</code>—rather than custom shaders.</li>
+<li><strong>Normal Mapping:</strong> Normal maps must follow standard
+tangent-space conventions (OpenGL format: Green channel = Y+).</li>
+</ul>
+<h2 id="texture-optimization-and-performance-budgets">Texture
+Optimization and Performance Budgets</h2>
+<p>Textures constitute the largest portion of a 3D file's data footprint
+and must meet strict performance parameters:</p>
+<ul>
+<li><strong>Dimensions:</strong> All textures must follow power-of-two
+(POT) dimensions (e.g., 512x512, 1024x1024, 2048x2048). Textures
+exceeding 4096x4096 are typically restricted.</li>
+<li><strong>Compression:</strong> For optimal bandwidth consumption,
+textures may be compressed using KTX 2.0 / Basis Universal
+(<code>KHR_texture_basisu</code>) or standard compressed formats (JPG,
+PNG) without noticeable compression artifacts.</li>
+<li><strong>UV Layout:</strong> UVs must be laid out efficiently within
+the 0 to 1 UV space, avoiding unnecessary overlaps on unique textured
+areas while maximizing texel density.</li>
+</ul>
+<h2 id="cross-renderer-visual-consistency">Cross-Renderer Visual
+Consistency</h2>
+<p>Beyond programmatic syntax validation, the Khronos 3D Commerce
+certification process evaluates visual parity. Assets are tested across
+multiple standard web and mobile rendering engines—such as Babylon.js,
+Three.js, and Google Filament—against a baseline reference render. The
+asset passes visual certification only when lighting response, surface
+roughness, transparency, and color fidelity remain visually consistent
+and true to the physical product across all tested target
+environments.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

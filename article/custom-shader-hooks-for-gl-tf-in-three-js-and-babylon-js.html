@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Shader Hooks for glTF in Three.js and Babylon.js - gltf</title>
+    <meta name="description" content="Modifying the rendering pipeline of glTF meshes without losing standard Physically Based Rendering (PBR) features requires injecting custom shader code directly into existing materials. Both Three.js and Babylon.js load glTF models with pre-configured PBR">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/custom-shader-hooks-for-gl-tf-in-three-js-and-babylon-js">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Custom Shader Hooks for glTF in Three.js and Babylon.js - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/custom-shader-hooks-for-gl-tf-in-three-js-and-babylon-js" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Modifying the rendering pipeline of glTF meshes without losing standard Physically Based Rendering (PBR) features requires injecting custom shader code directly into existing materials. Both Three.js and Babylon.js load glTF models with pre-configured PBR" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="custom-shader-hooks-for-gltf-in-threejs-and-babylonjs">Custom
+Shader Hooks for glTF in Three.js and Babylon.js</h1>
+<p>Modifying the rendering pipeline of glTF meshes without losing
+standard Physically Based Rendering (PBR) features requires injecting
+custom shader code directly into existing materials. Both Three.js and
+Babylon.js load glTF models with pre-configured PBR materials that
+handle complex tasks like skinning, morph targets, environment mapping,
+and shadows. Rather than replacing these with raw shader materials from
+scratch, developers use shader hooks to alter vertex positions, inject
+custom procedural textures, or manipulate lighting equations while
+keeping the core rendering pipeline intact.</p>
+<h2 id="the-challenge-with-standard-gltf-pipelines">The Challenge with
+Standard glTF Pipelines</h2>
+<p>When a glTF file loads, the engine parses its primitives and binds
+standard PBR materials—<code>MeshStandardMaterial</code> or
+<code>MeshPhysicalMaterial</code> in Three.js, and
+<code>PBRMaterial</code> in Babylon.js. Completely swapping these out
+for a native <code>ShaderMaterial</code> removes the engine's built-in
+handling of skeletal animations, directional shadows, and image-based
+lighting (IBL). Shader hooks solve this by exposing the underlying
+shader compilation process, allowing the injection of custom GLSL or
+WGSL code at designated lifecycle stages.</p>
+<h2 id="modifying-gltf-shaders-in-threejs">Modifying glTF Shaders in
+Three.js</h2>
+<p>Three.js provides the <code>Material.onBeforeCompile</code> callback
+to intercept and alter shader code before it compiles on the GPU.</p>
+<h3 id="1-traverse-and-intercept">1. Traverse and Intercept</h3>
+<p>After loading a glTF via <code>GLTFLoader</code>, traverse the scene
+graph to find mesh nodes and target their materials:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>gltfLoader<span class="op">.</span><span class="fu">load</span>(<span class="st">&#39;model.gltf&#39;</span><span class="op">,</span> (gltf) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  gltf<span class="op">.</span><span class="at">scene</span><span class="op">.</span><span class="fu">traverse</span>((child) <span class="kw">=&gt;</span> {</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (child<span class="op">.</span><span class="at">isMesh</span> <span class="op">&amp;&amp;</span> child<span class="op">.</span><span class="at">material</span>) {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">modifyMaterial</span>(child<span class="op">.</span><span class="at">material</span>)<span class="op">;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<h3 id="2-inject-code-via-string-manipulation">2. Inject Code via String
+Manipulation</h3>
+<p>Within <code>onBeforeCompile</code>, Three.js exposes the shader
+object containing <code>vertexShader</code>,
+<code>fragmentShader</code>, and <code>uniforms</code>. Custom code is
+added by replacing default Three.js shader chunks:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">modifyMaterial</span>(material) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  material<span class="op">.</span><span class="at">userData</span><span class="op">.</span><span class="at">time</span> <span class="op">=</span> { <span class="dt">value</span><span class="op">:</span> <span class="dv">0</span> }<span class="op">;</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  material<span class="op">.</span><span class="at">onBeforeCompile</span> <span class="op">=</span> (shader) <span class="kw">=&gt;</span> {</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    shader<span class="op">.</span><span class="at">uniforms</span><span class="op">.</span><span class="at">uTime</span> <span class="op">=</span> material<span class="op">.</span><span class="at">userData</span><span class="op">.</span><span class="at">time</span><span class="op">;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Inject uniform declaration into vertex shader</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    shader<span class="op">.</span><span class="at">vertexShader</span> <span class="op">=</span> <span class="vs">`</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="vs">      uniform float uTime;</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="vs">      </span><span class="sc">${</span>shader<span class="op">.</span><span class="at">vertexShader</span><span class="sc">}</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="vs">    `</span><span class="op">;</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Inject custom deformation logic into the vertex pipeline</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    shader<span class="op">.</span><span class="at">vertexShader</span> <span class="op">=</span> shader<span class="op">.</span><span class="at">vertexShader</span><span class="op">.</span><span class="fu">replace</span>(</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>      <span class="st">&#39;#include &lt;begin_vertex&gt;&#39;</span><span class="op">,</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>      <span class="vs">`</span></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="vs">      #include &lt;begin_vertex&gt;</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="vs">      transformed.y += sin(transformed.x * 5.0 + uTime) * 0.1;</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="vs">      `</span></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    )<span class="op">;</span></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    <span class="co">// Modify the final color output in the fragment shader</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    shader<span class="op">.</span><span class="at">fragmentShader</span> <span class="op">=</span> shader<span class="op">.</span><span class="at">fragmentShader</span><span class="op">.</span><span class="fu">replace</span>(</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>      <span class="st">&#39;#include &lt;dithering_fragment&gt;&#39;</span><span class="op">,</span></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>      <span class="vs">`</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="vs">      #include &lt;dithering_fragment&gt;</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a><span class="vs">      gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(1.0, 0.0, 0.0), 0.2);</span></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="vs">      `</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>    )<span class="op">;</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>  }<span class="op">;</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<p>Updating <code>material.userData.time.value</code> in the animation
+loop updates the uniform dynamically without triggering expensive
+re-compilations.</p>
+<h2 id="modifying-gltf-shaders-in-babylonjs">Modifying glTF Shaders in
+Babylon.js</h2>
+<p>Babylon.js offers a modular, structured alternative to string
+replacement through the <code>MaterialPluginBase</code> API, as well as
+legacy injection via <code>PBRCustomMaterial</code>.</p>
+<h3 id="1-the-modern-approach-materialpluginbase">1. The Modern
+Approach: MaterialPluginBase</h3>
+<p>The Babylon.js <code>MaterialPluginBase</code> system allows
+developers to create reusable shader modifications that seamlessly hook
+into any <code>PBRMaterial</code> created by the
+<code>SceneLoader</code>.</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> WavePlugin <span class="kw">extends</span> BABYLON<span class="op">.</span><span class="at">MaterialPluginBase</span> {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">public</span> time <span class="op">=</span> <span class="dv">0</span><span class="op">;</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">constructor</span>(material<span class="op">:</span> BABYLON<span class="op">.</span><span class="at">Material</span>) {</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="kw">super</span>(material<span class="op">,</span> <span class="st">&quot;WavePlugin&quot;</span><span class="op">,</span> <span class="dv">200</span><span class="op">,</span> { WavePlugin<span class="op">:</span> <span class="kw">false</span> })<span class="op">;</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">this</span><span class="op">.</span><span class="fu">enable</span>(<span class="kw">true</span>)<span class="op">;</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">getUniforms</span>() {</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> {</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>      ubo<span class="op">:</span> [{ name<span class="op">:</span> <span class="st">&quot;uTime&quot;</span><span class="op">,</span> size<span class="op">:</span> <span class="dv">1</span><span class="op">,</span> type<span class="op">:</span> <span class="st">&quot;float&quot;</span> }]<span class="op">,</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>      fragment<span class="op">:</span> <span class="st">&quot;&quot;</span><span class="op">,</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>      vertex<span class="op">:</span> <span class="st">&quot;uniform float uTime;&quot;</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    }<span class="op">;</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bindForSubMesh</span>(uniformBuffer<span class="op">:</span> BABYLON<span class="op">.</span><span class="at">UniformBuffer</span>) {</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="kw">this</span><span class="op">.</span><span class="at">_isEnabled</span>) {</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>      uniformBuffer<span class="op">.</span><span class="fu">updateFloat</span>(<span class="st">&quot;uTime&quot;</span><span class="op">,</span> <span class="kw">this</span><span class="op">.</span><span class="at">time</span>)<span class="op">;</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">getCustomCode</span>(shaderType<span class="op">:</span> <span class="dt">string</span>) {</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (shaderType <span class="op">===</span> <span class="st">&quot;vertex&quot;</span>) {</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>      <span class="cf">return</span> {</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>        <span class="co">// Injects right before position update in the vertex stage</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>        CUSTOM_VERTEX_UPDATE_POSITION<span class="op">:</span> <span class="vs">`</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="vs">          positionUpdated.y += sin(positionUpdated.x * 5.0 + uTime) * 0.1;</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="vs">        `</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>      }<span class="op">;</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="kw">null</span><span class="op">;</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h3 id="2-applying-the-plugin-to-gltf-meshes">2. Applying the Plugin to
+glTF Meshes</h3>
+<p>Attach the plugin directly to the materials of the imported model
+during or after the loading sequence:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode typescript"><code class="sourceCode typescript"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>BABYLON<span class="op">.</span><span class="at">SceneLoader</span><span class="op">.</span><span class="fu">ImportMeshAsync</span>(<span class="st">&quot;&quot;</span><span class="op">,</span> <span class="st">&quot;&quot;</span><span class="op">,</span> <span class="st">&quot;model.gltf&quot;</span><span class="op">,</span> scene)<span class="op">.</span><span class="fu">then</span>((result) <span class="kw">=&gt;</span> {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  result<span class="op">.</span><span class="at">meshes</span><span class="op">.</span><span class="fu">forEach</span>((mesh) <span class="kw">=&gt;</span> {</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (mesh<span class="op">.</span><span class="at">material</span> <span class="kw">instanceof</span> BABYLON<span class="op">.</span><span class="at">PBRMaterial</span>) {</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>      <span class="kw">new</span> <span class="fu">WavePlugin</span>(mesh<span class="op">.</span><span class="at">material</span>)<span class="op">;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>})<span class="op">;</span></span></code></pre></div>
+<p>Babylon.js executes defined hook points like
+<code>CUSTOM_VERTEX_UPDATE_POSITION</code> or
+<code>CUSTOM_FRAGMENT_BEFORE_FRAGCOLOR</code>, ensuring uniform buffers,
+lighting calculations, and shadow passes remain fully synchronized
+without manual string patching.</p>
+<h2 id="key-architectural-differences">Key Architectural
+Differences</h2>
+<ul>
+<li><strong>Integration Safety:</strong> Three.js uses raw string
+replacement on specific chunks
+(<code>#include &lt;begin_vertex&gt;</code>). If Three.js renames or
+deprecates an internal chunk in an update, shader injection can fail
+silently. Babylon.js defines formal hook keys via
+<code>MaterialPluginBase</code>, abstracting internal chunk names away
+from the developer.</li>
+<li><strong>Uniform Management:</strong> Three.js binds custom uniforms
+by appending to <code>shader.uniforms</code> inside
+<code>onBeforeCompile</code>, requiring persistent references on the
+host material. Babylon.js manages uniforms centrally through standard
+uniform buffers via <code>bindForSubMesh</code>.</li>
+<li><strong>State Preservation:</strong> Both approaches successfully
+retain glTF-specific properties—such as normal mapping,
+roughness/metallic workflows, skinning matrices, and environment
+lighting—by executing custom vertex offsets before world transformations
+and custom color modifications right before final composition.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

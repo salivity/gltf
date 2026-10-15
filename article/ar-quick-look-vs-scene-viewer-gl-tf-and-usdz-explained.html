@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR Quick Look vs Scene Viewer: glTF and USDZ Explained - gltf</title>
+    <meta name="description" content="Mobile augmented reality (AR) runtimes allow users to interact with 3D digital objects placed within their physical environments directly from mobile browsers and native applications. Apple’s AR Quick Look and Google’s Scene Viewer are the two dominant na">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/ar-quick-look-vs-scene-viewer-gl-tf-and-usdz-explained">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="AR Quick Look vs Scene Viewer: glTF and USDZ Explained - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/ar-quick-look-vs-scene-viewer-gl-tf-and-usdz-explained" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Mobile augmented reality (AR) runtimes allow users to interact with 3D digital objects placed within their physical environments directly from mobile browsers and native applications. Apple’s AR Quick Look and Google’s Scene Viewer are the two dominant na" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="ar-quick-look-vs-scene-viewer-gltf-and-usdz-explained">AR Quick
+Look vs Scene Viewer: glTF and USDZ Explained</h1>
+<p>Mobile augmented reality (AR) runtimes allow users to interact with
+3D digital objects placed within their physical environments directly
+from mobile browsers and native applications. Apple’s AR Quick Look and
+Google’s Scene Viewer are the two dominant native runtimes powering
+these experiences on iOS and Android, respectively. Rather than relying
+on heavy, third-party software, these platforms achieve instant
+rendering and real-world tracking by pairing directly with optimized 3D
+file formats: USDZ for Apple and glTF/GLB for Google. This article
+examines how both runtimes leverage these specific formats to optimize
+performance, visual fidelity, and web-to-AR delivery.</p>
+<h3 id="native-runtimes-ar-quick-look-and-scene-viewer">Native Runtimes:
+AR Quick Look and Scene Viewer</h3>
+<p>Both Apple and Google developed lightweight viewing pipelines
+integrated directly into the operating system.</p>
+<ul>
+<li><strong>AR Quick Look</strong> is built into iOS and iPadOS,
+functioning via Safari, Messages, Mail, and third-party apps. It ties
+directly into Apple's ARKit and RealityKit frameworks, utilizing the
+Metal graphics API for hardware-accelerated rendering.</li>
+<li><strong>Scene Viewer</strong> is integrated into Android through
+Google Play Services for AR (ARCore) and the Google app. It uses
+Filament, Google’s real-time physically based rendering (PBR) engine, to
+display assets launched via Chrome or native Android intents.</li>
+</ul>
+<h3 id="usdz-the-backbone-of-ar-quick-look">USDZ: The Backbone of AR
+Quick Look</h3>
+<p>Developed in collaboration between Apple and Pixar, USDZ is an
+uncompressed, read-only ZIP archive that packages Universal Scene
+Description (USD) files and their accompanying assets (such as textures
+and audio) into a single payload.</p>
+<p>AR Quick Look leverages USDZ in several key ways:</p>
+<ul>
+<li><strong>Zero-Copy Execution:</strong> Because USDZ is uncompressed
+and memory-mapped, the runtime does not need to extract files to disk
+before loading. The operating system reads geometry and texture buffers
+directly from the package, enabling near-instantaneous load times.</li>
+<li><strong>PBR Materials and Real-World Lighting:</strong> USDZ
+utilizes the <code>UsdPreviewSurface</code> specification. AR Quick Look
+samples the physical environment using the iOS device camera, calculates
+ambient lighting and reflection probes, and applies them to the USDZ
+model's PBR channels (roughness, metallic, and normal maps) in real
+time.</li>
+<li><strong>Interactivity and Spatial Audio:</strong> Beyond static 3D
+models, USDZ files can store animation sequences, custom physics
+interactions, and spatial audio cues. AR Quick Look executes these
+embedded behaviors natively without requiring JavaScript or custom
+runtime logic.</li>
+</ul>
+<h3 id="gltf-and-glb-the-open-standard-for-scene-viewer">glTF and GLB:
+The Open Standard for Scene Viewer</h3>
+<p>Maintained by the Khronos Group, glTF (GL Transmission
+Format)—particularly its binary form, GLB—is often described as the
+"JPEG of 3D." It packages scene hierarchies, mesh data, animations, and
+image textures into a compact, binary layout.</p>
+<p>Scene Viewer leverages glTF/GLB through the following mechanisms:</p>
+<ul>
+<li><strong>Compact Binary Delivery:</strong> GLB files store vertex
+buffers, index arrays, and animation matrices in formats that can be
+uploaded directly to the GPU with minimal preprocessing. This compact
+footprint is critical for fast transmission over cellular networks
+before handoff to Scene Viewer.</li>
+<li><strong>Filament PBR Integration:</strong> Google’s Filament engine
+parses glTF standard PBR materials alongside official Khronos extensions
+(such as <code>KHR_materials_specular</code>,
+<code>KHR_materials_clearcoat</code>, and
+<code>KHR_materials_ior</code>). Scene Viewer maps real-time
+environmental lighting captured by ARCore onto these material extensions
+for realistic visual integration.</li>
+<li><strong>Broad Device Scalability:</strong> Because Android
+encompasses a wide spectrum of hardware capabilities, Scene Viewer
+relies on glTF’s clean separation of geometry and texture levels of
+detail (LOD) to maintain target frame rates across varied GPU
+architectures.</li>
+</ul>
+<h3 id="bridging-the-file-formats-to-ar-functionality">Bridging the File
+Formats to AR Functionality</h3>
+<p>Both runtimes interpret their respective formats to enable core
+augmented reality capabilities:</p>
+<ul>
+<li><strong>Real-World Scale:</strong> glTF and USDZ define internal
+measurement units (glTF strictly standardizes on meters; USDZ supports
+defined metric scale tokens). Both runtimes read these scale parameters
+to ensure an object renders at exact real-world dimensions upon
+placement.</li>
+<li><strong>Plane and Surface Detection:</strong> The runtime analyzes
+the physical room using plane detection algorithms, then aligns the
+model's origin point (defined at the base of the glTF or USDZ mesh)
+directly flush with horizontal or vertical surfaces.</li>
+<li><strong>Instant Web-to-AR Handoff:</strong> On the web, developers
+link to USDZ files using standard anchor tags with the
+<code>rel="ar"</code> attribute in Safari, while Android developers
+invoke Scene Viewer via explicit intent URLs referencing the remote GLB
+file. The runtimes bypass complex web page execution to render the file
+directly within a native AR viewport.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

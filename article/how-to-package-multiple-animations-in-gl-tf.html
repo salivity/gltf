@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How to Package Multiple Animations in glTF - gltf</title>
+    <meta name="description" content="The glTF (GL Transmission Format) standard packages multiple concurrent animation clips by defining discrete animation objects within a single top-level array, allowing 3D engines to isolate, blend, and play them simultaneously. This article explains the">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-to-package-multiple-animations-in-gl-tf">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How to Package Multiple Animations in glTF - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-to-package-multiple-animations-in-gl-tf" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="The glTF (GL Transmission Format) standard packages multiple concurrent animation clips by defining discrete animation objects within a single top-level array, allowing 3D engines to isolate, blend, and play them simultaneously. This article explains the" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-to-package-multiple-animations-in-gltf">How to Package
+Multiple Animations in glTF</h1>
+<p>The glTF (GL Transmission Format) standard packages multiple
+concurrent animation clips by defining discrete animation objects within
+a single top-level array, allowing 3D engines to isolate, blend, and
+play them simultaneously. This article explains the underlying structure
+of glTF animations, how channels and samplers decouple movement data,
+and how runtimes process these isolated clips concurrently on the same
+3D model.</p>
+<h3 id="the-top-level-animation-array">The Top-Level Animation
+Array</h3>
+<p>In a glTF file, animations are organized inside a root-level array
+named <code>animations</code>. Rather than storing one long, continuous
+timeline containing every action, the format defines each distinct clip
+as an independent object inside this array.</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;animations&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span> <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;Walk&quot;</span><span class="fu">,</span> <span class="dt">&quot;channels&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="er">...</span><span class="ot">]</span><span class="fu">,</span> <span class="dt">&quot;samplers&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="er">...</span><span class="ot">]</span> <span class="fu">}</span><span class="ot">,</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span> <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;Shoot&quot;</span><span class="fu">,</span> <span class="dt">&quot;channels&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="er">...</span><span class="ot">]</span><span class="fu">,</span> <span class="dt">&quot;samplers&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="er">...</span><span class="ot">]</span> <span class="fu">}</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>Assigning a string to the <code>name</code> property identifies each
+clip (such as "Idle", "Run", or "Attack"). Because each entry is a
+self-contained JSON object, the glTF specification establishes strict
+data boundaries between different actions.</p>
+<h3 id="data-isolation-via-channels-and-samplers">Data Isolation via
+Channels and Samplers</h3>
+<p>Each animation object isolates its keyframe tracks through two core
+components: <code>samplers</code> and <code>channels</code>.</p>
+<ul>
+<li><strong>Samplers:</strong> Define the animation data curves. A
+sampler references an <code>input</code> accessor (the timeline
+timestamps in seconds), an <code>output</code> accessor (the
+transformation values, such as coordinates or quaternions), and an
+<code>interpolation</code> method (such as <code>LINEAR</code>,
+<code>STEP</code>, or <code>CUBICSPLINE</code>).</li>
+<li><strong>Channels:</strong> Connect a sampler directly to a specific
+target. A channel specifies a <code>node</code> index (a bone or mesh in
+the scene hierarchy) and a <code>path</code> property indicating what is
+being modified: <code>"translation"</code>, <code>"rotation"</code>,
+<code>"scale"</code>, or <code>"weights"</code> (for morph
+targets).</li>
+</ul>
+<p>By scoping samplers and channels strictly inside their parent
+animation object, glTF ensures that the keyframes of one clip do not
+interfere with or overwrite the keyframes of another inside the file
+asset.</p>
+<h3 id="sharing-and-isolating-buffer-data">Sharing and Isolating Buffer
+Data</h3>
+<p>Although animation clips are logically distinct, the binary keyframe
+data stored in the underlying <code>.bin</code> buffers can be
+structured in two ways:</p>
+<ol type="1">
+<li><strong>Dedicated Buffers:</strong> Each animation clip points to
+unique <code>bufferViews</code> and <code>accessors</code>, isolating
+the raw binary data completely.</li>
+<li><strong>Shared Time Accessors:</strong> Multiple clips can reference
+identical timeline accessors (for instance, if two clips share an
+identical frame duration and rate), reducing file size while keeping
+channel mappings logically separate.</li>
+</ol>
+<h3 id="concurrent-playback-in-runtimes">Concurrent Playback in
+Runtimes</h3>
+<p>glTF specifies the data format, while the client runtime (such as
+Three.js, Babylon.js, Unity, or Unreal Engine) handles concurrency. When
+a runtime loads a glTF file with multiple clips, it exposes them as
+distinct animation actions.</p>
+<p>Runtimes achieve concurrency through two primary methods:</p>
+<ul>
+<li><strong>Target Masking / Layering:</strong> One animation can
+control the lower body (nodes assigned to the legs in a "Walk" clip),
+while another controls the upper body (nodes assigned to the spine and
+arms in a "Shoot" clip). Because the channels target distinct node
+indices, the clips evaluate concurrently without conflicts.</li>
+<li><strong>Transform Blending:</strong> When two concurrent animations
+target the same node (such as blending a "Walk" clip into a "Run" clip),
+the runtime evaluates both channels at their current timestamps and
+calculates an interpolated mathematical blend (slerp for rotations, lerp
+for translations) based on weight parameters defined by the engine.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

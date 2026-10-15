@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Attributes in Blender glTF Export Workflows - gltf</title>
+    <meta name="description" content="Exporting custom attributes from Blender to the glTF 2.0 format allows technical artists and developers to pass specialized data—such as procedural masks, gameplay parameters, and custom vertex data—directly into real-time engines and web viewers. Blender">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/custom-attributes-in-blender-gl-tf-export-workflows">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Custom Attributes in Blender glTF Export Workflows - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/custom-attributes-in-blender-gl-tf-export-workflows" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Exporting custom attributes from Blender to the glTF 2.0 format allows technical artists and developers to pass specialized data—such as procedural masks, gameplay parameters, and custom vertex data—directly into real-time engines and web viewers. Blender" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="custom-attributes-in-blender-gltf-export-workflows">Custom
+Attributes in Blender glTF Export Workflows</h1>
+<p>Exporting custom attributes from Blender to the glTF 2.0 format
+allows technical artists and developers to pass specialized data—such as
+procedural masks, gameplay parameters, and custom vertex data—directly
+into real-time engines and web viewers. Blender handles this process
+through its integrated glTF 2.0 exporter, which converts internal mesh
+attributes into standard glTF primitive attributes. Understanding the
+mapping rules, domain limitations, exporter settings, and naming
+conventions is essential for ensuring this data transfers seamlessly
+into your downstream pipeline.</p>
+<h3 id="enabling-custom-attributes-in-the-exporter">Enabling Custom
+Attributes in the Exporter</h3>
+<p>By default, Blender’s glTF exporter does not include non-standard
+mesh data. To include them, you must configure the export settings:</p>
+<ol type="1">
+<li>Open the glTF export menu via <strong>File &gt; Export &gt; glTF 2.0
+(.glb/.gltf)</strong>.</li>
+<li>In the right-hand settings panel, expand the <strong>Data</strong>
+section, then expand <strong>Mesh</strong>.</li>
+<li>Check the <strong>Custom Attributes</strong> box.</li>
+</ol>
+<p>When this option is disabled, only standard properties—such as
+<code>POSITION</code>, <code>NORMAL</code>, <code>TANGENT</code>,
+<code>TEXCOORD_0</code>, and <code>COLOR_0</code>—are written to the
+file.</p>
+<h3 id="naming-conventions-and-the-gltf-specification">Naming
+Conventions and the glTF Specification</h3>
+<p>The glTF 2.0 specification requires all application-specific custom
+attributes to begin with an underscore (<code>_</code>).</p>
+<p>Blender's glTF exporter manages this prefixing automatically:</p>
+<ul>
+<li>If your attribute in Blender is named <code>AO_Mask</code>, the
+exporter translates it to <code>_AO_MASK</code> or <code>_AO_Mask</code>
+in the glTF primitive attributes dictionary.</li>
+<li>If your attribute already starts with an underscore (e.g.,
+<code>_damage</code>), the exporter preserves it.</li>
+<li>Standard names that align with glTF conventions (such as standard
+color attributes or secondary UV sets) are mapped directly to standard
+glTF semantics like <code>COLOR_1</code> or
+<code>TEXCOORD_1</code>.</li>
+</ul>
+<p>Keep your custom attribute names alphanumeric to prevent
+compatibility issues across different glTF loaders (such as Three.js,
+Babylon.js, or Godot).</p>
+<h3 id="supported-attribute-domains-and-data-types">Supported Attribute
+Domains and Data Types</h3>
+<p>glTF stores data per-vertex within mesh primitives. Because Blender
+supports multiple attribute domains, the exporter must reconcile
+Blender's internal data layout with glTF’s vertex-only requirement:</p>
+<ul>
+<li><strong>Point / Vertex Domain:</strong> This is the most direct
+mapping. Float, Vector, and Color data mapped to vertices convert
+cleanly to corresponding buffer views without data alteration.</li>
+<li><strong>Corner (Face Corner) Domain:</strong> Since Face Corner data
+can define split attributes (different values for the same geometric
+vertex across different faces), the exporter will duplicate vertices
+along seams where values diverge to preserve data fidelity.</li>
+<li><strong>Edge and Face Domains:</strong> These domains are generally
+not supported for direct export into vertex-based glTF primitives.
+Attributes assigned to edges or entire faces must be converted to the
+Point or Corner domain (for example, using a <strong>Store Named
+Attribute</strong> node in Geometry Nodes) prior to export.</li>
+</ul>
+<p>Data types like <strong>Float</strong>, <strong>Float Vector</strong>
+(2D, 3D, and 4D), and <strong>Color (Byte or Float)</strong> map to
+standard glTF component types (<code>FLOAT</code>,
+<code>UNSIGNED_BYTE</code>, or normalized integers). Boolean and Integer
+attributes are typically converted to floats during the export
+process.</p>
+<h3 id="working-with-geometry-nodes">Working with Geometry Nodes</h3>
+<p>Attributes created procedurally using Geometry Nodes are fully
+compatible with glTF export, provided they meet two criteria:</p>
+<ol type="1">
+<li>The data must be explicitly written using a <strong>Store Named
+Attribute</strong> node.</li>
+<li>The modifier must either be evaluated during export (enabled by
+default via the <strong>Apply Modifiers</strong> setting in the glTF
+export panel) or manually applied to the mesh before export.</li>
+</ol>
+<p>Ensure the attribute is stored on either the <strong>Point</strong>
+or <strong>Face Corner</strong> domain within the Geometry Nodes tree to
+avoid conversion errors during export.</p>
+<h3 id="consuming-attributes-in-downstream-engines">Consuming Attributes
+in Downstream Engines</h3>
+<p>Once exported, custom attributes reside inside the
+<code>attributes</code> dictionary of the mesh primitive in the
+resulting JSON or GLB binary:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;primitives&quot;</span><span class="er">:</span> <span class="ot">[</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">{</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;attributes&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;POSITION&quot;</span><span class="fu">:</span> <span class="dv">0</span><span class="fu">,</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;NORMAL&quot;</span><span class="fu">:</span> <span class="dv">1</span><span class="fu">,</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;_CUSTOM_MASK&quot;</span><span class="fu">:</span> <span class="dv">2</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">},</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;indices&quot;</span><span class="fu">:</span> <span class="dv">3</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="ot">]</span></span></code></pre></div>
+<p>Game engines and WebGL frameworks access these directly:</p>
+<ul>
+<li><strong>Three.js:</strong> Accessed via
+<code>geometry.attributes._custom_mask</code>.</li>
+<li><strong>Babylon.js:</strong> Accessed through vertex buffer queries
+using the custom attribute identifier.</li>
+<li><strong>Custom Shaders:</strong> Bound as custom vertex shader
+inputs for specialized rendering techniques like vertex-driven wind,
+terrain blending, or simulation caching.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

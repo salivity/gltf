@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Which JSON Schemas Validate a glTF File? - gltf</title>
+    <meta name="description" content="This article outlines the specific JSON schemas that validate the top-level structure of a standard glTF (GL Transmission Format) 2.0 asset. It identifies the root schema definitions provided by the Khronos Group, breaks down the core object arrays define">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/which-json-schemas-validate-a-gl-tf-file">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Which JSON Schemas Validate a glTF File? - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/which-json-schemas-validate-a-gl-tf-file" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article outlines the specific JSON schemas that validate the top-level structure of a standard glTF (GL Transmission Format) 2.0 asset. It identifies the root schema definitions provided by the Khronos Group, breaks down the core object arrays define" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="which-json-schemas-validate-a-gltf-file">Which JSON Schemas
+Validate a glTF File?</h1>
+<p>This article outlines the specific JSON schemas that validate the
+top-level structure of a standard glTF (GL Transmission Format) 2.0
+asset. It identifies the root schema definitions provided by the Khronos
+Group, breaks down the core object arrays defined at the document root,
+and explains how validation tools utilize these draft schemas to ensure
+asset conformance.</p>
+<h2 id="the-root-schema-gltfschemajson">The Root Schema:
+glTF.schema.json</h2>
+<p>In the official glTF specification maintained by the Khronos Group,
+validation begins at a single entry point:
+<code>glTF.schema.json</code>. This schema targets the document root of
+any <code>.gltf</code> manifest. It acts as the master orchestrator,
+importing dozens of sub-schemas via JSON Schema references
+(<code>$ref</code>) to validate every individual component.</p>
+<p>The schema complies with JSON Schema Draft-04 or Draft-07 (depending
+on the exact minor release version of the schema repository) and
+enforces that the root of every valid glTF file must be a JSON object
+containing defined top-level properties.</p>
+<h2 id="primary-top-level-property-schemas">Primary Top-Level Property
+Schemas</h2>
+<p>The root <code>glTF.schema.json</code> defines constraints for
+several high-level properties, each governed by its own dedicated schema
+file:</p>
+<ul>
+<li><strong>Asset Metadata (<code>asset.schema.json</code>):</strong>
+Validates the mandatory <code>asset</code> object. It strictly requires
+the <code>version</code> string (typically <code>"2.0"</code>) and
+optionally checks metadata properties like <code>generator</code>,
+<code>copyright</code>, and <code>minVersion</code>.</li>
+<li><strong>Scene Graph Structure (<code>scene.schema.json</code> and
+<code>node.schema.json</code>):</strong> Validates the
+<code>scenes</code> array, the active <code>scene</code> index pointer,
+and the <code>nodes</code> array. Nodes describe transformations, child
+hierarchies, and attachments to cameras, meshes, or skins.</li>
+<li><strong>Geometry and Primitives (<code>mesh.schema.json</code> and
+<code>mesh.primitive.schema.json</code>):</strong> Checks the
+<code>meshes</code> array, ensuring that mesh primitives point to valid
+attribute accessor indices and material indices.</li>
+<li><strong>Buffer Management (<code>buffer.schema.json</code> and
+<code>bufferView.schema.json</code>):</strong> Defines the
+<code>buffers</code> (raw binary data sources) and
+<code>bufferViews</code> (contiguous slices of binary data), validating
+byte offsets, byte lengths, and target buffer types.</li>
+<li><strong>Binary Accessors
+(<code>accessor.schema.json</code>):</strong> Validates the
+<code>accessors</code> array, which provides data types (such as
+<code>VEC3</code> or <code>SCALAR</code>) and component types (such as
+<code>FLOAT</code> or <code>UNSIGNED_SHORT</code>) for interpreting
+binary data from buffer views.</li>
+<li><strong>Materials and Textures (<code>material.schema.json</code>,
+<code>texture.schema.json</code>, <code>sampler.schema.json</code>,
+<code>image.schema.json</code>):</strong> Validates visual surfaces,
+including PBR metallic-roughness models, texture wrapping modes, and
+image references.</li>
+<li><strong>Animations and Skins (<code>animation.schema.json</code> and
+<code>skin.schema.json</code>):</strong> Governs skeletal rigging
+hierarchies and keyframe channel bindings.</li>
+<li><strong>Cameras (<code>camera.schema.json</code>):</strong>
+Validates perspective and orthographic projection parameters.</li>
+</ul>
+<h2 id="extensions-and-custom-metadata">Extensions and Custom
+Metadata</h2>
+<p>Two additional schemas govern custom data at the root level:</p>
+<ul>
+<li><strong><code>extension.schema.json</code>:</strong> Validates the
+<code>extensions</code> dictionary used for Khronos-approved
+(<code>KHR_</code>), vendor (<code>MSFT_</code>, <code>EXT_</code>), or
+engine-specific modifications. The root schema also enforces the arrays
+<code>extensionsUsed</code> and <code>extensionsRequired</code> as
+string lists.</li>
+<li><strong><code>extras.schema.json</code>:</strong> Validates the
+application-specific <code>extras</code> field, which permits any valid
+JSON value for custom metadata without violating format compliance.</li>
+</ul>
+<p>Standard validation suites, such as the Khronos glTF Validator,
+compile these schemas alongside semantic validation passes to ensure
+that indices point to actual entries within the top-level arrays.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

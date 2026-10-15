@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why glTF Uses Quaternions Instead of Euler Angles - gltf</title>
+    <meta name="description" content="This article explores why the glTF (GL Transmission Format) standard uses unit quaternions instead of Euler angles to encode rotational transform data. By adopting unit quaternions, glTF ensures smooth animation interpolation, avoids the mathematical pitf">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/why-gl-tf-uses-quaternions-instead-of-euler-angles">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Why glTF Uses Quaternions Instead of Euler Angles - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/why-gl-tf-uses-quaternions-instead-of-euler-angles" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article explores why the glTF (GL Transmission Format) standard uses unit quaternions instead of Euler angles to encode rotational transform data. By adopting unit quaternions, glTF ensures smooth animation interpolation, avoids the mathematical pitf" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="why-gltf-uses-quaternions-instead-of-euler-angles">Why glTF Uses
+Quaternions Instead of Euler Angles</h1>
+<p>This article explores why the glTF (GL Transmission Format) standard
+uses unit quaternions instead of Euler angles to encode rotational
+transform data. By adopting unit quaternions, glTF ensures smooth
+animation interpolation, avoids the mathematical pitfalls of gimbal
+lock, eliminates ambiguities related to rotational order, and provides
+high computational efficiency for real-time 3D web and game engines.</p>
+<h3 id="prevention-of-gimbal-lock">Prevention of Gimbal Lock</h3>
+<p>The primary mathematical limitation of Euler angles is gimbal lock.
+Euler angles represent 3D rotation by applying three sequential
+rotations around independent axes (such as roll, pitch, and yaw). When
+two of these rotational axes align—typically when a pitch reaches ±90
+degrees—one degree of rotational freedom is lost. In real-time rendering
+and animation, gimbal lock results in sudden flipping, jitter, or
+unnatural freezes. Unit quaternions encode rotation as an orientation in
+a four-dimensional space, completely bypassing the alignment issue and
+eliminating gimbal lock.</p>
+<h3 id="superior-interpolation-for-animation">Superior Interpolation for
+Animation</h3>
+<p>3D models and skeletal rigs rely heavily on keyframe animation, which
+requires calculating intermediate frames between key orientations.</p>
+<ul>
+<li><strong>Euler Angle Interpolation:</strong> Linearly interpolating
+between Euler angles produces jerky, inconsistent, and often
+unpredictable motion because the path taken across coordinate axes is
+not uniform.</li>
+<li><strong>Quaternion Interpolation (SLERP):</strong> Unit quaternions
+allow for Spherical Linear Interpolation (SLERP). SLERP computes the
+shortest rotational path along the surface of a unit sphere at a
+constant angular velocity. This guarantees smooth, natural-looking
+transitions between keyframes without distortion or sudden
+accelerations.</li>
+</ul>
+<h3 id="elimination-of-rotational-ambiguity">Elimination of Rotational
+Ambiguity</h3>
+<p>Euler angles depend entirely on the order of operations. An XYZ
+rotation produces a completely different orientation than an XZY or ZYX
+rotation. In addition, systems differ on whether rotations are intrinsic
+(relative to the rotating object) or extrinsic (relative to the static
+world). If an export tool and a rendering engine do not share the exact
+same convention, the rotation will be corrupted.</p>
+<p>Unit quaternions represent a definitive axis-angle rotation in a
+standardized format: a four-component vector <code>[x, y, z, w]</code>.
+There is no rotational sequence to misinterpret, making quaternions an
+ideal cross-platform interchange format.</p>
+<h3 id="computational-and-memory-efficiency">Computational and Memory
+Efficiency</h3>
+<p>While Euler angles use three floating-point values and quaternions
+use four, working with Euler angles requires repeated and expensive
+conversions into 3x3 or 4x4 transformation matrices for combination and
+rendering.</p>
+<p>Quaternions offer specific performance advantages:</p>
+<ul>
+<li><strong>Direct Concatenation:</strong> Multiplying two quaternions
+combines their rotations in fewer operations than matrix
+multiplication.</li>
+<li><strong>Simple Normalization:</strong> Floating-point drift over
+time can distort rotations. Quaternions can be re-normalized with a
+simple vector magnitude calculation, whereas matrices require expensive
+orthogonalization algorithms.</li>
+<li><strong>GPU Alignment:</strong> A four-component quaternion maps
+natively to standard four-wide vector types (<code>vec4</code>) utilized
+by modern GPU architectures.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

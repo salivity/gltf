@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Transparency: Why Choose MASK Over BLEND - gltf</title>
+    <meta name="description" content="When authoring 3D assets in glTF, selecting the correct alpha mode directly determines an asset&#39;s visual fidelity and rendering performance across real-time engines. While BLEND mode allows for smooth semi-transparency, it frequently introduces severe dep">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-transparency-why-choose-mask-over-blend">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Transparency: Why Choose MASK Over BLEND - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-transparency-why-choose-mask-over-blend" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="When authoring 3D assets in glTF, selecting the correct alpha mode directly determines an asset&#39;s visual fidelity and rendering performance across real-time engines. While BLEND mode allows for smooth semi-transparency, it frequently introduces severe dep" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-transparency-why-choose-mask-over-blend">glTF Transparency:
+Why Choose MASK Over BLEND</h1>
+<p>When authoring 3D assets in glTF, selecting the correct alpha mode
+directly determines an asset's visual fidelity and rendering performance
+across real-time engines. While <code>BLEND</code> mode allows for
+smooth semi-transparency, it frequently introduces severe depth-sorting
+bugs, breaks shadows, and degrades frame rates. In contrast,
+<code>MASK</code> mode evaluates transparency as a binary state based on
+a defined cutoff threshold, which writes cleanly to the depth buffer,
+eliminates visual sorting errors, and dramatically optimizes GPU
+efficiency. Unless an object strictly requires varying levels of
+translucency, 3D artists should consistently default to
+<code>MASK</code> for any cutout transparency.</p>
+<h3 id="the-mechanics-mask-vs-blend">The Mechanics: MASK vs. BLEND</h3>
+<p>The glTF specification defines three primary alpha modes:
+<code>OPAQUE</code>, <code>MASK</code>, and <code>BLEND</code>.</p>
+<ul>
+<li><strong><code>MASK</code> (Alpha Test/Cutout):</strong> Pixels are
+either 100% visible or 100% transparent based on a scalar value called
+<code>alphaCutoff</code>. Because every pixel is either rendered fully
+or discarded entirely, the GPU treats visible pixels as opaque
+geometry.</li>
+<li><strong><code>BLEND</code> (Alpha Blending):</strong> Pixels can
+possess partial opacity, allowing foreground and background colors to
+blend together. Because pixels need to read what is behind them, objects
+using <code>BLEND</code> generally disable depth writing to prevent
+invisible geometry from occluding background objects.</li>
+</ul>
+<h3 id="eliminating-depth-sorting-artifacts">Eliminating Depth-Sorting
+Artifacts</h3>
+<p>The primary reason to prefer <code>MASK</code> is avoiding
+depth-sorting artifacts. Real-time rendering engines draw opaque objects
+first using the depth buffer (Z-buffer) to ensure objects closer to the
+camera correctly obscure objects behind them.</p>
+<p>Because <code>BLEND</code> objects cannot reliably write to the depth
+buffer without causing clipping errors, the engine must sort transparent
+triangles from back to front relative to the camera before drawing them.
+This sorting process frequently fails with complex geometry:</p>
+<ul>
+<li><strong>Self-Sorting Errors:</strong> Intersecting surfaces or
+multi-layered meshes (such as foliage, hair cards, or chain-link fences)
+often render inside-out, with back surfaces displaying in front of
+forward surfaces.</li>
+<li><strong>Inter-Object Clipping:</strong> Adjacent semi-transparent
+assets regularly flicker or pop as camera angles change, since engines
+typically sort transparency per-mesh rather than per-triangle.</li>
+</ul>
+<p>Because <code>MASK</code> mode writes directly to the depth buffer,
+the GPU resolves depth at the individual pixel level. Triangles render
+in the correct visual order regardless of camera orientation or mesh
+complexity.</p>
+<h3 id="performance-and-overdraw-reduction">Performance and Overdraw
+Reduction</h3>
+<p>Alpha blending incurs a significant performance penalty compared to
+alpha masking:</p>
+<ul>
+<li><strong>Depth Pre-Pass and Early-Z:</strong> Modern GPUs utilize an
+early depth test to discard hidden pixels before executing expensive
+fragment (pixel) shaders. <code>MASK</code> assets can take advantage of
+depth pre-passes, discarding occluded geometry early in the
+pipeline.</li>
+<li><strong>Overdraw Costs:</strong> In dense scenes, such as forests or
+character hair, <code>BLEND</code> forces the GPU to calculate shading
+for multiple overlapping transparent layers on a single screen pixel.
+This excessive overdraw strains mobile and web-based platforms running
+WebGL or WebGPU.</li>
+<li><strong>CPU Sorting Overhead:</strong> Dynamic sorting of
+transparent meshes back-to-front creates unnecessary CPU overhead on
+every frame.</li>
+</ul>
+<h3 id="accurate-shadow-casting-and-reception">Accurate Shadow Casting
+and Reception</h3>
+<p>Shadow mapping algorithms rely on rendering the scene from the
+light’s perspective into a depth texture:</p>
+<ul>
+<li><strong><code>MASK</code> Assets:</strong> The depth pass respects
+the cutout shape, allowing objects like tree leaves or perforated metals
+to cast clean, accurate, hard-edged shadows into the scene.</li>
+<li><strong><code>BLEND</code> Assets:</strong> Real-time engines
+typically do not compute partial shadows from blended materials due to
+memory and performance limitations. Consequently, objects set to
+<code>BLEND</code> either cast solid, opaque rectangular shadows from
+their polygon boundaries or fail to cast shadows entirely.</li>
+</ul>
+<h3 id="engine-and-deferred-rendering-compatibility">Engine and Deferred
+Rendering Compatibility</h3>
+<p>Most modern high-fidelity rendering engines (including Unreal Engine,
+Unity, and three.js pipelines) employ deferred rendering or hybrid
+forward/deferred shading. Deferred renderers record geometric properties
+(normals, roughness, base color) into a series of screen-space buffers
+(G-buffers) before calculating lighting.</p>
+<p>Because G-buffers store only one layer of surface data per pixel,
+semi-transparent materials cannot be rendered natively in the deferred
+pass and must be delayed to an expensive forward pass. <code>MASK</code>
+materials integrate cleanly into deferred G-buffers, ensuring they
+receive the full suite of scene lighting, screen-space ambient occlusion
+(SSAO), and post-processing effects without extra draw calls.</p>
+<h3 id="when-blend-is-actually-necessary">When BLEND Is Actually
+Necessary</h3>
+<p><code>BLEND</code> should be reserved strictly for materials where
+true partial transparency is physical and unavoidable:</p>
+<ul>
+<li>Stained or tinted glass</li>
+<li>Smoke, fire, and particle effects</li>
+<li>Water surfaces and liquids</li>
+<li>Thin plastic or sheer fabric (such as pantyhose or light
+curtains)</li>
+<li>Holograms and UI overlays</li>
+</ul>
+<p>For hair, eyelashes, foliage, cloth cutouts, chains, decals, and
+grates, always author the glTF using <code>MASK</code> mode with a
+calibrated <code>alphaCutoff</code> (typically defaulting to 0.5) to
+ensure optimal visual stability and universal performance.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

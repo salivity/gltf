@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimizing glTF Morph Target Memory Footprint - gltf</title>
+    <meta name="description" content="Morph targets—commonly known as blend shapes—allow for complex skeletal-free animations such as facial expressions, but they can quickly inflate memory consumption because each target duplicate portions of the base mesh data. This article explores practic">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/minimizing-gl-tf-morph-target-memory-footprint">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Minimizing glTF Morph Target Memory Footprint - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/minimizing-gl-tf-morph-target-memory-footprint" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Morph targets—commonly known as blend shapes—allow for complex skeletal-free animations such as facial expressions, but they can quickly inflate memory consumption because each target duplicate portions of the base mesh data. This article explores practic" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="minimizing-gltf-morph-target-memory-footprint">Minimizing glTF
+Morph Target Memory Footprint</h1>
+<p>Morph targets—commonly known as blend shapes—allow for complex
+skeletal-free animations such as facial expressions, but they can
+quickly inflate memory consumption because each target duplicate
+portions of the base mesh data. This article explores practical
+technical strategies to significantly reduce the runtime and storage
+footprint of glTF morph targets, including the use of sparse accessors,
+attribute quantization, vertex stream stripping, texture-based
+deformation, and distance-based level of detail (LOD) management.</p>
+<h3 id="utilize-sparse-accessors">Utilize Sparse Accessors</h3>
+<p>By default, morph targets store displacement data for every single
+vertex in the base mesh. However, most morphs—such as a raised eyebrow
+or a lip curl—only deform a localized cluster of vertices. The glTF 2.0
+specification natively supports sparse accessors, which store only the
+indices and displacement vectors of the vertices that actually move.
+Converting full morph arrays into sparse accessors eliminates redundant
+zero-displacement values, dramatically lowering both file size and
+memory requirements.</p>
+<h3 id="quantize-morph-target-attributes">Quantize Morph Target
+Attributes</h3>
+<p>Morph target vectors (positions, normals, tangents) are typically
+authored using full 32-bit floating-point numbers (<code>FLOAT</code>).
+Using the <code>KHR_mesh_quantization</code> extension, these can be
+quantized down to normalized integers:</p>
+<ul>
+<li><strong>Positions:</strong> Compress to 16-bit signed normalized
+integers (<code>SHORT</code>).</li>
+<li><strong>Normals and Tangents:</strong> Compress to 8-bit signed
+normalized integers (<code>BYTE</code>).</li>
+</ul>
+<p>This conversion cuts the memory required for vertex attribute buffers
+by 50% to 75% while maintaining visual fidelity within typical tolerance
+thresholds.</p>
+<h3 id="apply-khr_meshopt_compression">Apply
+<code>KHR_meshopt_compression</code></h3>
+<p>For transmission and initial load memory, applying the
+<code>KHR_meshopt_compression</code> extension optimizes vertex
+attribute streams for fast hardware-assisted decompression. It arranges
+the data layout sequentially to maximize cache efficiency and
+significantly reduces download size without imposing heavy runtime
+decoding penalties.</p>
+<h3 id="strip-unnecessary-morph-attributes">Strip Unnecessary Morph
+Attributes</h3>
+<p>Not all morph targets require displacement data for positions,
+normals, and tangents simultaneously:</p>
+<ul>
+<li><strong>Drop Tangents:</strong> If your shader computes tangents
+analytically in the fragment shader (e.g., using screen-space
+derivatives), omit morph tangents completely.</li>
+<li><strong>Recalculate Normals:</strong> If shading artifacts are
+minimal or computing normals via shaders dynamically is feasible,
+eliminate morph normal attributes and only store position deltas.</li>
+<li><strong>Remove Low-Influence Morphs:</strong> Cull minor targets
+that move vertices by sub-pixel distances during standard viewing
+conditions.</li>
+</ul>
+<h3 id="adopt-texture-based-morph-targets-vat">Adopt Texture-Based Morph
+Targets (VAT)</h3>
+<p>Hardware vertex attribute limits (often limited to 8 or 16 active
+vertex attributes on mobile GPUs) make high-count morph setups difficult
+to load natively. Storing vertex offsets inside 2D high-dynamic-range
+(HDR) data textures (Vertex Animation Textures) moves the memory
+footprint from vertex buffer memory to standard texture memory. Textures
+can be loaded, mipmapped, compressed, and sampled directly in vertex
+shaders, bypassing vertex attribute buffer limits entirely.</p>
+<h3 id="implement-dynamic-morph-target-lods">Implement Dynamic Morph
+Target LODs</h3>
+<p>Distance-based Level of Detail (LOD) techniques should govern morph
+target usage at runtime:</p>
+<ul>
+<li><strong>Far LODs:</strong> Disable morph targets entirely when an
+object is far from the camera, falling back to basic skeletal or rigid
+animation.</li>
+<li><strong>Mid LODs:</strong> Strip high-frequency targets
+(micro-expressions, minor wrinkles) and keep only dominant shapes (mouth
+open, eyes closed).</li>
+<li><strong>Near LODs:</strong> Render the full complement of morph
+targets only during close-up shots or cinematic views.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Unity Converts glTF to Prefabs and Meshes - gltf</title>
+    <meta name="description" content="Unity converts glTF (GL Transmission Format) and GLB files into native engine assets through an import pipeline that parses the source data, reconstructs 3D geometry into UnityEngine.Mesh objects, translates PBR materials, and packages the resulting hiera">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-unity-converts-gl-tf-to-prefabs-and-meshes">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How Unity Converts glTF to Prefabs and Meshes - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-unity-converts-gl-tf-to-prefabs-and-meshes" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Unity converts glTF (GL Transmission Format) and GLB files into native engine assets through an import pipeline that parses the source data, reconstructs 3D geometry into UnityEngine.Mesh objects, translates PBR materials, and packages the resulting hiera" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-unity-converts-gltf-to-prefabs-and-meshes">How Unity
+Converts glTF to Prefabs and Meshes</h1>
+<p>Unity converts glTF (GL Transmission Format) and GLB files into
+native engine assets through an import pipeline that parses the source
+data, reconstructs 3D geometry into <code>UnityEngine.Mesh</code>
+objects, translates PBR materials, and packages the resulting hierarchy
+into a standard Unity Prefab. Because Unity does not support glTF
+natively in its base install, this conversion relies on specialized
+importer packages—such as Unity's official glTFast package or the
+open-source UnityGLTF—leveraging the engine's
+<code>ScriptedImporter</code> API to translate raw file buffers into
+editor-ready assets seamlessly during import time or runtime.</p>
+<h3 id="the-role-of-scriptedimporter">The Role of ScriptedImporter</h3>
+<p>The conversion process begins with Unity's
+<code>ScriptedImporter</code> framework. When a <code>.gltf</code>
+(JSON-based) or <code>.glb</code> (binary) file is placed into the Unity
+Project folder, the importer registers the file extension and triggers
+an import task. The importer reads the underlying data structures,
+isolates the components (geometry, textures, materials, and animations),
+and declares what native Unity assets will be generated as main and
+sub-assets inside the project database.</p>
+<h3 id="parsing-structure-and-binary-buffers">Parsing Structure and
+Binary Buffers</h3>
+<p>glTF assets define their scenes using a strict JSON schema coupled
+with binary blobs (buffers). Conversion happens in the following
+sequence:</p>
+<ol type="1">
+<li><strong>Reading Accessors and Buffer Views</strong>: The importer
+evaluates the JSON file to locate accessor objects, which describe how
+to interpret raw binary data.</li>
+<li><strong>De-interleaving Vertex Data</strong>: The importer reads
+array buffers to extract vertex attributes including positions, vertex
+colors, UV coordinates, normals, and tangents.</li>
+<li><strong>Index Parsing</strong>: Index buffers are read to assemble
+the polygon topology (typically triangle lists) required for
+rendering.</li>
+</ol>
+<h3 id="converting-geometry-to-unityenginemesh">Converting Geometry to
+<code>UnityEngine.Mesh</code></h3>
+<p>Once raw vertex and index data are isolated, the importer constructs
+one or more <code>UnityEngine.Mesh</code> instances:</p>
+<ul>
+<li><strong>Vertex Allocation</strong>: Data is packed into native
+memory buffers and assigned to the mesh via
+<code>Mesh.SetVertices()</code>, <code>Mesh.SetNormals()</code>,
+<code>Mesh.SetTangents()</code>, and <code>Mesh.SetUVs()</code>. For
+high-performance conversion, packages like glTFast write directly into
+Unity's vertex buffers using <code>Mesh.SetVertexBufferData</code> and
+the C# Job System.</li>
+<li><strong>SubMeshes and Topologies</strong>: Each glTF primitive
+corresponds to a sub-mesh in Unity. The importer maps primitive draw
+modes to Unity's <code>MeshTopology.Triangles</code>.</li>
+<li><strong>Skinning Data</strong>: If the model includes a skinned
+mesh, the importer reads joint indices and weights, mapping them to
+Unity's <code>BoneWeight</code> structs or native bone weight buffers,
+alongside <code>bindposes</code> (inverse bind matrices).</li>
+</ul>
+<h3 id="translating-materials-and-textures">Translating Materials and
+Textures</h3>
+<p>glTF utilizes a standard Metallic-Roughness or Specular-Glossiness
+Physically Based Rendering (PBR) workflow. Unity maps these definitions
+to corresponding shader properties:</p>
+<ul>
+<li><strong>Texture Decoding</strong>: Images embedded or referenced by
+the glTF file are decoded into <code>Texture2D</code> instances. Normal
+maps and occlusion/roughness/metallic (ORM) packed textures are remapped
+to match the channel layouts expected by Unity's Standard, Universal
+Render Pipeline (URP), or High Definition Render Pipeline (HDRP)
+shaders.</li>
+<li><strong>Material Mapping</strong>: A native
+<code>UnityEngine.Material</code> is created for each glTF material
+definition. The importer assigns base color factors, metallic and
+roughness values, emission, and normal scale factors directly to the
+target shader's uniform parameters.</li>
+</ul>
+<h3 id="hierarchy-construction-and-prefab-generation">Hierarchy
+Construction and Prefab Generation</h3>
+<p>After generating meshes and materials, the importer constructs the
+object graph:</p>
+<ol type="1">
+<li><strong>Transform Nodes</strong>: glTF scenes are organized as
+directed acyclic graphs of nodes. The importer iterates through these
+nodes, instantiating a <code>GameObject</code> for each and setting its
+local position, rotation, and scale.</li>
+<li><strong>Component Assignment</strong>: Nodes containing geometry are
+assigned a <code>MeshFilter</code> (referencing the newly created
+<code>Mesh</code>) and a <code>MeshRenderer</code> (referencing the
+generated <code>Material</code>). Skinned nodes receive a
+<code>SkinnedMeshRenderer</code> with associated transform references
+for the bone rig.</li>
+<li><strong>Animation Clips</strong>: glTF animation channels
+(translation, rotation, scale, and morph weights) are converted into
+<code>AnimationClip</code> curves mapped to the instantiated node
+paths.</li>
+<li><strong>Serialization</strong>: The entire root
+<code>GameObject</code> hierarchy, along with its dependent child
+meshes, materials, and animation clips, is passed to the
+<code>AssetImportContext</code>. Unity serializes this root object as a
+standard Prefab asset, making it directly usable in scenes or via script
+instantiation.</li>
+</ol></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

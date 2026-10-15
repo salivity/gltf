@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Assets in Nvidia Omniverse USD Pipelines - gltf</title>
+    <meta name="description" content="This article provides an overview of how Nvidia Omniverse integrates glTF (GL Transmission Format) assets into Universal Scene Description (USD) pipelines. It details the mechanisms of asset conversion, material translation, referencing workflows, and the">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-assets-in-nvidia-omniverse-usd-pipelines">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Assets in Nvidia Omniverse USD Pipelines - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-assets-in-nvidia-omniverse-usd-pipelines" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="This article provides an overview of how Nvidia Omniverse integrates glTF (GL Transmission Format) assets into Universal Scene Description (USD) pipelines. It details the mechanisms of asset conversion, material translation, referencing workflows, and the" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-assets-in-nvidia-omniverse-usd-pipelines">glTF Assets in
+Nvidia Omniverse USD Pipelines</h1>
+<p>This article provides an overview of how Nvidia Omniverse integrates
+glTF (GL Transmission Format) assets into Universal Scene Description
+(USD) pipelines. It details the mechanisms of asset conversion, material
+translation, referencing workflows, and the non-destructive composition
+methods that allow lightweight transmission models to function
+seamlessly within complex, multi-user simulation environments.</p>
+<h3 id="the-roles-of-gltf-and-usd">The Roles of glTF and USD</h3>
+<p>To understand how Omniverse handles glTF files, it is essential to
+distinguish between the two formats:</p>
+<ul>
+<li><strong>glTF:</strong> Often referred to as the "JPEG of 3D," glTF
+is an open, compact delivery format optimized for efficient transmission
+and rapid runtime loading on the web and real-time engines.</li>
+<li><strong>USD:</strong> Developed by Pixar, Universal Scene
+Description is an extensible, non-destructive interchange and
+scene-composition architecture designed for large-scale production
+pipelines and collaborative authoring.</li>
+</ul>
+<p>Omniverse uses OpenUSD as its native foundation. Rather than
+replacing USD, glTF serves as an ingestion format, bringing lightweight
+3D assets directly into industrial and creative USD-based workflows.</p>
+<h3 id="omniverse-gltf-asset-ingestion-and-conversion">Omniverse glTF
+Asset Ingestion and Conversion</h3>
+<p>Omniverse incorporates a dedicated glTF converter service and runtime
+importer. When a <code>.gltf</code> or binary <code>.glb</code> file is
+loaded into an Omniverse stage, the platform automatically parses the
+data and maps it into corresponding USD schemas:</p>
+<ul>
+<li><strong>Geometry and Hierarchy:</strong> Nodes, meshes, and
+transform hierarchies defined in the glTF file are mapped directly to
+<code>UsdGeomXform</code> and <code>UsdGeomMesh</code> primitives.</li>
+<li><strong>Skeletal Animation and Morphs:</strong> Joint structures,
+skin weights, and blend shapes are mapped into the <code>UsdSkel</code>
+schema, preserving rigging and performance capture data.</li>
+<li><strong>Cameras and Lights:</strong> Supported camera parameters and
+light extensions (such as <code>KHR_lights_punctual</code>) translate
+into their respective <code>UsdLux</code> and <code>UsdGeomCamera</code>
+equivalents.</li>
+</ul>
+<h3 id="pbr-material-translation-to-mdl-and-usdpreviewsurface">PBR
+Material Translation to MDL and UsdPreviewSurface</h3>
+<p>The standard glTF specification relies on a physically based
+rendering (PBR) metallic-roughness workflow. Omniverse preserves visual
+parity by converting glTF material definitions through two primary
+methods:</p>
+<ol type="1">
+<li><strong>UsdPreviewSurface:</strong> For lightweight previewing, glTF
+materials are mapped to the baseline <code>UsdShade</code> network using
+<code>UsdPreviewSurface</code>, ensuring compatibility across the
+broader USD ecosystem.</li>
+<li><strong>NVIDIA Material Definition Language (MDL):</strong> For
+high-fidelity path tracing and real-time simulation within the Omniverse
+RTX Renderer, the platform translates glTF PBR parameters (including
+roughness, metallic, normal, occlusion, and emissive maps) into native
+MDL representations. Extensions such as
+<code>KHR_materials_clearcoat</code>,
+<code>KHR_materials_transmission</code>, and
+<code>KHR_materials_ior</code> are mapped to corresponding MDL
+attributes to guarantee accurate optical behavior.</li>
+</ol>
+<h3 id="non-destructive-referencing-and-layering">Non-Destructive
+Referencing and Layering</h3>
+<p>Omniverse treats glTF assets as referenceable components rather than
+static, one-time imports. Through USD's composition arcs, glTF files can
+be referenced directly into an existing USD stage:</p>
+<ul>
+<li><strong>Payloads and References:</strong> Users can attach a glTF
+model using a standard USD sublayer or reference. Omniverse reads the
+underlying glTF asset and displays it in the viewport without requiring
+the user to permanently overwrite the source file.</li>
+<li><strong>USD Overrides:</strong> Because USD operates via
+non-destructive layering, artists can add "overs" (overrides) to the
+glTF asset. This means materials, physics properties (via
+<code>UsdPhysics</code>), and transform coordinates can be modified or
+animated on a distinct USD layer while leaving the source
+<code>.gltf</code> or <code>.glb</code> untouched.</li>
+</ul>
+<h3 id="pipeline-efficiency-and-interoperability">Pipeline Efficiency
+and Interoperability</h3>
+<p>By facilitating direct ingestion of glTF into USD pipelines, Nvidia
+Omniverse removes the barrier between web-ready asset libraries and
+enterprise-grade simulations. Assets sourced from web-based 3D
+repositories, CAD-to-glTF exporters, and mobile scanning applications
+can be instantly deployed into digital twin environments, robotics
+training simulations, and high-end visual effects pipelines without
+extensive manual cleanup or re-authoring.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

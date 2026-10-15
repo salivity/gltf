@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glTF Anisotropy: Highlight Direction and Strength - gltf</title>
+    <meta name="description" content="In glTF 2.0, controlling the shape and orientation of specular reflections relies on the KHRmaterialsanisotropy extension. This extension defines how specular highlights stretch and rotate across a surface using a combination of scalar factors, texture ch">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/gl-tf-anisotropy-highlight-direction-and-strength">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="glTF Anisotropy: Highlight Direction and Strength - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/gl-tf-anisotropy-highlight-direction-and-strength" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="In glTF 2.0, controlling the shape and orientation of specular reflections relies on the KHRmaterialsanisotropy extension. This extension defines how specular highlights stretch and rotate across a surface using a combination of scalar factors, texture ch" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="gltf-anisotropy-highlight-direction-and-strength">glTF
+Anisotropy: Highlight Direction and Strength</h1>
+<p>In glTF 2.0, controlling the shape and orientation of specular
+reflections relies on the <code>KHR_materials_anisotropy</code>
+extension. This extension defines how specular highlights stretch and
+rotate across a surface using a combination of scalar factors, texture
+channels, and the underlying mesh geometry. The strength of the
+highlight stretching is primarily governed by
+<code>anisotropyStrength</code>, while the direction is determined by
+the mesh's tangent space, modified by <code>anisotropyRotation</code>
+and directional data encoded within <code>anisotropyTexture</code>.</p>
+<h3 id="parameters-defining-highlight-strength">Parameters Defining
+Highlight Strength</h3>
+<p>The elongation or stretching intensity of the specular highlight
+determines how non-uniform the roughness is along different axes. It is
+controlled by the following parameters:</p>
+<ul>
+<li><strong><code>anisotropyStrength</code> (Float):</strong> A scalar
+factor ranging from <code>0.0</code> to <code>1.0</code>. A value of
+<code>0.0</code> produces standard isotropic reflection where the
+highlight is circular. A value of <code>1.0</code> delivers maximum
+highlight stretching.</li>
+<li><strong><code>anisotropyTexture</code> (Blue Channel):</strong> When
+an anisotropy texture is supplied, the blue (B) channel acts as a linear
+multiplier for the <code>anisotropyStrength</code>. The final strength
+at any UV coordinate is calculated as: <span
+class="math display">\[\text{Final Strength} = \text{anisotropyStrength}
+\times \text{Texture.b}\]</span></li>
+</ul>
+<h3 id="parameters-defining-highlight-direction">Parameters Defining
+Highlight Direction</h3>
+<p>The orientation of the stretched highlight is calculated relative to
+the surface's tangent space and altered by rotation angles and vector
+textures:</p>
+<ul>
+<li><strong>Mesh Tangents (<code>TANGENT</code> attribute):</strong> The
+baseline orientation of the anisotropy relies on the vertex tangents and
+bitangents defined in the 3D model. If explicit vertex tangents are
+omitted, implementations must derive them from surface UV
+coordinates.</li>
+<li><strong><code>anisotropyRotation</code> (Float):</strong> A scalar
+angle in radians ranging from <span class="math inline">\(-\pi\)</span>
+to <span class="math inline">\(\pi\)</span> (or <span
+class="math inline">\([0, 2\pi]\)</span>). This value rotates the
+primary tangent vector counter-clockwise around the surface normal.</li>
+<li><strong><code>anisotropyTexture</code> (Red and Green
+Channels):</strong> Encodes a 2D direction vector within the
+tangent-bitangent plane. Values stored in the <span
+class="math inline">\([0, 1]\)</span> range are remapped to <span
+class="math inline">\([-1, 1]\)</span> vectors: <span
+class="math display">\[\text{Direction} = 2 \times \text{Texture.rg} -
+1.0\]</span> This 2D vector establishes a local tangent direction, which
+is then further rotated by <code>anisotropyRotation</code>.</li>
+</ul>
+<h3 id="mathematical-interaction">Mathematical Interaction</h3>
+<p>During shader evaluation, the engine computes an anisotropy vector
+<span class="math inline">\(T_{aniso}\)</span> on the surface plane by
+combining the texture-based direction vector (from the red and green
+channels) and rotating it by <code>anisotropyRotation</code>. The
+roughness along this direction is maintained at the base
+<code>roughness</code>, while the roughness perpendicular to it is
+scaled upward according to the computed final strength:</p>
+<p><span class="math display">\[\alpha_t = \text{roughness}^2\]</span>
+<span class="math display">\[\alpha_b = \text{roughness}^2 \times
+\left(1.0 + \text{Final Strength} \times \dots\right)\]</span></p>
+<p>This discrepancy between the parallel roughness (<span
+class="math inline">\(\alpha_t\)</span>) and perpendicular roughness
+(<span class="math inline">\(\alpha_b\)</span>) is what causes the
+specular highlight to appear visibly stretched perpendicular to the
+resolved tangent direction.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How iOS Quick Look Converts glTF to USDZ On-the-Fly - gltf</title>
+    <meta name="description" content="Apple’s AR Quick Look enables users to preview 3D models seamlessly across iOS using Safari, Messages, and Files. While Apple natively built Quick Look around Pixar’s Universal Scene Description (USDZ) ecosystem, modern iOS updates have integrated pathway">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/how-i-os-quick-look-converts-gl-tf-to-usdz-on-the-fly">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="How iOS Quick Look Converts glTF to USDZ On-the-Fly - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/how-i-os-quick-look-converts-gl-tf-to-usdz-on-the-fly" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Apple’s AR Quick Look enables users to preview 3D models seamlessly across iOS using Safari, Messages, and Files. While Apple natively built Quick Look around Pixar’s Universal Scene Description (USDZ) ecosystem, modern iOS updates have integrated pathway" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="how-ios-quick-look-converts-gltf-to-usdz-on-the-fly">How iOS
+Quick Look Converts glTF to USDZ On-the-Fly</h1>
+<p>Apple’s AR Quick Look enables users to preview 3D models seamlessly
+across iOS using Safari, Messages, and Files. While Apple natively built
+Quick Look around Pixar’s Universal Scene Description (USDZ) ecosystem,
+modern iOS updates have integrated pathways to handle the web-standard
+glTF (GL Transmission Format) and its binary variant, GLB. This article
+breaks down the internal architecture, material translation, and runtime
+pipelines that allow iOS to dynamically convert and render glTF assets
+on-the-fly.</p>
+<h3 id="the-role-of-model-io-and-realitykit">The Role of Model I/O and
+RealityKit</h3>
+<p>When an iOS device encounters a <code>.gltf</code> or
+<code>.glb</code> file designated for Quick Look, the operating system
+routes the file through Apple’s low-level 3D graphics ingestion
+framework, Model I/O (<code>MDLAsset</code>), before passing it to
+RealityKit.</p>
+<p>Model I/O acts as an intermediate parsing engine. It reads the
+structural JSON hierarchy of a glTF file, unpacking:</p>
+<ul>
+<li>Node hierarchies and transformations</li>
+<li>Vertex attributes (positions, normals, tangents, texture
+coordinates)</li>
+<li>Index buffers defining geometric primitives</li>
+</ul>
+<p>Rather than saving a static <code>.usdz</code> archive to physical
+storage, the system instantiates an in-memory scene representation. This
+intermediate representation translates Khronos Group specifications into
+Apple’s native scene graph components.</p>
+<h3 id="pbr-material-mapping-to-usdpreviewsurface">PBR Material Mapping
+to UsdPreviewSurface</h3>
+<p>The primary technical hurdle in real-time conversion is ensuring
+material fidelity. Both glTF 2.0 and USDZ utilize Physically Based
+Rendering (PBR) workflows centered on the Metallic-Roughness model,
+which simplifies cross-format translation.</p>
+<p>During on-the-fly conversion, the system maps glTF PBR material
+inputs directly to the <code>UsdPreviewSurface</code> shader
+specification:</p>
+<ul>
+<li><strong>Base Color:</strong> Mapped to USD
+<code>diffuseColor</code>.</li>
+<li><strong>Metallic-Roughness:</strong> glTF packs roughness into the
+green channel and metallic into the blue channel of a single texture.
+Quick Look extracts and splits or routes these channels to USD's
+<code>roughness</code> and <code>metallic</code> inputs.</li>
+<li><strong>Normal Maps:</strong> Inverted if necessary to match the
+expected coordinate space (OpenGL vs. DirectX conventions) and piped
+into the USD <code>normal</code> input.</li>
+<li><strong>Occlusion and Emissive:</strong> Bound directly to
+corresponding ambient occlusion and emissive color nodes.</li>
+</ul>
+<p>This deterministic mapping allows the conversion pipeline to bypass
+heavy shader recompilation, preserving GPU performance.</p>
+<h3 id="geometry-draco-decompression-and-rigging">Geometry, Draco
+Decompression, and Rigging</h3>
+<p>glTF files often utilize Draco compression to reduce payload sizes
+for web transmission. To render these files on-the-fly:</p>
+<ol type="1">
+<li><strong>Buffer Decompression:</strong> Quick Look utilizes
+integrated Draco decoders to decompress geometric arrays directly into
+system RAM.</li>
+<li><strong>Coordinate Normalization:</strong> glTF natively uses a
+right-handed, Y-up coordinate system, which aligns directly with USD and
+ARKit spaces, minimizing matrix reorientations.</li>
+<li><strong>Skeletal Animation and Morph Targets:</strong> Joint
+hierarchies, skinning weights, and inverse bind matrices defined in glTF
+are mapped into USD’s <code>UsdSkel</code> schema. Keyframe animations
+driving translation, rotation, and scale channels are converted into
+uniform time-sampled USD animation curves.</li>
+</ol>
+<h3 id="memory-optimization-and-execution">Memory Optimization and
+Execution</h3>
+<p>Because Quick Look operates as an embedded extension within host
+applications like Safari, it runs under strict memory limits. The
+on-the-fly conversion minimizes memory overhead by:</p>
+<ul>
+<li>Streaming binary buffers directly from disk or network cache without
+intermediate disk writes.</li>
+<li>Dynamically generating mipmaps using the GPU rather than
+pre-allocating texture memory.</li>
+<li>Instantiating the final scene directly as an entity within
+RealityKit, bypassing the need to generate an actual physical
+<code>.usdz</code> container.</li>
+</ul>
+<p>Once the memory graph is established, Quick Look hands the scene over
+to ARKit for surface detection, lighting estimation, and real-time
+interaction.</p></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>

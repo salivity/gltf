@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fetch glTF Buffers on Demand via HTTP Range Requests - gltf</title>
+    <meta name="description" content="Loading massive 3D scenes efficiently on the web requires dynamic data streaming rather than downloading monolithic geometry payloads upfront. By leveraging HTTP range requests, web-based 3D engines can fetch specific byte ranges of glTF binary buffers on">
+    <link rel="canonical" href="https://salivity.github.io/gltf/article/fetch-gl-tf-buffers-on-demand-via-http-range-requests">
+    <link rel="search" type="application/opensearchdescription+xml" title="gltf" href="/gltf/opensearch.xml">
+    <link rel="icon" href="/gltf/favicon.ico">
+    <link rel="stylesheet" href="/gltf/css/style.css">
+    <link media="print" rel="stylesheet" href="/gltf/css/print.css">
+    <script src="/gltf/js/fuse.min.js"></script>
+    <script src="/gltf/js/script.js"></script>
+    <script id="MathJax-script" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.1.3/tex-chtml.min.js" defer></script>
+    <script src="/monetize/monetize.js"></script>
+    <script src="/social/social.js"></script>
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Fetch glTF Buffers on Demand via HTTP Range Requests - gltf" />
+    <meta property="og:url" content="https://salivity.github.io/gltf/article/fetch-gl-tf-buffers-on-demand-via-http-range-requests" />
+    <meta property="og:image" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:secure_url" content="https://salivity.github.io/gltf/images/open-graph/default.webp" />
+    <meta property="og:image:width" content="1120" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:description" content="Loading massive 3D scenes efficiently on the web requires dynamic data streaming rather than downloading monolithic geometry payloads upfront. By leveraging HTTP range requests, web-based 3D engines can fetch specific byte ranges of glTF binary buffers on" />
+    <link rel="manifest" href="/gltf/pwa/manifest.json" />
+</head>
+<body>
+    <header>
+        <a href="/gltf/" aria-label="Go To Home Page" title="Go To Home Page" id="logo">
+            <span>salivity.github.io/</span><span>gltf</span>
+        </a>
+        <nav>
+            <ul class="header-links">
+                <li><a href="/gltf/search" title="Search" aria-label="Go To Search Page"><svg class="svg-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"></path></svg></a></li>
+                <li><a id="theme-toggle" title="Theme" href="javascript:void(0);" aria-label="Toggle Website Theme"></a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        
+    <div class="article-layout">
+        <aside id="profile-sidebar" class="profile-column" aria-label="Author Profile"></aside>
+        <div class="article-main-column">
+            <article><h1 id="fetch-gltf-buffers-on-demand-via-http-range-requests">Fetch glTF
+Buffers on Demand via HTTP Range Requests</h1>
+<p>Loading massive 3D scenes efficiently on the web requires dynamic
+data streaming rather than downloading monolithic geometry payloads
+upfront. By leveraging HTTP range requests, web-based 3D engines can
+fetch specific byte ranges of glTF binary buffers on demand as the user
+zooms the camera closer to an object. This progressive level-of-detail
+(LOD) workflow reduces initial load times, saves client-server
+bandwidth, and ensures that high-resolution vertex and texture data are
+only transferred when the camera's proximity requires them.</p>
+<h3 id="the-underlying-mechanism-http-range-requests">The Underlying
+Mechanism: HTTP Range Requests</h3>
+<p>An HTTP range request uses the standard
+<code>Range: bytes=start-end</code> request header to ask a web server
+for a partial slice of a remote resource. If the server supports byte
+serving, it responds with an <code>HTTP 206 Partial Content</code>
+status and the requested segment of bytes, rather than the entire
+file.</p>
+<p>To utilize this with glTF (or binary GLB) files:</p>
+<ol type="1">
+<li>The server must advertise support by sending the
+<code>Accept-Ranges: bytes</code> response header.</li>
+<li>Cross-Origin Resource Sharing (CORS) configurations must expose the
+<code>Content-Range</code> and <code>Content-Length</code> headers via
+<code>Access-Control-Expose-Headers</code>.</li>
+</ol>
+<h3
+id="structuring-gltf-buffers-for-spatial-and-detail-streaming">Structuring
+glTF Buffers for Spatial and Detail Streaming</h3>
+<p>A standard glTF file references one or more binary buffers
+(<code>.bin</code>) through <code>bufferViews</code> and
+<code>accessors</code>. To enable partial fetching:</p>
+<ol type="1">
+<li><strong>Buffer Partitioning:</strong> The binary asset is structured
+so that low-detail base meshes occupy the earliest byte offsets in the
+buffer, while progressively higher-detail geometries (or subdivided
+spatial chunks) are positioned at strictly defined subsequent
+offsets.</li>
+<li><strong>glTF Metadata First:</strong> The initial JSON manifest (the
+<code>.gltf</code> text file or the JSON chunk of a <code>.glb</code>)
+is loaded first. This metadata defines the exact <code>byteOffset</code>
+and <code>byteLength</code> for each <code>bufferView</code>, providing
+a map of where specific LODs reside within the remote binary file.</li>
+</ol>
+<h3 id="triggering-partial-fetches-on-camera-zoom">Triggering Partial
+Fetches on Camera Zoom</h3>
+<p>Dynamic buffer loading relies on listening to camera transformations
+and evaluating visibility metrics in the render loop.</p>
+<h4 id="1-distance-and-screen-space-error-calculation">1. Distance and
+Screen-Space Error Calculation</h4>
+<p>During camera zoom, the engine evaluates the distance between the
+camera position and the target object's bounding volume, or calculates
+the Screen-Space Error (SSE). When the camera crosses predefined zoom
+thresholds, the engine flags that the current mesh requires a
+higher-fidelity geometry representation.</p>
+<h4 id="2-byte-range-request-execution">2. Byte Range Request
+Execution</h4>
+<p>Once a LOD switch is triggered, the engine avoids requesting the
+entire asset. Instead, it looks up the target LOD's
+<code>bufferView</code> in the glTF JSON manifest to identify the start
+and end bytes, then issues a targeted fetch request:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode javascript"><code class="sourceCode javascript"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">async</span> <span class="kw">function</span> <span class="fu">fetchBufferChunk</span>(url<span class="op">,</span> byteOffset<span class="op">,</span> byteLength) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> rangeHeader <span class="op">=</span> <span class="vs">`bytes=</span><span class="sc">${</span>byteOffset<span class="sc">}</span><span class="vs">-</span><span class="sc">${</span>byteOffset <span class="op">+</span> byteLength <span class="op">-</span> <span class="dv">1</span><span class="sc">}</span><span class="vs">`</span><span class="op">;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>  <span class="kw">const</span> response <span class="op">=</span> <span class="cf">await</span> <span class="fu">fetch</span>(url<span class="op">,</span> {</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">headers</span><span class="op">:</span> { <span class="st">&#39;Range&#39;</span><span class="op">:</span> rangeHeader }</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>  })<span class="op">;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (response<span class="op">.</span><span class="at">status</span> <span class="op">===</span> <span class="dv">206</span>) {</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="cf">await</span> response<span class="op">.</span><span class="fu">arrayBuffer</span>()<span class="op">;</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>  <span class="cf">throw</span> <span class="kw">new</span> <span class="bu">Error</span>(<span class="st">&#39;Server does not support partial content requests.&#39;</span>)<span class="op">;</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+<h4 id="3-gpu-buffer-ingestion-and-mesh-swapping">3. GPU Buffer
+Ingestion and Mesh Swapping</h4>
+<p>When the partial <code>ArrayBuffer</code> resolves:</p>
+<ol type="1">
+<li>The raw bytes are assigned to the target glTF accessor.</li>
+<li>The data is uploaded directly to the GPU via WebGL
+(<code>gl.bufferData</code> / <code>gl.bufferSubData</code>) or WebGPU
+(<code>device.queue.writeBuffer</code>).</li>
+<li>The renderer swaps or subdivides the geometry at runtime, seamlessly
+replacing the coarse base mesh with the high-resolution geometry without
+blocking the main render loop.</li>
+</ol>
+<h3 id="handling-caching-and-memory-management">Handling Caching and
+Memory Management</h3>
+<p>To maintain stable frame rates during continuous zooming:</p>
+<ul>
+<li><strong>LRU Caching:</strong> Maintain an in-memory Least Recently
+Used (LRU) cache of fetched chunks. If the camera zooms out and back in
+quickly, cached chunks prevent redundant network round-trips.</li>
+<li><strong>Request Cancellation:</strong> If a user rapidly zooms past
+an intermediate LOD level directly to the highest resolution, use
+<code>AbortController</code> to cancel intermediate, in-flight range
+requests before they consume network bandwidth.</li>
+</ul></article>
+        <div id="comments-container"></div>
+        <script>
+            const utterancesScript = document.createElement('script');
+            utterancesScript.setAttribute('src', 'https://utteranc.es/client.js');
+            utterancesScript.setAttribute('repo', 'salivity/gltf'); 
+            utterancesScript.setAttribute('issue-term', 'pathname'); 
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            utterancesScript.setAttribute('theme', currentTheme === 'dark' ? 'github-dark' : 'github-light'); 
+            utterancesScript.setAttribute('crossorigin', 'anonymous');
+            utterancesScript.async = true;
+            document.getElementById('comments-container').appendChild(utterancesScript);
+        </script>
+    
+        </div>
+    </div>
+    
+    </main>
+    <footer>
+        <nav>
+            <ul class="social-links">
+            </ul>
+        </nav>
+        <nav>
+            <ul class="footer-links">
+                <li><a href="https://smvc.dev/contact">Contact</a></li>
+                <li><a href="/gltf/privacy-policy">Privacy Policy</a></li>
+                <li><a href="/gltf/terms-and-conditions">Terms and Conditions</a></li>
+            </ul>
+        </nav>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span>
+        </div>
+    </footer>
+</body>
+</html>
